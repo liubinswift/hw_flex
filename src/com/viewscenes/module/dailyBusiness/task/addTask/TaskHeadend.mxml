@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:task="com.viewscenes.module.dailyBusiness.task.*" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" xmlns:timecomp="com.viewscenes.utils.timecomp.*">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.utils.StringTool;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.IVisualElement;
+			public var isRecord:Boolean = true;
+			public var runplan_id:String = "";
+			public var headcode:String = "";
+			/**
+			 * 指标录音任务中任务类型  质量、效果 
+			 */
+			public var record_type:String = "";
+			public var isTempTask:Boolean = false;
+			private var num:Number = 0;
+			public function visableMy():void{
+				this.content.visible = !this.content.visible;
+				this.content.includeInLayout = this.content.visible;
+			}
+			public function addChannel(e:MouseEvent=null):TaskChannel{
+				var runplanChannel:TaskChannel = new TaskChannel();
+				runplanChannel.task_type = "loop";
+//				runplanChannel.id = 'taskZL_'+headcode;
+				runplanChannel.runplan_id=runplan_id;
+				runplanChannel.isTempTask = isTempTask;
+//				mx.controls.Alert.show(isTempTask+"");
+				runplanChannel.addGroup.visible = runplanChannel.addGroup.includeInLayout = isTempTask;
+				runplanChannel.myParent = this;
+				runplanChannel.percentWidth=100;
+				runplanChannel.station.dataProvider=DataManager.stationBeanAll;
+				
+				if("101" == DataManager.getHeadendByCode(headcode).type_id){
+					runplanChannel._equ_code.dataProvider = runplanChannel.equColl;
+				} else{
+					runplanChannel._equ_code.dataProvider = DataManager.taskHeadenEqu;
+				}
+//				runplanChannel.language.dataProvider=DataManager; 语言test
+				content.addElement(runplanChannel);
+				if(e!=null)
+				e.stopImmediatePropagation();
+				return runplanChannel;
+			}
+			/**
+			 * 
+			 */
+			public function removeTaskChild(evement:IVisualElement):void{
+				content.removeElement(evement);
+			}
+			
+			/**
+			 * 设置是否显示录音任务、指标任务的参数
+			 * recordBB：录音 true显示 false不显示
+			 * qualityBB：指标 true显示 false不显示
+			 */
+			public function setRecord(recordBB:Boolean,qualityBB:Boolean):void{
+				for(var i:int=0;i<content.numElements;i++){
+					var taskChan:TaskChannel = content.getElementAt(i) as TaskChannel;
+					taskChan.includeRecordTask = recordBB;
+					taskChan.bpsHBox.visible = taskChan.bpsHBox.includeInLayout = recordBB;
+					taskChan.qualityBox.visible = taskChan.qualityBox.includeInLayout = qualityBB;
+				}
+			}
+			/**
+			 * 设置选择条幅度还是调制度
+			 * isFm：是否为调频 true是 false不是
+			 */
+			public function setSelectQuality(type:String,selectBB:Boolean):void{
+				for(var i:int=0;i<content.numElements;i++){
+					var taskChan:TaskChannel = content.getElementAt(i) as TaskChannel;
+					if(type == "level"){
+						taskChan.level.selected = selectBB;
+					} else if(type == "am_mod"){
+						if(StringTool.getBandFromFreq(taskChan._freq.text) == "2"){
+							taskChan.am_mod.selected = false;
+							taskChan.fm_mod.selected = false;
+						} else{
+							taskChan.am_mod.selected = selectBB;
+							taskChan.fm_mod.selected = false;
+						}
+					} else if(type == "fm_mod"){
+						if(StringTool.getBandFromFreq(taskChan._freq.text) == "2"){
+							taskChan.am_mod.selected = false;
+							taskChan.fm_mod.selected = selectBB;
+						} else{
+							taskChan.am_mod.selected = false;
+							taskChan.fm_mod.selected = false;
+						}
+					} else if(type == "bandwidth"){
+						taskChan.bandwidth.selected = selectBB;
+					} else if(type == "qualityAlarm"){
+						taskChan.qualityRecordAlarm.selected = selectBB;
+					}
+					
+				}
+			}
+			/**
+			 * 统一设置录音文件长度
+			 */
+			public function setSelectRecordlength(rlen:String):void{
+				for(var i:int=0;i<content.numElements;i++){
+					var taskChan:TaskChannel = content.getElementAt(i) as TaskChannel;
+					taskChan.recordlength.text = rlen;
+				}
+			}
+			/**
+			 * 统一设置录音时间间隔
+			 */
+			public function setSelectStream_sleeptime(rlen:String):void{
+				for(var i:int=0;i<content.numElements;i++){
+					var taskChan:TaskChannel = content.getElementAt(i) as TaskChannel;
+					taskChan.stream_sleeptime.text = rlen;
+				}
+			}
+			/**
+			 * 统一设置录音码率
+			 */
+			public function setSelectBps(rlen:String):void{
+				for(var i:int=0;i<content.numElements;i++){
+					var taskChan:TaskChannel = content.getElementAt(i) as TaskChannel;
+					taskChan.setBps(rlen);
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<s:Group width="100%" click="visableMy();" id="test" right="0">
+		<s:Image source="com/viewscenes/images/module/parameterSet/title_bg.png"     fillMode="scale" scaleMode="stretch"  height="30" width="100%"/>
+		<s:Label id="showHead"  fontSize="14" left="15"  width="400" top="7"/>
+		<s:Button buttonMode="true" label="添加频道"  click="addChannel(event);" id="addCHButton" left="415" top="4"/>
+	</s:Group>
+	<s:VGroup width="100%" id="content" height="100%">
+		
+	</s:VGroup>
+</s:VGroup>

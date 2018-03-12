@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:contaners="com.morcha4.ui.contaners.*" 
+		 width="100%" height="100%"  creationComplete="init()" 
+		 xmlns:runState="com.viewscenes.module.systemTopology.runState.*">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="filter", type="flash.events.Event")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.morcha4.frame.system.EventBus;
+			import com.viewscenes.beans.pub.ResHeadendBean;
+			import com.viewscenes.global.DataManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.ArrayList;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			[Bindable] private var columnsCount:int=0;
+			private var tai:Array=new Array;
+			private var index:uint=0;
+			private var time:uint;
+			public var stateNow:String="all";
+			public var inited:Boolean=false;
+			private function init():void{
+				EventBus.addEventListener("showTip",showTip);
+				EventBus.addEventListener("showHeadList",showHeadList);
+				EventBus.addEventListener("handleAlarm",handle);
+				refreshState("all","all");
+			}
+			
+			private function handle(e:AdvancedEvent):void{
+				refreshState("all","all");
+			}
+			/**
+			 * 加载站点信息，根据站点的状态 信息，以不同的图片显示出来。
+			 * */
+			public function loadData(arr:ArrayCollection):void{
+				clearTimeout(time);
+				remove();
+				var flagCode:String ="@@";
+				var pl:stationPan=new stationPan();
+				for(var i:int=0;i<arr.length;i++){
+						var bean:ResHeadendBean = arr.getItemAt(i) as ResHeadendBean;
+
+						if(bean.code.indexOf(flagCode)==0)
+						{
+							 pl.headendList.addItem(bean);
+							 if( bean.is_online=="1")
+							 {
+								 pl.data.src="com/viewscenes/images/module/systemTopology/"+bean.type_id+"_"+bean.is_online+"_"+bean.site_status+".png";
+								 
+							 }
+						}else
+						{
+							pl=new stationPan();
+							pl.headendList.addItem(bean);
+							var obj:Object = new Object();
+							obj.ip = bean.ip;
+							obj.address = bean.address;
+							obj.src = "com/viewscenes/images/module/systemTopology/"+bean.type_id+"_"+bean.is_online+"_"+bean.site_status+".png";
+							var code:String=  bean.code;
+							var flag:String =code.substring(bean.code.length-1,bean.code.length);
+							if(bean.type_id=="102"&&(flag=="A"||flag=="B"||flag=="C"
+								||flag=="D"
+								||flag=="E"
+								||flag=="F"||flag=="G"))
+							{
+								
+								obj.name = bean.shortname.substring(0,bean.shortname.length-1);
+								obj.code = bean.code.substring(0,bean.code.length-1);
+							   flagCode=bean.code.substring(0,bean.code.length-1);
+							   
+							}else
+							{
+								obj.name = bean.shortname;
+								obj.code = bean.code;
+								flagCode=bean.code;	
+							}
+							pl.data=obj
+							con0.addElement(pl);
+						
+						}
+//							}
+//							if(bean.state=="1"){
+//								con1.addElement(pl);
+//							}
+//							if(bean.state=="2"){
+//								con2.addElement(pl);
+//							}
+//							if(bean.state=="3"){
+//								con3.addElement(pl);
+//							}
+//							if(bean.state=="4"){
+//								con4.addElement(pl);
+//							}
+//							if(bean.state=="5"){
+//								con5.addElement(pl);
+//							}
+							//							if(bean.state=="6"){
+							//								con6.addElement(pl);
+							//								contaner6.height=0;
+							//							}
+							
+							
+					}
+				//contaner0.height=250;
+				time=setTimeout(refreshState,30000,"all","all");
+			}
+			/**
+			 * 清空运行图状态图数据
+			 * */
+			private function remove():void{
+				con0.removeAllElements();
+				columnsCount=(this.con0.width-20)/95;
+				this.con0.width = columnsCount*95+20;
+//				con1.removeAllElements();
+//				columnsCount=(this.con1.width-20)/95;
+//				this.con1.width = columnsCount*95+20;
+//				con2.removeAllElements();
+//				columnsCount=(this.con2.width-20)/95;
+//				this.con2.width = columnsCount*95+20;
+//				con3.removeAllElements();
+//				columnsCount=(this.con3.width-20)/95;
+//				this.con3.width = columnsCount*95+20;
+//				con4.removeAllElements();
+//				columnsCount=(this.con4.width-20)/95;
+//				this.con4.width = columnsCount*95+20;
+//				con5.removeAllElements();
+//				columnsCount=(this.con5.width-20)/95;
+//				this.con5.width = columnsCount*95+20;
+				//				con6.removeAllElements();
+				//				columnsCount=(this.con6.width-20)/95;
+				//				this.con6.width = columnsCount*95+20;
+			}
+			/**
+			 *重新加载前端信息，更新运行状态图
+			 * */
+			public function refreshState(name:String,code:String):void{
+				var obj:Object = new Object;
+				obj.name=name;
+				obj.code=code;
+				obj.stateNow=stateNow;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getHeadendByState",obj,processDataBack,processDataBack));
+			}
+			
+			private function processDataBack(list:ArrayCollection):void{
+				this.loadData(list);
+			}
+			
+			/**
+			 * 点击站点弹出站点信息和导航按钮
+			 * */
+			private function showHeadList(e:AdvancedEvent):void{
+				
+				var tip:headendPan = headendPan(PopUpManager.createPopUp(this,headendPan,false));
+				tip.headendList=e.data.headendList;
+				PopUpManager.centerPopUp(tip);
+				tip.setFocus();
+				if((this.width-e.data.mousePX)<tip.width){
+					if(stage.stageHeight-e.data.mousePY<tip.height){
+						tip.x=e.data.mousePX-tip.width;
+						tip.y=e.data.mousePY-tip.height;
+					}else{
+						tip.x=e.data.mousePX-tip.width;
+						tip.y=e.data.mousePY;
+					}
+					
+				}else
+					if(stage.stageHeight-e.data.mousePY<tip.height){
+						tip.x=e.data.mousePX;
+						tip.y=e.data.mousePY-tip.height;
+					}
+					else{
+						tip.x=e.data.mousePX;
+						tip.y=e.data.mousePY;
+					}
+			}
+			
+			/**
+			 * 点击站点弹出站点信息和导航按钮
+			 * */
+			private function showTip(e:AdvancedEvent):void{
+				
+				var tip:tipPan = tipPan(PopUpManager.createPopUp(this,tipPan,false));
+				tip.imgsrc = e.data.src;
+				tip.title = e.data.name;
+				tip.code = e.data.code;
+				tip.ip = e.data.ip;
+				tip.address = e.data.address;
+				PopUpManager.centerPopUp(tip);
+				tip.setFocus();
+				if((this.width-e.data.mousePX)<tip.width){
+					if(stage.stageHeight-e.data.mousePY<tip.height){
+						tip.x=e.data.mousePX-tip.width;
+						tip.y=e.data.mousePY-tip.height;
+					}else{
+						tip.x=e.data.mousePX-tip.width;
+						tip.y=e.data.mousePY;
+					}
+					
+				}else
+					if(stage.stageHeight-e.data.mousePY<tip.height){
+						tip.x=e.data.mousePX;
+						tip.y=e.data.mousePY-tip.height;
+					}
+					else{
+						tip.x=e.data.mousePX;
+						tip.y=e.data.mousePY;
+					}
+			}
+			/**
+			 * 点击收起/展开按钮触发的事件
+			 * */
+//			protected function image1_clickHandler(image:Image,tileGroup:TileGroup,simpleContainer:BGAbleContainer):void
+//			{
+//				if(image.source.toString().split('/')[5].toString().split('.')[0]=="shouqi"){
+//					tileGroup.visible=false;
+//					tileGroup.includeInLayout=false;
+//					simpleContainer.height=0;
+//					image.source="com/viewscenes/images/module/systemTopology/zhankai.png";
+//				}else{
+//					tileGroup.visible=true;
+//					tileGroup.includeInLayout=true;
+//					simpleContainer.height=250;
+//					image.source="com/viewscenes/images/module/systemTopology/shouqi.png";
+//				}
+//				
+//			}
+			
+		]]>
+	</fx:Script>
+	<s:VGroup width="100%"  height="100%" gap="5" paddingLeft="20" paddingRight="20">
+		<!--contaners:BGAbleContainer backgroundImageMode="scale"  backgroundImage="@Embed(source='com/viewscenes/images/module/systemTopology/title_Bg.png')" width="100%" height="32">
+			<contaners:layout>
+				<s:HorizontalLayout verticalAlign="middle" paddingRight="15"/>
+			</contaners:layout>	
+			<s:Label text="亚洲" color="#000000" paddingLeft="35"/>
+			<s:Spacer width="100%"/>
+			<s:Image id="image0"  source="com/viewscenes/images/module/systemTopology/shouqi.png" click="image1_clickHandler(this.image0,this.con0,this.contaner0)" />
+		</contaners:BGAbleContainer-->
+		<contaners:BGAbleContainer id="contaner0" width="100%" paddingTop="10" paddingbottom="10" paddingLeft="10" height="100%" backgroundColors="{[0xffffff,0xffffff]}" backgroundAlphas="{[0.3,0.3]}">
+			<s:TileGroup id="con0" paddingLeft="10" paddingRight="10" horizontalAlign="center" verticalAlign="middle" horizontalGap="10" verticalGap="10" requestedColumnCount="{columnsCount}" height="100%" width="100%" > 
+			</s:TileGroup> 
+		</contaners:BGAbleContainer>
+		
+		<!--contaners:BGAbleContainer backgroundImageMode="scale" backgroundImage="@Embed(source='com/viewscenes/images/module/systemTopology/title_Bg.png')" width="100%" height="32">
+			<contaners:layout>
+				<s:HorizontalLayout verticalAlign="middle" paddingRight="15"/>
+			</contaners:layout>	
+			<s:Label text="欧洲" color="#000000" paddingLeft="35"/>
+			<s:Spacer width="100%"/>
+			<s:Image id="image1" source="com/viewscenes/images/module/systemTopology/zhankai.png" click="image1_clickHandler(this.image1,this.con1,this.contaner1)" />
+		</contaners:BGAbleContainer>
+		<contaners:BGAbleContainer id="contaner1" width="100%" paddingTop="10" paddingbottom="10" paddingLeft="10" height="0" backgroundColors="{[0xffffff,0xffffff]}" backgroundAlphas="{[0.3,0.3]}">
+			<s:TileGroup id="con1" paddingLeft="10" paddingRight="10" horizontalAlign="center" verticalAlign="middle" horizontalGap="10" verticalGap="28" requestedColumnCount="{columnsCount}" height="100%" width="100%" > 
+			</s:TileGroup> 
+		</contaners:BGAbleContainer>
+		
+		<contaners:BGAbleContainer backgroundImageMode="scale" backgroundImage="@Embed(source='com/viewscenes/images/module/systemTopology/title_Bg.png')" width="100%" height="32">
+			<contaners:layout>
+				<s:HorizontalLayout verticalAlign="middle" paddingRight="15"/>
+			</contaners:layout>	
+			<s:Label text="非洲" color="#000000" paddingLeft="35"/>
+			<s:Spacer width="100%"/>
+			<s:Image id="image2" source="com/viewscenes/images/module/systemTopology/zhankai.png" click="image1_clickHandler(this.image2,this.con2,this.contaner2)" />
+		</contaners:BGAbleContainer>
+		<contaners:BGAbleContainer id="contaner2" width="100%" paddingTop="10" paddingbottom="10"  paddingLeft="10" height="0" backgroundColors="{[0xffffff,0xffffff]}" backgroundAlphas="{[0.3,0.3]}">
+			<s:TileGroup id="con2" paddingLeft="10" paddingRight="10" horizontalAlign="center" verticalAlign="middle" horizontalGap="10" verticalGap="28" requestedColumnCount="{columnsCount}" height="100%" width="100%" > 
+			</s:TileGroup> 
+		</contaners:BGAbleContainer>
+		
+		<contaners:BGAbleContainer backgroundImageMode="scale" backgroundImage="@Embed(source='com/viewscenes/images/module/systemTopology/title_Bg.png')" width="100%" height="32">
+			<contaners:layout>
+				<s:HorizontalLayout verticalAlign="middle" paddingRight="15"/>
+			</contaners:layout>	
+			<s:Label text="北美洲" color="#000000" paddingLeft="35"/>
+			<s:Spacer width="100%"/>
+			<s:Image id="image3" source="com/viewscenes/images/module/systemTopology/zhankai.png" click="image1_clickHandler(this.image3,this.con3,this.contaner3)" />
+		</contaners:BGAbleContainer>
+		<contaners:BGAbleContainer id="contaner3" width="100%" paddingTop="10" paddingbottom="10" paddingLeft="10" height="0" backgroundColors="{[0xffffff,0xffffff]}" backgroundAlphas="{[0.3,0.3]}">
+			<s:TileGroup id="con3" paddingLeft="10"  paddingRight="10" horizontalAlign="center" verticalAlign="middle" horizontalGap="10" verticalGap="28" requestedColumnCount="{columnsCount}" height="100%" width="100%" > 
+			</s:TileGroup> 
+		</contaners:BGAbleContainer>
+		
+		<contaners:BGAbleContainer backgroundImageMode="scale" backgroundImage="@Embed(source='com/viewscenes/images/module/systemTopology/title_Bg.png')" width="100%" height="32">
+			<contaners:layout>
+				<s:HorizontalLayout verticalAlign="middle" paddingRight="15"/>
+			</contaners:layout>	
+			<s:Label text="南美洲" color="#000000" paddingLeft="35"/>
+			<s:Spacer width="100%"/>
+			<s:Image id="image4" source="com/viewscenes/images/module/systemTopology/zhankai.png" click="image1_clickHandler(this.image4,this.con4,this.contaner4)" />
+		</contaners:BGAbleContainer>
+		<contaners:BGAbleContainer id="contaner4" width="100%"  paddingTop="10" paddingbottom="10"  paddingLeft="10" height="0" backgroundColors="{[0xffffff,0xffffff]}" backgroundAlphas="{[0.3,0.3]}">
+			<s:TileGroup id="con4" paddingLeft="10" paddingRight="10" horizontalAlign="center" verticalAlign="middle" horizontalGap="10" verticalGap="28" requestedColumnCount="{columnsCount}" height="100%" width="100%" > 
+			</s:TileGroup> 
+		</contaners:BGAbleContainer>
+		
+		<contaners:BGAbleContainer backgroundImageMode="scale" backgroundImage="@Embed(source='com/viewscenes/images/module/systemTopology/title_Bg.png')" width="100%" height="32">
+			<contaners:layout>
+				<s:HorizontalLayout verticalAlign="middle" paddingRight="15"/>
+			</contaners:layout>	
+			<s:Label text="大洋洲" color="#000000" paddingLeft="35"/>
+			<s:Spacer width="100%"/>
+			<s:Image id="image5" source="com/viewscenes/images/module/systemTopology/zhankai.png" click="image1_clickHandler(this.image5,this.con5,this.contaner5)" />
+		</contaners:BGAbleContainer>
+		<contaners:BGAbleContainer id="contaner5" width="100%"  paddingTop="10" paddingbottom="10" paddingLeft="10" height="5" backgroundColors="{[0xffffff,0xffffff]}" backgroundAlphas="{[0.3,0.3]}">
+			<s:TileGroup id="con5" paddingLeft="10" paddingRight="10" horizontalAlign="center" verticalAlign="middle" horizontalGap="10" verticalGap="28" requestedColumnCount="{columnsCount}" height="100%" width="100%" > 
+			</s:TileGroup> 
+		</contaners:BGAbleContainer>
+		
+		<contaners:BGAbleContainer backgroundImageMode="scale" backgroundImage="@Embed(source='com/viewscenes/images/module/systemTopology/title_Bg.png')" width="100%" height="32">
+		<contaners:layout>
+		<s:HorizontalLayout verticalAlign="middle" paddingRight="15"/>
+		</contaners:layout>	
+		<s:Label text="南极洲" color="#000000" paddingLeft="35"/>
+		<s:Spacer width="100%"/>
+		<s:Image id="image6" source="com/viewscenes/images/module/systemTopology/zhankai.png" click="image1_clickHandler(this.image6,this.con6,this.contaner6)" />
+		</contaners:BGAbleContainer>
+		<contaners:BGAbleContainer id="contaner6" width="100%" paddingTop="10" paddingbottom="10" paddingLeft="10" height="100%"  backgroundColors="{[0xffffff,0xffffff]}" backgroundAlphas="{[0.3,0.3]}">
+		<s:TileGroup id="con6" paddingLeft="10" paddingRight="10" horizontalAlign="center" verticalAlign="middle" horizontalGap="10" verticalGap="28" requestedColumnCount="{columnsCount}" height="100%" width="100%" > 
+		</s:TileGroup> 
+		</contaners:BGAbleContainer-->
+	</s:VGroup>
+</s:Group>

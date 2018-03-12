@@ -1,0 +1,936 @@
+<?xml version="1.0" encoding="utf-8"?>
+<contaners:BGAbleContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+						   xmlns:s="library://ns.adobe.com/flex/spark"
+						   xmlns:mx="library://ns.adobe.com/flex/mx"
+						   xmlns:contaners="com.morcha4.ui.contaners.*"
+						   xmlns:layout="com.morcha4.ui.contaners.layout.*"
+						   xmlns:utils="com.viewscenes.utils.*"
+						   xmlns:quality="com.viewscenes.module.dailyBusiness.dataAnalyse.quality.*"
+						       backgroundColors="{['0xDDDDDD','0xDDDDDD']}" width="100%"
+						   creationComplete="init();" resize="parentResize()" height="100%">
+	
+		
+		
+		<contaners:layout>
+			<s:VerticalLayout horizontalAlign="left" gap="0"/>
+		</contaners:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.viewscenes.beans.pub.ResHeadendBean;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.utils.timecomp.DateUtil;
+			
+			import flash.utils.setTimeout;
+			
+			import mx.charts.HitData;
+			import mx.charts.chartClasses.ChartElement;
+			import mx.charts.events.ChartItemEvent;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.DragSource;
+			import mx.core.UIComponent;
+			import mx.events.DragEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.DragManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			
+			[Bindable] public var po:Number 			= 0;						//每个像素占的刻度值			
+			
+			/**
+			 * 门限上限值
+			 */
+			[Bindable] public  var threshold:Number		=50;	//门限值
+			/**
+			 * 门限下限值
+			 */
+			[Bindable] public  var thresholdD:Number	=30;		//门限值下限
+			/**
+			 * 第二门限上限值
+			 */
+			public  var threshold2:Number	=50;	//第二门限上限
+			/**
+			 * 
+			 * 第二门限下限值
+			 */
+			public  var thresholdD2:Number	=50;	//第二门限下限
+			
+			/**
+			 * 门限上限值对应的坐标Y轴的值
+			 */
+			public var thresholdY:Number		=50;						//
+			/**
+			 * 门限下限值对应的坐标Y轴的值
+			 */
+			public var thresholdDY:Number		=50;						//
+			/**
+			 * 第二门限值--与门限上限对应的坐标Y轴的值
+			 */
+			public var thresholdY2:Number		=50;
+			/**
+			 * 第二门限值--与门限下限对应的坐标Y轴的值
+			 */
+			public var thresholdDY2:Number	=50;
+			
+			public var ZeroX:Number 			= 0;						//图表X轴显示位置
+			public var MaxY:Number			= 0;						//图表Y轴最大值显示位置
+			
+			
+			[Bindable] public var topLimit:Number 		= 250;						//坐标Y轴上限
+			[Bindable] public var lowerLimit:Number		= 0;						//坐标Y轴上限			
+			[Bindable] public var XMin:Number  			= 23;						//X下限
+			[Bindable] public var XMax:Number  			= 26.1;						//X轴上限
+			
+			
+			[Bindable] public var chartDP:ArrayCollection  = new ArrayCollection();	//频谱图数据
+			private var dicChartDP:Object=new Object();
+			private var dicChartDPF:Object=new Object();//3、最大调制度 反向线使用
+			[Bindable] public var chartDPV:ArrayCollection  = new ArrayCollection();//8、瞬时调制度分布专用
+			[Bindable] public var chartDPF:ArrayCollection  = new ArrayCollection();//3、最大调制度 反向线使用
+			
+			/*
+			[{time:new Date(1277259950000+8*60*60*1000),spectrum:-86},
+			{time:new Date(1277259950083+8*60*60*1000),spectrum:-86},
+			{time:new Date(1277259950166+8*60*60*1000),spectrum:-92},
+			{time:new Date(1277259950249+8*60*60*1000),spectrum:-82},
+			{time:new Date(1277259950332+8*60*60*1000),spectrum:-94},
+			{time:new Date(1277259950415+8*60*60*1000),spectrum:-87},
+			{time:new Date(1277259950498+8*60*60*1000),spectrum:-87},
+			{time:new Date(1277259950581+8*60*60*1000),spectrum:-86},
+			{time:new Date(1277259950664+8*60*60*1000),spectrum:-92},
+			{time:new Date(1277259950747+8*60*60*1000),spectrum:-82},
+			{time:new Date(1277259950830+8*60*60*1000),spectrum:-94},
+			{time:new Date(1277259950913+8*60*60*1000),spectrum:-87},
+			]);*/
+			[Bindable] public var lineAxis:ArrayCollection = new ArrayCollection([
+			{time:0,spectrum:0},{time:0,spectrum:255}]);
+			
+			public var serUrl:String	   = "";        //HttpService的URL由QualityScan类传入
+			//
+			public var countT:Number 	  = 0;			//数据是否第一次返回
+			public var startTimeNu:Number = 0;			//开始时间的数字
+			public var curentTimeNu:Number= 0;			//本次数据时间数字
+			public var manual:Boolean	  = false;		//是否人工翻页
+			public var pageStTime:Number  = 0;			//翻页时的时间数字
+			public var pageStTimeInterval:Number = 60000;		//一分钟
+			[Bindable] public var pageTotalCount:int	  = 0;			//总页数
+			[Bindable] public var pageCurrentCount:int   = 0;			//当前页数
+			public var intervalid:uint 	  = new uint();	//setInterval返回的id
+			
+			public var paramObj:Object = new Object();
+			/**
+			 * 指标类型 KLTV_1 KLTV_2 FM_1
+			 */
+			public var _qualityType:String = "";
+			/**
+			 * 指标名称 载波电平 频偏
+			 */
+			public var _qualityName:String = "";
+			/**
+			 * 纵坐标测量值单位  kHz MHz
+			 */
+			[Bindable] public var _valueUnits:String = "表头值";
+			
+			/**
+			 * 门限显示的类型  A:一条高门限(1条门限) 
+			 * 				 B:一条高门限和一条低门限(2条门限) 
+			 * 				 C:一条高门限和一条与一条高门限相对的门限 (2条门限)
+			 * 				 D:一条高门限和一条、高门限相对的门限 、一条低门限、一条低门限相对的门限 (4条门限)
+			 * 				 E:无门限
+			 */
+			public var _levelType:String = "A";
+			/**
+			 * 门限是否入库
+			 */
+			public var _isInDb:Boolean = false;
+				
+			[Bindable]private var reg:RegExp =   /^[1-9]\d*\.\d*|0\.\d*[1-9]\d*|[1-9]\d*|0$/;
+			
+			public var ownerParent:UIComponent;
+			private var tfObject:Object = new Object();  //记录调幅度指标返回的数量，高于低于门限的数量
+			
+			//一、折线
+			//1、带宽指标 	Y：0~200	 	X:时间		Y单位：KHZ带宽
+			//2、频偏指标		Y:-100~100,	X:时间		Y单位：HZ频偏		2条门限,2条正反相对的线
+			//3、最大调制度 	Y:-150~150,	X:时间		Y单位: KHZ		4条门限,2条折线	获取门限
+			//4、调幅度		Y:0~100, 	X:时间		Y单位: %调幅度	2条门限,			获取门限
+			//5、载波电平		Y:0~255,	X:时间		Y单位: uV						获取门限（边境除外）	图像/伴音载波电平/差、载噪比
+			//6、载频频偏		Y:-100~100,	X:时间		Y单位：HZ载频频偏	2条门限,2条正反相对的线  电视指标
+			//7、李沙育
+			//二、竖线
+			//8、瞬时调制度分布		Y:-60~0,	 X:-150~150 X单位：KHZ调制度
+			
+			public var _headCode:String = "";		//站点代码
+			private var _receiverCode:String = "";	//接收机代码
+			private function init():void{
+//				if(this.height<200){
+//					this.height = 200; 
+//				}
+//				
+				m_setChartParams(null);
+				if(this._qualityType == "1"){//电平
+//					getLevel();
+				}
+			}
+			
+			/**
+			 * 设置图表参数
+			 * @param qualityType 指标类型
+			 * @param qualityName 指标名称
+			 * @param minValue  显示扫描最小值
+			 * @param maxValue	小时扫描最大值
+			 * @param valueUnits 测量值单位及指标类型名称  "kHz" "MHz"
+			 * @param levelType  门限类型
+			 *				  	A:一条低门限(1条门限) 
+			 * 				 	B:一条高门限和一条低门限(2条门限) 
+			 * 				 	C:一条低门限和一条与一条低门限相对的门限 (2条门限)
+			 * 				 	D:一条高门限和一条、高门限相对的门限 、一条低门限、一条低门限相对的门限 (4条门限)
+			 * 					E:无门限
+			 * @param isInDb    门限是否入库
+			 */
+			public function m_setChartParams(fe:FlexEvent):void{
+				this._qualityType = this.paramObj.qualityType;
+				this._qualityName = this.paramObj.qualityName;
+				this._levelType = this.paramObj.levelType;
+				this._valueUnits = this.paramObj.valueUnits;
+				this._isInDb = this.paramObj.isInDb;
+				topLimit = new Number(this.paramObj.maxValue);
+				lowerLimit = new Number(this.paramObj.minValue);
+				
+				_vAxis.minimum = new Number(this.paramObj.minValue);
+				_vAxis.maximum = new Number(this.paramObj.maxValue);
+				_vAxis.interval=(_vAxis.maximum-_vAxis.minimum)/10;
+				
+				countT = 0;
+				chartDP.removeAll();
+				chartDPF.removeAll();
+				
+				if(this._qualityType == "3"){//调幅度
+					threshold = 90;
+					thresholdD = 70;
+				} else if(this._qualityType == "5"){//调制度
+					threshold = 75;
+					thresholdD = 30;
+				} 
+				m_initLine();
+//				setTimeout(m_initLine,500);
+				
+			}
+				
+			
+			/**
+			 * 设置Y轴基准线
+			 * @param min Y轴最小值
+			 * @param max Y轴最大值
+			 */
+			private function m_initLine():void{
+				
+				lineAxis.removeAll();
+				var tmobj:Object = new Object;
+				tmobj.spectrum = _vAxis.minimum;
+				tmobj.time 	   =0;
+				lineAxis.addItemAt(tmobj,0);
+				
+				tmobj = new Object;
+				tmobj.spectrum = _vAxis.maximum;
+				tmobj.time 	   =0;
+				lineAxis.addItemAt(tmobj,1);
+				
+				ZeroX = m_getYByValue(_vAxis.minimum);
+				MaxY  = m_getYByValue(_vAxis.maximum);
+				thresholdY	= m_getYByValue(threshold);
+
+				_thresholdDataHigh.text = threshold+"";
+				_thresholdDataLow.text = thresholdD+"";
+
+				setTimeout(m_setLevel,100);
+				
+				setTimeout(m_setMiddleLine,100);
+		
+			}
+				
+			/**
+			 * 根据手动输入门限值设置页面的门限值
+			 */
+			private function m_setLevel():void{
+				if(this._isInDb){
+					_setHoldLineToDB.visible  = true;
+					_setHoldLineToDB.includeInLayout = true;
+				} else {
+					_setHoldLineToDB.visible  = false;
+					_setHoldLineToDB.includeInLayout = false;
+				}
+				
+				if(_drawPanel.width<_conditionGroup.width){
+					_drawPanel.width = _conditionGroup.width;
+				}
+				if(_thresholdDataHigh.text == ""){
+					_thresholdDataHigh.text = threshold+"";
+				}
+				if(_thresholdDataLow.text == ""){
+					_thresholdDataLow.text = thresholdD+"";
+				}
+				threshold  	 	= new Number(_thresholdDataHigh.text);
+				thresholdD  	= new Number(_thresholdDataLow.text);
+				
+				threshold2 = threshold==0?0:-threshold;
+				thresholdD2 = thresholdD==0?0:-thresholdD;
+				
+				thresholdY 		= m_getYByValue(threshold);
+				thresholdDY 	= m_getYByValue(thresholdD);
+				thresholdY2		= m_getYByValue(threshold2);
+				thresholdDY2	= m_getYByValue(thresholdD2);
+				
+				_thresholdLine.y = thresholdY;		//上限
+				_thresholdLineD.y = thresholdDY;		//下限
+				_thresholdLine2.y = thresholdY2;		//2上限
+				_thresholdLineD2.y = thresholdDY2;	//2下限
+				if(this._levelType == "A"){//1条门限
+					_thresholdLine.visible 	 = true;
+					_thresholdLine.includeInLayout 	 = true;
+					_thresholdLineD.visible  = false;
+					_thresholdLineD.includeInLayout  = false;
+					_thresholdLine2.visible  = false;
+					_thresholdLine2.includeInLayout  = false;
+					_thresholdLineD2.visible = false;
+					_thresholdLineD2.includeInLayout = false;
+					_lowLine.visible = _lowLine.includeInLayout = false;
+					
+				}else if(this._levelType == "B"){//2条门限
+					_thresholdLine.visible 	 = true;
+					_thresholdLine.includeInLayout 	 = true;
+					_thresholdLineD.visible  = true;
+					_thresholdLineD.includeInLayout  = true;
+					_thresholdLine2.visible  = false;
+					_thresholdLine2.includeInLayout  = false;
+					_thresholdLineD2.visible = false;
+					_thresholdLineD2.includeInLayout = false;
+					_lowLine.visible = _lowLine.includeInLayout = true;
+					
+				}else if(this._levelType == "D"){//4条门限
+					_thresholdLine.visible 	 = true;
+					_thresholdLine.includeInLayout 	 = true;
+					_thresholdLineD.visible  = true;
+					_thresholdLineD.includeInLayout  = true;
+					_thresholdLine2.visible  = true;
+					_thresholdLine2.includeInLayout  = true;
+					_thresholdLineD2.visible = true;
+					_thresholdLineD2.includeInLayout = true;
+					_lowLine.visible = _lowLine.includeInLayout = true;
+				}else if(this._levelType == "C"){//2条正反相对的门限  绝对值相同，符号相反  用高门线
+					_thresholdLine.visible 	 = true;
+					_thresholdLine.includeInLayout 	 = true;
+					_thresholdLineD.visible  = false;
+					_thresholdLineD.includeInLayout  = false;
+					_thresholdLine2.visible  = true;
+					_thresholdLine2.includeInLayout  = true;
+					_thresholdLineD2.visible = false;
+					_thresholdLineD2.includeInLayout = false;
+					_lowLine.visible = _lowLine.includeInLayout = false;
+				} else {//无门限
+					_thresholdLine.visible 	 = false;
+					_thresholdLine.includeInLayout 	 = false;
+					_thresholdLineD.visible  = false;
+					_thresholdLineD.includeInLayout  = false;
+					_thresholdLine2.visible  = false;
+					_thresholdLine2.includeInLayout  = false;
+					_thresholdLineD2.visible = false;
+					_thresholdLineD2.includeInLayout = false;
+					_lowLine.visible = _lowLine.includeInLayout = false;
+				}
+				
+				
+				_spectrumLine.dataProvider = null;
+				_spectrumLine.dataProvider = chartDP;
+				_spectrumLine2.dataProvider = null;
+				_spectrumLine2.dataProvider = chartDPF;
+				
+			}
+			
+			/**
+			 * 门限保存到数据库
+			 */ 
+			private function m_clickSaveLevel():void{
+				m_setLevel();
+				var obj:Object = new Object();
+				obj.highLevel = _thresholdDataHigh.text;
+				obj.lowLevel = _thresholdDataLow.text;
+				ownerParent.dispatchEvent(new AdvancedEvent("SAVA_QUALITY_SCAN_LEVEL",false,false,obj));
+			}
+			
+			/**
+			 * 拖动门限触发
+			 */
+			private function m_onStartDrag(event:MouseEvent):void{
+				var dragInitiator:Image = Image(event.currentTarget);
+				var ds:DragSource = new DragSource();
+				
+				ds.addData( {"x" : event.localX, "y" : event.localY},dragInitiator.id);
+				DragManager.doDrag(dragInitiator,ds,event); // 开始拖动这个物体  btnDrag
+			}
+				
+			private function m_dragIn(event:DragEvent) : void{
+				DragManager.acceptDragDrop(LineChart(event.target));
+//				DragManager.acceptDragDrop(Image(event.target));
+				// cansAccess 接受被拖进来的物体
+			}
+			private function m_complete( e : DragEvent ) : void
+			{
+				var line1 : Object =  e.dragSource.dataForFormat("_thresholdLine");//1
+				var lineD : Object =  e.dragSource.dataForFormat("_thresholdLineD");//2
+				var line2 : Object =  e.dragSource.dataForFormat("_thresholdLine2");//3与下限对应的那条线2
+				var lineD2 : Object =  e.dragSource.dataForFormat("_thresholdLineD2");//4与上限对应的那条线1
+				
+				holdLine.dataProvider = null;
+				holdLine.dataProvider = lineAxis;
+				
+				var YValue:String = _levelbg.mouseY.valueOf().toString();
+				var mouse_line:Number = _levelbg.mouseY;
+
+				if(line1!=null)
+				{//1
+					_thresholdDataHigh.text = m_getValueByY(mouse_line)+"";
+				}
+				else if(lineD!=null)
+				{//2
+					_thresholdDataLow.text = m_getValueByY(mouse_line)+"";
+				}
+				else if(line2!=null)
+				{//3
+					_thresholdDataHigh.text = -m_getValueByY(mouse_line)+"";
+				}
+				else if(lineD2!=null)
+				{//4
+					_thresholdDataLow.text = -m_getValueByY(mouse_line)+"";
+				}
+
+				m_setLevel();
+				_spectrumLine.dataProvider = null;
+				_spectrumLine.dataProvider = chartDP;
+				
+				_spectrumLine2.dataProvider = null;
+				_spectrumLine2.dataProvider = chartDPF;
+			
+			}
+			/**
+			* 通过门限在图表上的y得到实际的门限值
+			*/
+			private function m_getValueByY(yy:Number):Number{
+				//yy -= 9;//偏移补偿
+				var y0:Number = holdLine.items[0].y;
+				var y1:Number = holdLine.items[1].y;
+				var xx:Number = Math.abs(y1-y0);
+				var linepo:Number = y1>y0?(y1-yy):y0-(yy);
+				//po = (topLimit-lowerLimit)/xx;
+				var nn:Number = new Number(((linepo*(topLimit-lowerLimit))/xx+lowerLimit).toFixed(1));
+				//return new Number((nn+lowerLimit).toFixed(1));
+				return nn;
+			}
+			
+			/**
+			 * 通过坐标轴的值获取应该显示的位置
+			 */
+			private function m_getYByValue(value:Number):Number{
+				var y0:Number = holdLine.items[0].y;
+				var y1:Number = holdLine.items[1].y;
+				//Alert.show("y1:"+y1+"=="+"y0:"+y0);
+				var xx:Number = Math.abs(y1-y0);		//Y轴像素总数
+				
+				po = (topLimit-lowerLimit)/xx;			//一个像素表示po个数值
+				var pox1:Number = (value-lowerLimit)/po;	//数值 能用多少个像素来表示
+				//Alert.show(pox1+"pox1");
+				//				Alert.show("y1:"+y1+"=="+"y0:"+y0+"---"+xx+"=="+po+"==="+pox1);
+				var pox:Number = new Number((((value-lowerLimit)*xx)/(topLimit-lowerLimit)).toFixed(1));
+				//Alert.show(pox+"pox");
+				var nn:Number = y1>y0?(y1-pox):y0-(pox);
+				nn += 9;
+				return nn;
+			}
+			
+			
+			public function parseFunction(s:Number):Date{
+			var newDate:Date = new Date(s);
+			var str:String = newDate.toTimeString()
+			
+			return newDate;
+			}
+			/**
+			* 控制显示翻页按钮状态
+			**/
+			private function displayPageButton():void{
+				if(pageTotalCount<=1){
+					_periousPage.enabled = false;
+					_fristPage.enabled = false;
+					_nextPage.enabled = false;
+					_lastPage.enabled = false;
+				} else{
+					if(pageCurrentCount==1){
+						_periousPage.enabled = false;
+						_fristPage.enabled = false;
+						_nextPage.enabled = true;
+						_lastPage.enabled = true;
+					} else if(pageCurrentCount==pageTotalCount){
+						_periousPage.enabled = true;
+						_fristPage.enabled = true;
+						_nextPage.enabled = false;
+						_lastPage.enabled = false;
+					} else{
+						_periousPage.enabled = true;
+						_fristPage.enabled = true;
+						_nextPage.enabled = true;
+						_lastPage.enabled = true;
+					}
+				}
+			}
+			/**
+			* 前一页按钮
+			* */
+			public function periousPage():void{
+				if(startTimeNu<pageStTime){
+					if(manual == false)
+						manual = true;
+					
+					_hAxis.minimum = new Date(pageStTime-pageStTimeInterval);
+					_hAxis.maximum = new Date(pageStTime);
+					pageStTime = pageStTime-pageStTimeInterval;
+					//					if(pageStTime==startTimeNu){
+					//						_periousPage.enabled = false;
+					//					}
+					//					if(_nextPage.enabled == false){
+					//						_nextPage.enabled = true;
+					//					}
+					pageCurrentCount--;
+					displayPageButton();
+				}
+			}
+			/**
+			* 后一页按钮
+			* */
+			public function nextPage():void{
+				if(curentTimeNu>(pageStTime+pageStTimeInterval)){
+					_hAxis.minimum = new Date(pageStTime+pageStTimeInterval);
+					_hAxis.maximum = new Date(pageStTime+pageStTimeInterval*2);
+					pageStTime = pageStTime+pageStTimeInterval;
+					//					if(_periousPage.enabled == false){
+					//						_periousPage.enabled = true;
+					//					}
+					//					if(curentTimeNu<(pageStTime+pageStTimeInterval)){
+					//						_nextPage.enabled = false;
+					//					}
+					pageCurrentCount++;
+					displayPageButton();
+				}
+			}
+			/**
+			* 显示第一页数据
+			* */
+			public function getFristPage():void{
+				_hAxis.minimum = new Date(startTimeNu);
+				_hAxis.maximum = new Date(startTimeNu+pageStTimeInterval);
+				pageStTime = startTimeNu;
+				pageCurrentCount = 1;
+				displayPageButton();
+			}
+			/**
+			* 显示最后一页数据
+			* */
+			public function getLastPage():void{
+				trace(startTimeNu+"==="+pageStTimeInterval+"=="+pageTotalCount);
+				_hAxis.minimum = new Date(startTimeNu+pageStTimeInterval*(pageTotalCount-1));
+				_hAxis.maximum = new Date(pageStTime+pageStTimeInterval*pageTotalCount);
+				pageStTime = startTimeNu+pageStTimeInterval*(pageTotalCount-1);
+				pageCurrentCount = pageTotalCount;
+				displayPageButton();
+			}
+			private function chartItemClicked(event:ChartItemEvent):void{
+			//				event.hitData.item.spectrum;
+			}
+			
+			/**
+			* 重写弹出提示信息
+			*/ 
+			public function dtFunc(hitData:HitData):String{
+				//return "电平:"+hitData.item.spectrum+"uV,"+hitData.item.freq+units;
+				var resStr:String = "";
+				//一、折线
+				//1、带宽指标 	Y：0~200	 	X:时间		Y单位：KHZ带宽
+				//2、频偏指标		Y:-100~100,	X:时间		Y单位：HZ频偏		2条门限,
+				//3、最大调制度 	Y:-150~150,	X:时间		Y单位: KHZ		4条门限,2条折线	获取门限
+				//4、调幅度		Y:0~100, 	X:时间		Y单位: %调幅度	2条门限,			获取门限
+				//5、载波电平		Y:0~255,	X:时间		Y单位: uV						获取门限（边境除外）	图像/伴音载波电平/差、载噪比
+				//6、载频频偏		Y:-100~100,	X:时间		Y单位：HZ载频频偏	2条门限,
+				//7、李沙育
+				//二、竖线
+				//8、瞬时调制度分布		Y:-60~0,	 X:-150~150 X单位：KHZ调制度
+				var dateold:Date = null;
+				var yValue:String = "";
+				var x:String = "";
+				var y:String = "";
+//				if(_qualityType=="7"){
+//					x = hitData.item.time;
+//					y = hitData.item.spectrum;
+//				} else if(_qualityType=="8"){
+//					x = hitData.item.time;
+//					y = hitData.item.spectrum;
+//					if(parseFloat(y)>=0){
+//					if(dicChartDP[dateold]!=null){
+//					y = dicChartDP[dateold];
+//					}
+//					} else{
+//					if(dicChartDPF[dateold]!=null){
+//					y = dicChartDPF[dateold];
+//					} 
+//					}
+//				} else{
+					dateold = (hitData.item.time as Date);
+					yValue = hitData.item.spectrum;
+					
+					if(dateold == null){
+						
+						return _qualityName+":"+yValue+_valueUnits+",";
+					}
+					
+					if(parseFloat(yValue)>=0){
+						if(dicChartDP[DateUtil.date2str(dateold)]!=null){
+							yValue = dicChartDP[DateUtil.date2str(dateold)];
+						}
+					} else{
+						if(dicChartDPF[DateUtil.date2str(dateold)]!=null){
+							yValue = dicChartDPF[DateUtil.date2str(dateold)];
+						} 
+					}
+					
+					var date1:Date = new Date(dateold.getTime()-8*60*60*1000);
+					var tiemstr:String = DateUtil.date2str(date1);
+//				}
+				resStr = _qualityName+":"+yValue+_valueUnits+","+tiemstr;
+			
+				return resStr;
+			}
+			
+			
+			protected function test1(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				_thresholdDataHigh.text = event.localX+"";
+			}
+			
+			protected function test2(event:DragEvent):void
+			{
+				// TODO Auto-generated method stub
+				_thresholdDataHigh.text = event.localX+"a";
+			}
+			
+			/**
+			 * 页面大小改变时调用 重新画图
+			 */
+			protected function parentResize():void
+			{
+				// TODO Auto-generated method stub
+				setTimeout(m_initLine,200);
+			}
+			/**
+			 * 设置背景网格图片位置
+			 */
+			public function m_setMiddleLine():void{
+				_levelbg.height = ZeroX-9;
+				_levelbg.top = m_getYByValue(_vAxis.maximum)+1;
+			}
+			
+			/**
+			 * 根据数据画图
+			 * 
+			 * dataType:1载波电平；2瞬时调制度；3调幅度；5调制度；6频偏指标；8带宽指标
+			 */
+			public function drawingByData(data:String,dataType:String):void{
+				if(dataType=="2"){
+					chartDPF.removeAll();
+				}
+				var xml:String=data;
+				var tmarry:Array = xml.split("</columns>");
+				if(tmarry.length<2){
+					return;
+				}
+				var dataarry:Array = (tmarry[1] as String).split("$");
+				var count:int = 0;
+				var DataObj:Object = new Object();
+				var type:String = "";
+				var liyushaX:String = "";
+				for(var i:int=0;i<dataarry.length;i++){
+					
+					if(count==0){
+						type = dataarry[i] as String;
+						DataObj = new Object();
+					}
+					var tmint:Number = type.indexOf("10");
+					if(type.indexOf("10")>=0){//一般情况下全是10，调制度最大值的负值是11
+						if(count==2){
+							if(dataType!="2"){//出此之外全是时间轴
+								
+								var time:Date = new Date(parseInt(dataarry[i])+8*60*60*1000);
+								//								var outTime:Date = new Date(parseInt(dataarry[i])+8*60*60*1000+60*1000);
+								DataObj.time=time;
+								if(dataType=="3"){
+									this.tfCurrTime.text = "x:"+DateUtil.date2str(new Date(parseInt(dataarry[i])),"time")+" ";
+								}
+								curentTimeNu = parseInt(dataarry[i])+8*60*60*1000;
+//Alert.show(DateUtil.date2str(new Date(parseInt(dataarry[i])),"time"));
+								if(i<8&&countT==0){//第一次数据的时间
+									startTimeNu = parseInt(dataarry[i])+8*60*60*1000;
+									pageStTime = startTimeNu;
+									countT++;
+									_hAxis.minimum = time;
+									_hAxis.maximum = new Date(pageStTime+pageStTimeInterval);
+									if(pageTotalCount==pageCurrentCount){
+										pageCurrentCount++;
+									}
+									pageTotalCount++;
+									displayPageButton();
+								}
+								
+								if(((startTimeNu+pageStTimeInterval*pageTotalCount)<curentTimeNu)){
+									if(pageTotalCount==pageCurrentCount){
+										_hAxis.minimum = new Date(pageStTime+pageStTimeInterval);
+										_hAxis.maximum = new Date(pageStTime+pageStTimeInterval*2);
+										pageStTime = pageStTime+pageStTimeInterval;
+										pageCurrentCount++;
+									}
+									pageTotalCount++;
+									displayPageButton();
+								}
+								
+								//								if(((pageStTime+pageStTimeInterval)<curentTimeNu)&&manual==false){//超过1分钟换坐标最小值
+								//									pageStTime = pageStTime+pageStTimeInterval;
+								//									if(pageTotalCount==pageCurrentCount){
+								//										_hAxis.minimum = new Date(pageStTime+pageStTimeInterval);
+								//										_hAxis.maximum = new Date(pageStTime+pageStTimeInterval*2);
+								//										
+								//										_periousPage.enabled = true;
+								//										pageCurrentCount++;
+								//									}
+								//									pageTotalCount++;
+								//									displayPageButton();
+								//								}
+								
+								
+							}else{
+								DataObj.time=dataarry[i];
+							}
+						}
+						if(count==3){
+							if(dataType=="2"){
+								DataObj.spectrum=dataarry[i];
+								var ss:String = parseInt(DataObj.spectrum).toString();
+								if(ss!="NaN"){
+									if(parseFloat(DataObj.spectrum)>topLimit-topLimit*0.01){//如果y值大于y轴最大，赋y值为y轴最大值，显示时要显示实际的值
+										dicChartDP[DataObj.time]=DataObj.spectrum;
+										DataObj.spectrum = topLimit-topLimit*0.01;
+									}
+									if(parseFloat(DataObj.spectrum)<lowerLimit+topLimit*0.01){//如果y值小于y轴最小，赋y值为y轴最小值，显示时要显示实际的值
+										dicChartDP[DataObj.time]=DataObj.spectrum;
+										DataObj.spectrum = lowerLimit+topLimit*0.01;
+									}
+									chartDP.addItem(DataObj);
+								}
+							} else{
+								DataObj.spectrum=dataarry[i];
+								var ss:String = parseFloat(DataObj.spectrum).toString();
+								if(ss!="NaN"){
+									if(parseFloat(DataObj.spectrum)>topLimit-topLimit*0.01){//如果y值大于y轴最大，赋y值为y轴最大值，显示时要显示实际的值
+										dicChartDP[DateUtil.date2str(DataObj.time,"time")]=DataObj.spectrum;
+										DataObj.spectrum = topLimit-topLimit*0.01;
+									}
+									if(parseFloat(DataObj.spectrum)<lowerLimit+topLimit*0.01){//如果y值小于y轴最小，赋y值为y轴最小值，显示时要显示实际的值
+										dicChartDPF[DateUtil.date2str(DataObj.time,"time")]=DataObj.spectrum;
+										DataObj.spectrum = lowerLimit+topLimit*0.01;
+									}
+									chartDP.addItem(DataObj);
+									if(dataType=="3"){
+										this.tfObject.total++;
+										if(DataObj.spectrum>=threshold){
+											this.tfObject.hightCount++;
+										}
+										if(DataObj.spectrum<=thresholdD){
+											this.tfObject.lowCount++;
+										}
+										
+										this.tfCurrValue.text = "y:"+DataObj.spectrum+"(%)";
+										this.tfMessageHighPer.text = (Number(this.tfObject.hightCount/this.tfObject.total)*100).toFixed(2)+"%";
+										this.tfMessageLowPer.text = (Number(this.tfObject.lowCount/this.tfObject.total)*100).toFixed(2)+"%";
+										
+									}
+								}
+							}
+						}
+					}else if(type.indexOf("11")>=0){
+						if(count==2){
+							DataObj = new Object();
+							var time:Date = new Date(parseInt(dataarry[i])+8*60*60*1000);
+							DataObj.time=time;
+							//							DataObj.time=dataarry[i];
+							//							DataManager.alertShowErrorMessage("time>>>>"+time);
+						}
+						if(count==3){
+							DataObj.spectrum=dataarry[i];
+							if(parseFloat(DataObj.spectrum)<lowerLimit+topLimit*0.01){//如果y值小于y轴最小，赋y值为y轴最小值，显示时要显示实际的值
+								dicChartDPF[DateUtil.date2str(DataObj.time,"time")]=DataObj.spectrum;
+								DataObj.spectrum = lowerLimit+topLimit*0.01;
+							}
+							if(parseInt(DataObj.spectrum)<=0){
+								chartDPF.addItem(DataObj);
+							}
+							
+							//							DataManager.alertShowErrorMessage("dataarry[i]>>>>"+dataarry[i]);
+						}
+					}					
+					
+					count++;
+					if(count==8){
+						count = 0;
+					}
+					
+					
+				}
+				
+				
+				_spectrumLine.dataProvider = null;
+				_spectrumLine.dataProvider = chartDP;
+				_spectrumLine2.dataProvider = null;
+				_spectrumLine2.dataProvider = chartDPF;
+				
+			}
+			/**
+			 * 取得门限
+			 */
+			private function getLevel():void{
+				var obj:Object = new Object();
+				obj.code = this._headCode;
+				obj.receiverCode = this._receiverCode;
+				obj.dataType = this._qualityType;//指标类型
+				//				obj.code = headcode;
+				var head:ResHeadendBean = DataManager.getHeadendByCode(this._headCode);
+				if(head==null){
+					obj.headendID = "-1";
+				} else{
+					obj.headendID = head.head_id;
+				}
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.online.realtimeMonitor.RealtimeQuality",
+					'getLevel',obj,getLevelBack,DataManager.alertShowErrorMessage);
+				RPCManager.sendCmd(request); 
+			}
+			private function getLevelBack(obj:Object):void{
+				if((obj.level as String).indexOf(":")>0){
+					_thresholdDataLow.text = (obj.level as String).split(":")[0];
+					_thresholdDataHigh.text = (obj.level as String).split(":")[1];
+				} else{
+					_thresholdDataHigh.text = obj.level;
+				}
+				m_setLevel();
+			}
+		]]>
+		</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:SolidColorStroke id="s1" alpha="0.7" color="red"/>
+		<s:SolidColorStroke id="vSolid" alpha="1" color="#222222"/><!--网格纵线颜色-->
+		<s:SolidColorStroke id="hSolid" alpha="1" color="#ffffff"/><!--网格横线颜色-->
+		<s:SolidColor id="vFill" alpha="0" color="#000000"/>
+		<s:SolidColor id="hFill" alpha="0.9" color="#000000"/><!--背景填充颜色-->
+		
+		<s:SolidColorStroke id="chartAxisStrokeThick" caps="square" color="0x363636" weight="6"/><!--纵坐标轴颜色 -->
+		<s:SolidColorStroke id="chartAxisStroke" color="0x363636"/>
+	</fx:Declarations>
+			<s:HGroup paddingLeft="5" paddingRight="5" verticalAlign="middle" id="_conditionGroup" color="0x000000">
+				<s:Label id="_vTitle" text="{_valueUnits+'  '+_qualityName}"/>
+				<s:Spacer width="100%"/>
+				<s:HGroup id="_HoldLines" verticalAlign="middle">
+					<s:HGroup id="_highLine" gap="0" verticalAlign="middle">
+						<s:Label text="高门限"/>
+						<utils:RegExpTextInput id="_thresholdDataHigh" width="40" maxChars="5"
+											   mouseDown="event.stopImmediatePropagation()" regex="{reg}" text="{threshold}"/>
+					</s:HGroup>
+					<s:HGroup id="_lowLine" gap="0" verticalAlign="middle" visible="false" includeInLayout="false">
+						<s:Label text="低门限"/>
+						<utils:RegExpTextInput id="_thresholdDataLow" width="40" maxChars="5"
+											   mouseDown="event.stopImmediatePropagation()" regex="{reg}" text="{thresholdD}"/>
+					</s:HGroup>
+					<s:Button buttonMode="true" id="_setHold" label="设置" click="m_setLevel();"/>
+					<s:Button buttonMode="true" id="_setHoldLineToDB" visible="false" includeInLayout="false" label="入库" click="m_clickSaveLevel();"/>
+					
+				</s:HGroup>
+				<s:Label id="pageLabel" text="总{pageTotalCount}页,当前{pageCurrentCount}页"/>
+				<s:HGroup id="pageHGroup" gap="1" verticalAlign="middle">
+					<s:Button buttonMode="true" id="_fristPage" width="28" label="&lt;&lt;" click="getFristPage();" enabled="false" fontSize="8"
+							  toolTip="第一页"/>
+					<s:Button buttonMode="true" id="_periousPage" width="25" label="&lt;" click="periousPage();" enabled="false" fontSize="8"
+							  toolTip="前一页"/>
+					<s:Button buttonMode="true" id="_nextPage" width="25" label="&gt;" click="nextPage();" enabled="false" fontSize="8" toolTip="后一页"/>
+					<s:Button buttonMode="true" id="_lastPage" width="28" label="&gt;&gt;" click="getLastPage();" enabled="false" fontSize="8"
+							  toolTip="最后页"/>
+				</s:HGroup>
+			</s:HGroup>
+	<s:BorderContainer borderVisible="false" id="_drawPanel" height="100%" width="99%" backgroundColor="0x363636">
+			<mx:LineChart id="linechart" width="100%" height="100%" alpha="1" color="#FFFFFF" dataTipFunction="dtFunc"
+						  dragDrop="m_complete(event)" dragEnabled="true" dragEnter="m_dragIn(event)" dragMoveEnabled="true"
+						  itemClick="chartItemClicked(event);" paddingBottom="1" selectionMode="single" showDataTips="true">
+				<mx:horizontalAxis>
+					<!--mx:LinearAxis   maximumLabelPrecision="1" id="_hAxis"
+					title="频率(MHZ)" displayName="频率" /-->
+					<mx:DateTimeAxis id="_hAxis" dataInterval="5" dataUnits="seconds"/>
+					<!--mx:CategoryAxis   id="hor"  categoryField="time" dataProvider="{chartDP}"/-->
+				</mx:horizontalAxis>
+				<mx:verticalAxis>
+					<mx:LinearAxis id="_vAxis" maximum="{topLimit}" maximumLabelPrecision="1" minimum="{lowerLimit}"/>
+				</mx:verticalAxis>
+				<mx:verticalAxisRenderers>
+					<!-- 定制纵坐标 -->
+					<mx:AxisRenderer id="_vZuobiaozhou" axis="{_vAxis}" axisStroke="{chartAxisStrokeThick}" color="#FFFFFF"
+									 textAlign="right" tickStroke="{chartAxisStroke}"/>
+				</mx:verticalAxisRenderers>
+				<mx:backgroundElements><!--背景-->
+					<mx:GridLines id="bge" gridDirection="both" horizontalAlternateFill="{hFill}" horizontalFill="{hFill}"
+								  horizontalStroke="{hSolid}" horizontalTickAligned="true" verticalAlternateFill="{hFill}"
+								  verticalFill="{hFill}" verticalStroke="{vSolid}" verticalTickAligned="false"/>
+				</mx:backgroundElements>
+				<mx:series>
+					<quality:LineSeriesNew id="_spectrumLine" maxWidth="1" dataProvider="{chartDP}" displayName="quality"
+								   lineSegmentRenderer="com.viewscenes.module.dailyBusiness.dataAnalyse.quality.QualityRender" usedUi="{this}"
+								   showDataEffect="slideZoomIn" xField="time" yField="spectrum"/>
+					<quality:LineSeriesNew id="_spectrumLine2" maxWidth="1" dataProvider="{chartDPF}" displayName="逆向最大调制度"
+								   lineSegmentRenderer="com.viewscenes.module.dailyBusiness.dataAnalyse.quality.QualityRender" usedUi="{this}"
+								   showDataEffect="slideZoomIn" xField="time" yField="spectrum"/>
+					<quality:LineSeriesNew id="holdLine" dataProvider="{lineAxis}" lineStroke="{s1}" yField="spectrum"/>
+					<!--holdLine作用 由lineAxis提供Y轴最大值最小值,及鼠标位置的像素,计算门限值在Linechart中的位置-->
+				</mx:series>
+			</mx:LineChart>
+			<s:Image source="com/viewscenes/images/module/onlineListen/realMonitor/levelbg.png"  fillMode="repeat" alpha="0.2"
+					 id="_levelbg" x="46" y="0" width="99%" height="1" scaleMode="stretch"  
+					 dragEnter="m_dragIn(event)" dragDrop="m_complete(event)" mouseEnabled="false" mouseChildren="false"/>
+			<s:Image id="_thresholdLine" x="46" y="0" width="99%" height="1" fillMode="repeat" dragOver="test2(event)"
+					 mouseDown="m_onStartDrag(event)" source="com/viewscenes/images/module/onlineListen/realMonitor/levelline.png"/>
+			<s:Image id="_thresholdLineD" x="46" y="0" width="99%" height="1" fillMode="repeat"
+					 mouseDown="m_onStartDrag(event)" source="com/viewscenes/images/module/onlineListen/realMonitor/levelline.png" visible="false"/>
+			<s:Image id="_thresholdLine2" x="46" y="0" width="99%" height="1" fillMode="repeat"
+					 mouseDown="m_onStartDrag(event)" source="com/viewscenes/images/module/onlineListen/realMonitor/levelline.png" visible="false"/>
+			<s:Image id="_thresholdLineD2" x="46" y="0" width="99%" height="1" fillMode="repeat"
+					 mouseDown="m_onStartDrag(event)" source="com/viewscenes/images/module/onlineListen/realMonitor/levelline.png" visible="false"/>
+		</s:BorderContainer>
+	<s:HGroup width="100%" height="22" id="tfMessage" gap="0" visible="false" includeInLayout="false">
+		<s:HGroup height="22" fontSize="12"  gap="0">
+			<s:Label text="调幅度 " color="green"/>
+			<s:Label text="x:00:00:00 " id="tfCurrTime" color="green"/>
+			<s:Label text="y:0(%)" id="tfCurrValue" color="green"/>
+		</s:HGroup>
+		<s:HGroup height="22" fontSize="12" gap="0">
+			<s:Label text="低于:" id="tfMessageLowValue" color="green"/>
+			<s:Label text="0%" id="tfMessageLowPer" color="green"/>
+			<s:Label text=" 高于:" id="tfMessageHighValue" color="green"/>
+			<s:Label text="0%" id="tfMessageHighPer" color="green"/>
+		</s:HGroup>
+	</s:HGroup>
+</contaners:BGAbleContainer>
+

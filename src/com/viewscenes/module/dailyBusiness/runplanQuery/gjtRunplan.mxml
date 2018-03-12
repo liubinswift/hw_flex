@@ -1,0 +1,577 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:system="com.morcha4.frame.system.*" 
+				 xmlns:flipBar="com.viewscenes.utils.flipBar.*"
+				 xmlns:global="com.viewscenes.global.*"
+				 xmlns:timecomp="com.viewscenes.utils.timecomp.*"
+				 creationComplete="init()"
+				 width="100%" height="100%">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.util.RendererUtil;
+			import com.viewscenes.beans.runplan.GJTRunplanBean;
+			import com.viewscenes.beans.task.CycleSubTask;
+			import com.viewscenes.beans.task.Subtask;
+			import com.viewscenes.beans.task.Task;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.comp.MM;
+			import com.viewscenes.utils.StringTool;
+			import com.viewscenes.utils.timecomp.DateUtil;
+			
+			import flexunit.utils.ArrayList;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			[Bindable]
+			public var selectedCounts:int =0;
+			[Bindable]
+			private var headendArr:ArrayCollection = new ArrayCollection();
+			//发射台
+			[Bindable]
+			private var stationArr:ArrayCollection = new ArrayCollection();
+			
+			//语言
+			[Bindable]
+			private var lanaguageArr:ArrayCollection = new ArrayCollection();
+			
+			//国际台运行图
+			[Bindable]
+			private var gjtRunplanArr:ArrayCollection = new ArrayCollection();
+			//监测录音规则对象
+			[Bindable]
+			private var objRule = new Object();
+			//存放 任务对象
+			private var tasklist:ArrayCollection = new ArrayCollection();
+			
+			private var file:FileReference = new FileReference();//导入对象
+			
+			private var fileRe:FileReference = new FileReference();//上传对象
+			[Bindable]
+			private var seasonArr:ArrayCollection = new ArrayCollection();
+			private function init():void{
+				//this.valid_starttime.text=this.valid_starttime.text.split(' ')[0]+" 00:00:00";
+				getStationList();
+				getLanguageList();
+				file.addEventListener(Event.SELECT,clickBrowser);
+				getRecordRules();
+				getHeadend();
+				querySeason();
+			}
+			/**
+			 * 季节代号
+			 * */
+			private function querySeason():void{
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getSeasonList",null,getSeasonListBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function getSeasonListBack(arr:ArrayCollection):void{
+				seasonArr.removeAll();
+				var obj:Object = new Object();
+				obj.code = "";
+				arr.addItemAt(obj,0);
+				seasonArr = arr;
+				season.selectedIndex = 1;
+			}
+			
+			private function getHeadend():void{
+				var obj:Object = new Object();
+				obj.type_id="all";
+				obj.state="all"; 
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getHeadList",obj,getHeadListBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function getHeadListBack(arr:ArrayCollection):void{
+				headendArr.removeAll();
+				headendArr = arr;
+				headendArr.addItemAt({label:"全部",value:""},0);
+				headend.selectedIndex = 0;
+			}
+			
+			/**
+			 * 
+			 * 发射台
+			 * */
+			private function getStationList():void{
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getStationList",null,getStationListBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function getStationListBack(arr:ArrayCollection):void{
+				stationArr.removeAll();
+				stationArr = arr;
+				stationArr.addItemAt({name:"全部",station_id:""},0);
+				station.selectedIndex = 0;
+			}
+			
+			/**
+			 * 
+			 * 语言
+			 * */
+			private function getLanguageList():void{
+				var obj:Object = new Object;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getLanguageList",obj,getLanguageListBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function getLanguageListBack(arr:ArrayCollection):void{
+				lanaguageArr.removeAll();
+				lanaguageArr = arr;
+				lanaguageArr.addItemAt({language_name:"全部",language_id:""},0);
+				language.selectedIndex = 0;
+			}
+			
+			/**
+			 * 查询运行图
+			 * 
+			 */
+			
+			private function queryRunplan(){
+				gjtRunplanArr.removeAll();
+				clew_label.visible=true;
+				clew_label.includeInLayout=true;
+				clew_label.text="正在查询，请稍候...";
+				var gjtRunplan:GJTRunplanBean = new GJTRunplanBean;
+				if(station.selectedItem.name!='全部'){
+					gjtRunplan.station_name = station.selectedItem.name;
+					gjtRunplan.station_id = station.selectedItem.station_id;
+				}
+				
+				if(headend.selectedItem.value!=""){
+					gjtRunplan.mon_area = headend.selectedItem.value;
+				}
+				gjtRunplan.flag="all";
+				gjtRunplan.language_id = this.language.selectedItem.language_id;
+				gjtRunplan.season_id = this.season.selectedItem.code;
+				gjtRunplan.freq = this.freq.text;
+				gjtRunplan.start_time = "";
+				gjtRunplan.end_time = "";
+				gjtRunplan.valid_start_time = this.valid_starttime.text;
+				gjtRunplan.valid_end_time = this.valid_endtime.text;
+				gjtRunplan.runplan_type_id="1";
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.runplan.gjt_runplan.GJTRunplan","queryRunplan",gjtRunplan,getRunplanListBack,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id);
+				pagebar.m_sendCmd(request);
+			}
+			private function getRunplanListBack(arr:ArrayCollection):void{
+				btn1.label="本页全选";
+				selectState=false;
+				//gjtRunplanArr.removeAll();
+				if(arr.length==0){
+					clew_label.text="无相关查询数据";
+				}else{
+					clew_label.visible=false;
+					clew_label.includeInLayout=false;
+					gjtRunplanArr = arr;
+				}
+				
+			}
+			//选择点中后执行的方法
+			private function changeSelect(obj:Object):void{
+				if(obj.data.isSelected=="true"){
+					this.selectedCounts=selectedCounts+1;  
+				}else{
+					this.selectedCounts=selectedCounts-1; 
+				}
+			}
+			/**
+			 * 下发运行图
+			 * */
+			private function sendRunplan():void{
+			
+				gjtRunplanArr.refresh();
+				tasklist.removeAll();
+				
+				for(var i:int=0;i<gjtRunplanArr.length;i++){
+					var obj:Object = new Object();
+					obj = gjtRunplanArr.getItemAt(i) as Object;
+					   
+					if(obj.isSelected=="true"){
+						
+						if(obj.mon_area!=""){
+							var codes:Array = obj.mon_area.split(',');
+							for(var j:int=0;j<codes.length;j++){
+								if (codes[j] == "")
+									continue;
+								var code:String = codes[j];
+//								var obj1:Object = new Object();
+//								obj1.code = code;
+//								obj1.type = "质量";
+//								getRecordRules(obj1);
+								var task:Task=new Task();
+								
+								task.head_type_id = DataManager.getHeadendByCodeNoAB(code).type_id;
+								if(task.head_type_id=="102")
+								{
+								   task.head_code = code+"A";//遥控站默认发给A
+								}else 
+								{
+								  task.head_code = code;
+								}
+								task.task_type="5";//任务类型
+								task.record_type="质量";
+								task.valid_startdatetime = obj.valid_start_time; //有效期开始时间
+								task.valid_enddatetime = obj.valid_end_time;//有效期结束时间
+								task.priority="0";//优先级
+								task.unit="2";//2:分钟 ;1:秒;3:小时  
+								task.samples_number="5";//采样个数
+								task.is_temporary="2";//2:运行图任务
+								task.equ_code="";
+								var sub:Subtask=new Subtask();
+								sub.band=StringTool.getBandFromFreq(obj.freq);
+								sub.freq = obj.freq;
+								sub.equ_code="";
+								sub.from_runplan = obj.runplan_id;
+								sub.station_name = obj.station_name;
+								sub.language = obj.language;
+								var cyc:CycleSubTask=new CycleSubTask();
+								
+								cyc.dayofweek = "All";//周设置 
+								cyc.starttime = obj.start_time+":00";//运行图开始时间
+								cyc.endtime = obj.end_time+":00";//运行图结束时间
+								cyc.reportmode = "1";//等待时间间隔上报
+								cyc.reportinterval="00:00:00";//上报时间间隔
+								cyc.expiredays="30";//录音文件保存天数
+								
+								sub.cyctask.addItem(cyc);
+								task.subtask.addItem(sub);
+								task.batch_no=DateUtil.date2str(new Date());				//生成任务的时间
+								task.note="["+task.batch_no+"]任务生成";
+								task.create_user=DataManager.user.userName;
+								if(objRule[code]!=null){
+									if(objRule[code].quality_bps==""||objRule[code].quality_bps==null){
+										sub.bps="32000";
+									}else{
+										sub.bps=objRule[code].quality_bps;
+									}
+									if(objRule[code].quality_record_length==""||objRule[code].quality_record_length==null){
+										task.recordlength = "00:01:00";//录音文件长度
+									}else{
+										task.recordlength = objRule[code].quality_record_length;
+									}
+									if(objRule[code].quality_sleep_time==""||objRule[code].quality_sleep_time==null){
+										task.stream_sleeptime = "00:00:00";//录音任务收测间隔
+									}else{
+										task.stream_sleeptime =objRule[code].quality_sleep_time;
+									}
+								}else{
+									sub.bps="32000";
+									task.recordlength = "00:01:00";//录音文件长度
+									task.stream_sleeptime = "00:00:00";//录音任务收测间隔
+								}
+								
+								task.quality_sleeptime = "00:00:00"; //指标任务收测间隔
+								task.check_level="1"; //是否监测电平
+								task.check_bandwidth="1";//是否监测带宽
+								
+								if(Number(obj.freq) >= 87000 && Number(obj.freq) <= 108000){
+									task.check_fm_modulation="1";//是否监测调制度
+								}else{
+									task.check_am_modulation="1";//是否监测调幅度 
+								}
+								task.check_alarm="0";//质量录音默认报警
+								tasklist.addItem(task);
+							}
+						}
+						
+						if(obj.xg_mon_area!=""){
+							
+							var xgCodes:Array = obj.xg_mon_area.split(',');
+							
+							for(var j:int=0;j<xgCodes.length;j++){
+								if (xgCodes[j] == "")
+									continue;
+								var code:String = xgCodes[j];
+								
+								var task:Task=new Task();
+								task.head_code = code;
+							
+								task.head_type_id = DataManager.getHeadendByCodeNoAB(code).type_id;
+								
+								if(task.head_type_id=="102")
+								{
+									task.head_code = code+"A";//遥控站默认发给A
+								}else 
+								{
+									task.head_code = code;
+								}
+								task.task_type="5";//任务类型
+								task.record_type="效果";
+								task.valid_startdatetime = obj.valid_start_time; //有效期开始时间
+								task.valid_enddatetime = obj.valid_end_time;//有效期结束时间
+								task.priority="0";//优先级
+								task.unit="2";//2:分钟 ;1:秒;3:小时  
+								task.samples_number="5";//采样个数
+								task.is_temporary="2";//2:运行图任务
+								task.equ_code="";
+								var sub:Subtask=new Subtask();
+								sub.band=StringTool.getBandFromFreq(obj.freq);
+								sub.freq = obj.freq;
+								sub.equ_code="";
+								sub.from_runplan = obj.runplan_id;
+								sub.station_name = obj.station_name;
+								sub.language = obj.language;
+								
+								
+								var cyc:CycleSubTask=new CycleSubTask();
+								
+								cyc.dayofweek = "All";//周设置 
+								cyc.starttime = obj.start_time+":00";//运行图开始时间
+								cyc.endtime = obj.end_time+":00";//运行图结束时间
+								cyc.reportmode = "1";//等待时间间隔上报
+								cyc.reportinterval="00:00:00";//上报时间间隔
+								cyc.expiredays="30";//录音文件保存天数
+								
+								sub.cyctask.addItem(cyc);
+								task.subtask.addItem(sub);
+								task.batch_no=DateUtil.date2str(new Date());				//生成任务的时间
+								task.note="["+task.batch_no+"]任务生成";
+								task.create_user=DataManager.user.userName;
+								if(objRule[code]!=null){
+									
+									
+									if(objRule[code].effect_bps==""||objRule[code].effect_bps==null){
+										sub.bps="32000";
+									}else{
+										sub.bps=objRule[code].effect_bps;
+									}
+									if(objRule[code].effect_record_length==""||objRule[code].effect_record_length==null){
+										task.recordlength = "00:03:00";//录音文件长度
+									}else{
+										task.recordlength = objRule[code].effect_record_length;
+									}
+									if(objRule[code].effect_sleep_time==""||objRule[code].effect_sleep_time==null){
+										task.stream_sleeptime = "00:30:00";//录音任务收测间隔
+									}else{
+										task.stream_sleeptime =objRule[code].effect_sleep_time;
+									}
+								}else{
+									sub.bps="32000";
+									task.recordlength = "00:03:00";//录音文件长度
+									task.stream_sleeptime = "00:30:00";//录音任务收测间隔
+								}
+								
+								
+								task.quality_sleeptime = "00:30:00"; //指标任务收测间隔
+								task.check_level="1"; //是否监测电平
+								task.check_bandwidth="1";//是否监测带宽
+								
+								if(Number(obj.freq) >= 87000 && Number(obj.freq) <= 108000){
+									task.check_fm_modulation="1";//是否监测调制度
+								}else{
+									task.check_am_modulation="1";//是否监测调幅度 
+								}
+								task.check_alarm="1";//效果录音默认不报警
+								tasklist.addItem(task);
+							}
+						}
+					}
+					
+				}
+				if(tasklist.length>0){
+					RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.runplan.gjt_runplan.GJTRunplan","sendRunplan",tasklist,processSendRunplan,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id));
+				}else{
+					DataManager.showErrorMessage("请选择要下发的运行图！");
+					return;
+				}
+				
+			}
+			/**
+			 * 根据站点code获取录音监测规则
+			 * */
+			private function getRecordRules():void{
+				var obj:Object = new Object();
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getRecordRules",obj,processRecordRules,DataManager.showErrorMessageBack));
+			}
+			
+			private function processRecordRules(obj:Object):void{
+				objRule=obj;
+			}
+			
+			private function processSendRunplan(str:String):void{
+				DataManager.showErrorMessage(str);
+			}
+			
+			/**
+			 * 全选操作
+			 * */
+			private var selectState:Boolean = false;// 记录选中的状态
+			
+			private function selectAll():void{
+				if(btn1.label=="本页全选"){
+					btn1.label="取消全选";
+					selectState=true;
+				}else{
+					btn1.label="本页全选";
+					selectState=false;
+				}
+				for(var i:int=0;i<gjtRunplanArr.length;i++){
+					var obj:Object = gjtRunplanArr.getItemAt(i) as Object;
+					obj.isSelected=selectState;
+				}
+				gjtRunplanArr.refresh();
+				
+			}
+			/**
+			 * 导入运行图
+			 * */
+			private function importRunplan():void{
+				file.browse();
+			}
+			
+			private function clickBrowser(event:Event):void{
+				var obj:Object = new Object();
+				obj.input_person = DataManager.user.userName;
+				obj.runplan_type_id="1";
+				obj.file_name=file.name;
+				obj.season=season.selectedItem.code;
+				obj.code = headend.selectedItem.value;
+				obj.station_id = station.selectedItem.station_id;
+				obj.language_id = language.selectedItem.language_id;
+				obj.freq = freq.text;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.runplan.gjt_runplan.GJTRunplan","importRunplan",obj,importRunplanBack,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id));
+			}
+			/**
+			 *运行图导入
+			 * */
+			private function importRunplanBack(res:String):void{
+				DataManager.showErrorMessage(res);
+				queryRunplan();
+			}
+			
+			
+			/**
+			 * 运行图文件上传
+			 * */
+			private function submit():void{
+				//上传完成之后执行的事件   
+				fileRe.addEventListener(Event.SELECT,selectHandler);
+				fileRe.addEventListener(Event.COMPLETE,processResult);
+				fileRe.browse();
+			}
+			
+			private function selectHandler(event:Event):void{
+				//根据URL执行文件上传，请求到后台Java的Servlet
+				var sysurl:String = FlexGlobals.topLevelApplication.url;
+				var index:int = sysurl.lastIndexOf("/");
+				var url:String = sysurl.substring(0,index);
+				url = DataManager.dataServerAppAddress;
+				var urlStr:String=url+"/uploadservlet";
+				var r:URLRequest=new URLRequest(urlStr);
+				fileRe.upload(r);//第二个参数指定文件域的名字，默认为Filedata       
+				//提交三个参数Filename,Filedata,Upload                
+			}
+			
+			private function processResult(event:Event):void{
+				Alert.show("上传成功,可以导入运行图！");
+			}
+			
+			/**
+			 * 删除运行图
+			 * */
+			public var runplanIDs:String="";
+			private function delRunplan():void{
+				
+				for(var i:int=0;i<gjtRunplanArr.length;i++){
+					var obj:Object = new Object();
+					obj = gjtRunplanArr.getItemAt(i) as Object;
+					if(obj.isSelected=="true"){
+						runplanIDs+=obj.runplan_id+",";
+					}
+				}
+				if(runplanIDs!=""){
+					MM.show("您确定要删除吗?","删除运行图",runplanIDs.substr(0,runplanIDs.length-1),confirmDel,true,cancelHandler,null);
+				}else{
+					DataManager.showErrorMessage("请选择要删除的运行图!");
+					return;
+				}
+				
+			}
+			
+			/**
+			 * 取消回调方法
+			 * */
+			private function cancelHandler():void{
+				runplanIDs="";
+			}
+			
+			
+			private function confirmDel():void{
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.runplan.gjt_runplan.GJTRunplan","delRunplan",runplanIDs.substr(0,runplanIDs.length-1),delRunplanBack,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id));
+			}
+			
+			private function delRunplanBack(res:String):void{
+				runplanIDs="";
+				DataManager.showErrorMessage(res);
+				queryRunplan();
+			}
+			/**
+			 * 删除全部运行图
+			 * */
+			private function delAllRunplan():void{
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.runplan.gjt_runplan.GJTRunplan","delRunplan","all",delRunplanBack,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id));
+			}
+			
+		]]>
+	</fx:Script>
+	<s:VGroup width="100%" height="100%" paddingLeft="2">
+		<s:HGroup  width="100%" height="25" verticalAlign="middle" paddingLeft="20">
+			
+			<s:Label text="收测站点:"/>
+			<s:ComboBox id="headend" width="180" dataProvider="{headendArr}"/>
+			<!--global:HeadendList id="headend" headDataAll="true"  width="180"/-->
+			<s:Label text="发射台:"/>
+			<s:DropDownList id="station" width="100"  dataProvider="{stationArr}" labelField="name"/>
+			<s:Label text="语言:"/>
+			<s:DropDownList id="language" width="80"  dataProvider="{lanaguageArr}" labelField="language_name"/>
+			<s:Label text="频率"/>
+			<s:TextInput width="50" id="freq" restrict="0-9" maxChars="6" />
+			<s:Label text="季节代号"/>
+			<s:ComboBox id="season" dataProvider="{seasonArr}" labelField="code" width="80"/>
+			<!--s:Label text="开始时间" />
+			<timecomp:TimeNew id="starttime"  dateDisplay="timenew"/>
+			<s:Label text="结束时间" />
+			<timecomp:TimeNew id="endtime"  dateDisplay="timenew"/-->
+			<s:Label text="导入时间"/>
+			<timecomp:TimeNew id="valid_starttime"/>
+			<s:Label text="～"/>
+			<timecomp:TimeNew id="valid_endtime"/>
+		</s:HGroup>
+		<s:HGroup width="100%" height="25" verticalAlign="middle" horizontalAlign="center" paddingLeft="20">	
+			
+			<s:Button buttonMode="true" label="上传" click="submit()"/>
+			<s:Button buttonMode="true" label="导入" click="importRunplan()"/>
+			<s:Button buttonMode="true" label="查询" click="queryRunplan()"/>
+			<s:Button buttonMode="true" label="本页全选" id="btn1" click="selectAll()"  width="80"/>
+			<s:Button buttonMode="true" label="删除" click="delRunplan()"/>
+			<s:Button buttonMode="true" label="全部删除" click="delAllRunplan()"/>
+			<s:Button buttonMode="true" label="下发运行图" click="sendRunplan()"/>
+		</s:HGroup>
+		<mx:Canvas width="100%" height="100%">
+			<s:DataGrid width="100%" height="100%" id="datagrid" textAlign="center" dataProvider="{gjtRunplanArr}">
+				<s:columns>
+					<s:ArrayCollection>
+						<s:GridColumn dataField="check"  headerText="选择" itemRenderer="{RendererUtil.getCheckBoxRenderer(changeSelect)}"/>
+						<s:GridColumn dataField="station_name"  headerText="台名" />
+						<s:GridColumn dataField="freq"  headerText="频率(KHZ)" />
+						<s:GridColumn dataField="language"  headerText="语言" />
+						<s:GridColumn dataField="start_time"  headerText="开始时间" />
+						<s:GridColumn dataField="end_time"  headerText="结束时间" />
+						<s:GridColumn dataField="valid_start_time"  headerText="启用期" />
+						<s:GridColumn dataField="valid_end_time"  headerText="停用期" />
+						<s:GridColumn dataField="mon_area"  headerText="质量收测站点" />
+						<s:GridColumn dataField="xg_mon_area"  headerText="效果收测站点" />
+						<s:GridColumn dataField="store_datetime"   headerText="导入时间" />
+					</s:ArrayCollection>
+				</s:columns>
+			</s:DataGrid>
+			<s:Label text="正在查询，请稍候..." id="clew_label" y="{datagrid.columnHeaderGroup.height+10}" color="0x000000" fontSize="15" width="100%" textAlign="center"  visible="false" includeInLayout="false" />
+		</mx:Canvas>
+		
+		<flipBar:PageBar width="100%" id="pagebar" rowConutOfPage="40" totalPageQuery="5" height="20"/>
+	</s:VGroup>
+</system:BasePage>

@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:mx="library://ns.adobe.com/flex/mx" 
+				 xmlns:system="com.morcha4.frame.system.*"
+				 width="100%" height="100%" 
+				 xmlns:timecomp="com.viewscenes.utils.timecomp.*" 
+				 xmlns:flipBar="com.viewscenes.utils.flipBar.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.viewscenes.beans.ImportFileBean;
+			import com.viewscenes.global.DataManager;
+			public var sendReadyColl:ArrayCollection = new ArrayCollection(
+				[   {label:"录音打分数据", data:"radio_mark_zst_view_tab"}, 
+					{label:"录音文件数据", data:"radio_stream_result_tab"}, 
+					{label:"频谱数据", data:"radio_spectrum_stat_tab"},
+					{label:"设备报警", data:"radio_equ_alarm_tab"},
+					{label:"指标报警", data:"radio_abnormal_tab"},
+					]);
+			
+			[Bindable]
+			private var allselect:String="false";
+			[Bindable]
+			public var querydata:ArrayCollection = new ArrayCollection();
+			
+			private function clickChooseAll():void{
+				if(allselect=="false")
+				{
+					allselect="true";
+				}else
+				{
+					allselect="false";	
+				}
+				
+				for(var i:int=0;i<querydata.length;i++)
+				{
+					querydata.getItemAt(i).isSelected=allselect;
+					
+					querydata.refresh();
+					datagrid.dataProvider = querydata;
+				}
+				
+				
+			}
+			
+			public function exporttData():void{
+				this.exporttButton.label="正在执行导出数据,请稍等......"
+			    this.exporttButton.enabled=false;		
+				var obj:Object = new Object();
+				obj.fileName=this.oexportData.selectedItem.label;
+				obj.tableName=this.oexportData.selectedItem.data;
+				obj.starttime=this.oStartValidDate.text;
+				obj.endtime=this.oEndValidDate.text;
+		         var request:RORequestParam = new RORequestParam("com.viewscenes.web.importDataManager.DataExportManager","exporttData",obj,exporttDataProcess,DataManager.showErrorMessageBack);
+				RPCManager.sendCmd(request); 
+			}
+			public function exporttDataProcess(retStr:String):void{
+				this.exporttButton.label="导出"
+				this.exporttButton.enabled=true;
+				DataManager.showErrorMessage(retStr);
+				clickQuery();
+			}
+			/*
+			**	通知查询方法
+			*/
+			public function clickQuery(event:AdvancedEvent=null):void{
+				con_clewlabel(clew_label,true,'正在查询，请稍候...');
+				querydata = new ArrayCollection();
+				
+				var obj:ImportFileBean = new ImportFileBean();
+				
+				obj.date=this.oDate.text;
+				pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.importDataManager.DataExportManager","getFileList",obj,clickQueryProcess,DataManager.showErrorMessageBack));
+				
+			}
+			private function clickQueryProcess(obj:ArrayCollection):void{
+				con_clewlabel(clew_label,false);
+				querydata.removeAll();
+				querydata=obj;	
+				if(obj.length==0){
+					
+					con_clewlabel(clew_label,true,"无查询数据！");
+				}
+				
+			}
+			/**
+			 * 控制datagrid的提示框是否显示，以及显示内容
+			 * author:cht
+			 * **/
+			public function con_clewlabel(_component:Label,_visible:Boolean,_label:String="")
+			{
+				_component.visible=_visible;
+				_component.includeInLayout=_visible;
+				_component.text=_label;
+			}
+			
+			
+			
+			
+			//选择点中后执行的方法
+			[Bindable]
+			public var selectedCounts:int =0;
+			private function changeSelect(obj:Object):void{
+				
+				if(obj.data.isSelected=="true"){
+					this.selectedCounts=selectedCounts+1;  
+				}else{
+					this.selectedCounts=selectedCounts-1; 
+				}
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<s:VGroup width="100%" height="100%">
+		<s:HGroup width="100%" paddingLeft="10" verticalAlign="middle">
+			<s:Label text="开始时间"/>
+			<timecomp:TimeNew  id="oStartValidDate"  />
+			<s:Spacer width="20"/>
+			<s:Label text="结束时间"/>
+			<timecomp:TimeNew  id="oEndValidDate"  />
+			<s:Spacer width="20"/>
+			<s:Label text="导出数据"/>
+			<s:DropDownList id="oexportData" dataProvider="{sendReadyColl}"  selectedIndex="0"/>
+			<s:Spacer width="10"/>
+			
+			<s:Button buttonMode="true" click="exporttData();"  id="exporttButton" label="导出" />
+			<s:Spacer width="10"/>
+		</s:HGroup>
+		<mx:HRule width="100%"/>
+		<s:HGroup width="100%" paddingLeft="10" verticalAlign="middle">
+			<s:Label text="查询导出日期"/>
+			<timecomp:TimeNew  id="oDate"   dateDisplay="date"/>
+			<s:Spacer width="50"/>
+			<s:Button buttonMode="true" click="clickQuery();" label="查询" />
+			<s:Spacer width="10"/>
+
+			
+		</s:HGroup>
+		
+		<s:Group width="100%" height="100%" top="12" bottom="60">
+			<s:DataGrid id="datagrid" width="100%"    textAlign="center" height="100%" dataProvider="{querydata}"  showDataTips="true">
+				<s:columns>  
+					<s:ArrayCollection>	
+						<s:GridColumn headerText="日期 "  width="100" dataField="date" />
+						<s:GridColumn headerText="文件名" dataField="file_name"  />
+						<s:GridColumn headerText="大小(KB)" width="100" dataField="file_size"  />
+						<s:GridColumn headerText="导出状态" width="150" dataField="flag"  />
+						
+					</s:ArrayCollection>
+				</s:columns>
+			</s:DataGrid>
+			<s:Label text="正在查询，请稍候..."  color="0x000000"  id="clew_label" y="{datagrid.columnHeaderGroup.height+10}" width="100%" textAlign="center"  visible="false" includeInLayout="false" />				
+			
+		</s:Group>
+		
+		<flipBar:PageBar width="100%" height="20" id="pagebar" rowConutOfPage="20" totalPageQuery="5" />
+		
+		
+	</s:VGroup>
+</system:BasePage>

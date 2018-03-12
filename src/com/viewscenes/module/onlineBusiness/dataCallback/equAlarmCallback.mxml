@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:mx="library://ns.adobe.com/flex/mx" 
+				 xmlns:system="com.morcha4.frame.system.*" 
+				 xmlns:global="com.viewscenes.global.*" 
+				 xmlns:flipBar="com.viewscenes.utils.flipBar.*"
+				 PAGE_SHOW="setCode(event)"
+				 xmlns:timecomp="com.viewscenes.utils.timecomp.*"
+				 width="100%" height="100%" creationComplete="init()">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.viewscenes.beans.pub.ResHeadendBean;
+			import com.viewscenes.global.DataManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			[Bindable]
+			var alarmArr:ArrayCollection = new ArrayCollection();
+			private function setCode(event:Event):void{
+				if(DataManager.code!=""){
+					station.selectedIndex = 1;
+					
+					for(var i:int=0;i<(station.dataProvider as ArrayCollection).length;i++){
+						if(DataManager.code==(station.dataProvider as ArrayCollection)[i].code){
+							station.selectedIndex=i;
+						}
+					}
+				}
+				
+			}
+			private function init():void{
+				this.startTime.text=this.startTime.text.split(' ')[0]+" 00:00:00";
+				if(DataManager.code!=""){
+					
+					for(var i:int=0;i<this.station.dataProvider.length;i++){
+						var bean:ResHeadendBean = this.station.dataProvider.getItemAt(i) as ResHeadendBean;
+						if(DataManager.code==bean.code){
+							this.station.selectedIndex=i;
+							
+						}
+					}
+				}
+			}
+			
+			/**
+			 * 下发设备报警回收接口
+			 * */
+			private function alarmCallback():void{
+				
+				datagrid.dataProvider = new ArrayCollection();
+				var paraObj:Object = new Object();
+				var startDate:String=startTime.text;
+				var endDate:String=endTime.text;
+				
+				if(startDate>endDate)
+				{
+					DataManager.showErrorMessage("起始时间不能大于结束时间，请重新输入！");
+					return;
+				}
+				paraObj.user_id = DataManager.user.userId;
+				paraObj.priority = DataManager.user.priority;
+				paraObj.head_id = this.station.selectedItem.head_id;
+				paraObj.code = this.station.selectedItem.code;
+				paraObj.startDate = startDate;
+				paraObj.endDate = endDate;
+				clew_label.visible=true;
+				clew_label.includeInLayout=true;
+				clew_label.text ="正在回收,请稍候...";
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.dataretrieve.EquAlarmCallback","equAlarmCallback",paraObj,processAlarmCallback,processAlarmCallback,true,null,DataManager.server_app_id));
+			}
+			
+			private function processAlarmCallback(res:String):void{
+				if(res=="设备报警回收成功"){
+					this.queryAlarm();
+				}else{
+					DataManager.showErrorMessage(res);
+					clew_label.visible=false;
+					clew_label.includeInLayout=false;	
+				}
+			}
+			
+			private function queryAlarm():void{
+				var paraObj:Object = new Object();
+				paraObj.head_id = this.station.selectedItem.head_id;
+				paraObj.code = this.station.selectedItem.code;
+				paraObj.startDate = startTime.text;
+				paraObj.endDate = endTime.text;
+				clew_label.visible=true;
+				clew_label.includeInLayout=true;	
+				clew_label.text ="正在查询,请稍候...";
+				pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.online.dataretrieve.EquAlarmCallback","queryEquAlarm",paraObj,processQueryAlarm,DataManager.showErrorMessageBack));
+				
+			}
+			
+			private function processQueryAlarm(arr:ArrayCollection):void{
+				if(arr.length==0){
+					clew_label.text="无相关查询数据";
+				}else{
+					clew_label.visible=false;
+					clew_label.includeInLayout=false;  
+					datagrid.dataProvider = arr;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<s:VGroup width="100%" height="100%" paddingTop="10">
+		<s:HGroup width="100%" paddingLeft="2" verticalAlign="middle">
+			<s:Label text="站点名称"/>
+			<global:HeadendList id="station"/>
+			<s:Label text="开始时间"/>
+			<timecomp:TimeNew id="startTime"/>
+			<s:Label text="结束时间"/>
+			<timecomp:TimeNew id="endTime"/>
+			<s:Button buttonMode="true" label="回收" click="alarmCallback()"/>
+			<s:Button buttonMode="true" label="查询" click="queryAlarm()"/>
+		</s:HGroup>
+		<mx:Canvas width="100%" height="100%">
+			<s:DataGrid width="100%" height="100%" textAlign="center" id="datagrid" dataProvider="{alarmArr}">
+				<s:columns>
+					<s:ArrayCollection>
+						<s:GridColumn dataField="head_name"  headerText="报警站点" />
+						<s:GridColumn dataField="type_name"  headerText="报警类型" />
+						<s:GridColumn dataField="alarm_datetime"  headerText="发生时段" />
+						<s:GridColumn dataField="is_handle"  headerText="处理状态" />
+						<s:GridColumn dataField="reason"  headerText="原因"/>
+					</s:ArrayCollection>
+				</s:columns>
+			</s:DataGrid>
+			<s:Label text="正在查询，请稍候..." id="clew_label" y="{datagrid.columnHeaderGroup.height+10}" color="0x000000" fontSize="15" width="100%" textAlign="center"  visible="false" includeInLayout="false" />
+		</mx:Canvas>
+		
+		<flipBar:PageBar width="100%" id="pagebar" rowConutOfPage="40" totalPageQuery="5" height="20"/>
+		
+	</s:VGroup>
+</system:BasePage>

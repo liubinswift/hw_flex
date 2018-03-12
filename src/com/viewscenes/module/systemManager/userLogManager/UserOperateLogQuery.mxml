@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 creationComplete="init()"
+				 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:system="com.morcha4.frame.system.*" width="100%" height="100%" xmlns:timecomp="com.viewscenes.utils.timecomp.*" xmlns:flipBar="com.viewscenes.utils.flipBar.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.viewscenes.global.DataManager;
+			
+			import mx.collections.ArrayCollection;
+			
+			[Bindable]
+			public var typelist:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var userlist:ArrayCollection = new ArrayCollection();	
+			
+			[Bindable] var IndexData:ArrayCollection=new ArrayCollection();
+			
+			public function init():void{
+				this.getAllUserList();
+				this.getAllOpTypeList();
+				var date:Date=new Date();
+				date.setHours(00,00,00);
+				StartTime_day.setDate(date);
+			}
+			/**
+			 * 查询用户列表
+			 * */
+			private function getAllUserList():void{
+				
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.sysmgr.userLog.UserLog","getAllUserList",null,getAllUserListProcess,DataManager.showErrorMessageBack);
+				RPCManager.sendCmd(request); 				
+			}
+			
+			private function getAllUserListProcess(array:ArrayCollection):void{
+				
+				userlist = array;
+				userListtab.selectedIndex=0;
+			}
+			
+			
+			/**
+			 * 查询用户操作类型
+			 * */
+			private function getAllOpTypeList():void{
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.sysmgr.userLog.UserLog","getAllOpTypeList",null,getAllOpTypeListProcess,DataManager.showErrorMessageBack);
+				RPCManager.sendCmd(request); 
+			}
+			
+			private function getAllOpTypeListProcess(array:ArrayCollection):void{
+				
+				typelist = array;
+				this.typetab.selectedIndex=0;
+				
+			}
+			/**
+			 * 查询操作日志
+			 * */
+			public function queryLog():void{
+				
+				datagrid.dataProvider=null;
+				clew_label.text="正在查询，请稍候...";
+				clew_label.visible=true;
+				clew_label.includeInLayout=true;
+				var startDate:String=StartTime_day.text;
+				var endDate:String=EndTime_day.text;
+				if(startDate>endDate){
+					DataManager.showErrorMessage("起始时间不能大于结束时间，请重新输入！");
+					return;
+				}
+				var obj:Object = new Object();
+				
+				obj.param_userID = this.userListtab.selectedItem.data;
+				obj.param_opType = this.typetab.selectedItem.data;
+				obj.param_begintime = startDate;
+				obj.param_endtime=endDate;
+				
+				pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.userLog.UserLog","queryOperateLog",obj,queryLogProcess,DataManager.showErrorMessageBack));
+				
+				
+			}
+			
+			
+			
+			private function queryLogProcess(array:ArrayCollection):void{
+				
+				
+				if(array.length==0)
+					
+				{
+					
+					datagrid.dataProvider = null;
+					clew_label.text="无查询结果信息！";
+					clew_label.visible=true;
+					clew_label.includeInLayout=true;
+					return;
+				}
+				clew_label.visible=false;
+				clew_label.includeInLayout=false;
+				
+				IndexData = array;
+				
+				
+			}
+		]]>
+	</fx:Script>
+	<s:VGroup width="100%" left="9" right="9" height="100%" >
+		
+		<s:HGroup width="100%" verticalAlign="middle" horizontalAlign="center" >
+			<s:HGroup verticalAlign="middle" horizontalAlign="left" width="100%" height="38">
+				<s:Spacer width="16" />
+				<s:Label text="用户名称：" fontSize="12"/>
+				<s:DropDownList id="userListtab" dataProvider="{userlist}"   enabled="true" width="120"/>
+				<s:Spacer width="20" />
+				<s:Label  text="操作类型："  fontSize="12"/>
+				<s:DropDownList  dataProvider="{typelist}"    id="typetab"  width="150"/>
+				<s:Spacer width="20" />
+				<s:Label text="起始时间："/>
+				
+				<timecomp:TimeNew id="StartTime_day"/>
+				
+				<s:Spacer width="5"/>
+				
+				<s:Label text="结束时间："/>
+				<timecomp:TimeNew id="EndTime_day"/>
+				<s:Spacer width="16" />
+				<s:Button buttonMode="true"  label="查询" id="queryBtn"  enabled="true" cornerRadius="0" click="queryLog()" width="70"/>
+				<s:Spacer width="16" />
+				
+				
+			</s:HGroup>
+		</s:HGroup>
+		
+		<s:Group width="100%" height="100%" top="12" bottom="60">
+			<s:DataGrid textAlign="center"   width="100%" height="100%" id="datagrid" dataProvider="{IndexData}">
+				<s:columns>  
+					<s:ArrayCollection>
+						<s:GridColumn width="200" dataField="log_datetime" headerText="操作时间"/>
+						<s:GridColumn width="130" dataField="user_name" headerText="操作人"/>
+						<s:GridColumn width="180" dataField="operation_name" headerText="操作名称"/>
+						<s:GridColumn  dataField="description" headerText="备注"/>
+					</s:ArrayCollection>
+				</s:columns>
+			</s:DataGrid>	
+			<s:Label text="正在查询，请稍候..."  color="0x000000"  id="clew_label" y="{datagrid.columnHeaderGroup.height+10}" width="100%" textAlign="center"  visible="false" includeInLayout="false" />				
+		</s:Group>
+		<flipBar:PageBar  width="100%" height="20" id="pagebar" rowConutOfPage="14" totalPageQuery="5"/>
+	</s:VGroup>
+</system:BasePage>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark"
+				 PAGE_SHOW="checkInfo(event)"
+				 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:system="com.morcha4.frame.system.*" width="100%" height="100%">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.viewscenes.global.DataManager;
+			[Bindable] 
+			private var info:ArrayCollection = new ArrayCollection();
+			private function checkInfo(event:Event):void{
+				info.removeAll()
+				clew_label.visible=true;
+				clew_label.includeInLayout=true;
+				clew_label.text="正在生成,请稍候......";
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getInfo",null,getInfoBack,DataManager.showErrorMessageBack));
+			}
+			private function getInfoBack(arr:ArrayCollection):void{
+				
+				if(arr.length>0){
+					clew_label.visible=false;
+					clew_label.includeInLayout=false;
+					info=arr;
+				}else{
+					clew_label.text="没有相关查询数据!";
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:Group width="100%" height="100%">
+		<s:DataGrid width="100%" height="100%" dataProvider="{info}" id="grid" showDataTips="true" textAlign="center">
+			<s:columns>
+				<s:ArrayCollection>
+					<s:GridColumn dataField="exception_id" headerText="故障消息ID"/>
+					<s:GridColumn dataField="exception" headerText="故障原因说明"/>
+					<s:GridColumn dataField="exception_time" headerText="故障发生时间"/>
+					<s:GridColumn dataField="solve_method" headerText="解决方案"/>
+					<s:GridColumn dataField="if_deal" headerText="故障是否解决"/>
+				</s:ArrayCollection>
+			</s:columns>
+		</s:DataGrid>
+		<s:Label text="正在查询，请稍候..."  color="0x000000" id="clew_label" y="{grid.columnHeaderGroup.height+10}" width="100%" textAlign="center" visible="false" includeInLayout="false"/>
+	</s:Group>
+</system:BasePage>

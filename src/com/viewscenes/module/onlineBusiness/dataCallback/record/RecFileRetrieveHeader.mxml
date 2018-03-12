@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" 
+		  width="100%" height="100%"
+		  creationComplete="init();" xmlns:global="com.viewscenes.global.*" xmlns:utils="com.viewscenes.utils.*" xmlns:timecomp="com.viewscenes.utils.timecomp.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.viewscenes.beans.pub.ResHeadendBean;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.utils.StringTool;
+			import com.viewscenes.utils.timecomp.DateUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			
+			public var body:RecFileRetrieveBody;
+			
+			
+			//做过录音任务的频率
+			[Bindable]
+			private var freqArray:ArrayCollection = new ArrayCollection;
+			
+			//波段
+			[Bindable]
+			private var bandArray:ArrayCollection = new ArrayCollection;
+			
+			//查询返回的文件列表
+			[Bindable]
+			private var queryFiles:ArrayCollection = new ArrayCollection;
+			
+			//获取回来的文件列表
+			[Bindable]
+			private var retrieveFiles:ArrayCollection = new ArrayCollection;
+			
+			private function init():void{
+				//getRecTaskFreqList();
+				
+				bandArray = StringTool.getBandList();
+			}
+			
+			
+			/**
+			 * 查询站点做过录音任务的频率
+			 */ 
+			private function getRecTaskFreqList():void{
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.recplay.MonitorRecPlayService","getRecTaskFreqList",null,getRecTaskFreqListBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function getRecTaskFreqListBack(arr:ArrayCollection):void{
+				freqArray = arr;
+				freqArray.addItemAt("全部",0);
+			}
+			
+			//录音文件查询
+			private function msgFileQueryCmd():void{
+				
+				if (headend.selectedItem == undefined || headend.selectedItem.shortname == "全部"){
+					DataManager.showErrorMessage("请先选择要查询的站点");
+					return ;
+				}
+				
+				//校验时间
+				var result:Number = DateUtil.compareDateStr(startDatetime.time.text,endDatetime.time.text);
+				if (result != -1){
+					DataManager.showErrorMessage("开始时间不能大于或等于结束时间");
+					return ;
+				}
+				
+				body.recfileRetList.showTips(true,"正在查询,请稍候...");
+				body.showRadioMark(false);
+				
+				var obj:Object = new Object;
+				obj.userId = DataManager.user.userId;
+				obj.headCode = headend.selectedItem.code;
+				obj.resultType = "1";//所查询的文件类型,1:录音文件,目前只有录音文件
+				obj.startDatetime = startDatetime.time.text;
+				obj.endDatetime = endDatetime.time.text;
+				obj.requestTaskId = taskId.text == ""?"":taskId.text;
+				
+				//obj.freq = (freqList.selectedItem == "全部" || freqList.selectedItem == null)?"":freqList.selectedItem;
+				obj.freq=freq.text;
+				obj.band = bandList.selectedItem.value;
+				obj.priority = DataManager.user.priority;
+				
+				body.recfileRetList.pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.online.dataretrieve.RecFileRetrieve","msgFileQueryCmd",obj,msgFileQueryCmdBack,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id));
+			}
+			
+			private function msgFileQueryCmdBack(arr:ArrayCollection):void{
+				queryFiles.removeAll();
+				queryFiles = arr;
+				if (arr.length>0){
+					getFileBtn.visible = true;
+					getFileBtn.includeInLayout = true
+				}
+				body.recfileRetList.msgFileQueryCmdBack(arr);
+			}
+			//录音文件重新上传命令下发
+			private function streamRecoveryReportCmd():void{
+				
+				if (headend.selectedItem == undefined || headend.selectedItem.shortname == "全部"){
+					DataManager.showErrorMessage("请先选择要操作的站点");
+					return ;
+				}
+				
+				//校验时间
+				var result:Number = DateUtil.compareDateStr(startDatetime.time.text,endDatetime.time.text);
+				if (result != -1){
+					DataManager.showErrorMessage("开始时间不能大于或等于结束时间");
+					return ;
+				}
+				
+				body.recfileRetList.showTips(true,"正在下发命令,请稍候...");
+				body.showRadioMark(false);
+				
+				var obj:Object = new Object;
+				obj.userId = DataManager.user.userId;
+				obj.headCode = headend.selectedItem.code;
+				obj.startDatetime = startDatetime.time.text;
+				obj.endDatetime = endDatetime.time.text;
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.online.dataretrieve.RecFileRetrieve","streamFileReReport",obj,streamFileReReportBack,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id);
+				RPCManager.sendCmd(request);
+			}
+			private function streamFileReReportBack(retStr:String):void{	
+				body.recfileRetList.showTips(false);
+				Alert.show(retStr);
+			}
+			/**
+			 * 录音文件回收
+			 */ 
+			private function msgFileRetrieveCmd():void{
+				var obj:Object = new Object;
+				if (headend.selectedItem == undefined || headend.selectedItem.shortname == "全部"){
+					DataManager.showErrorMessage("请先选择要获取文件的站点");
+					return ;
+				}
+				body.recfileRetList.showTips(true,"正在获取,请稍候...");
+				body.showRadioMark(true);
+				obj.userId = DataManager.user.userId;
+				obj.headCode = headend.selectedItem.code;
+				
+				var files:ArrayCollection = body.recfileRetList.getSelectedRecFileList();
+				obj.fileList = files;
+				body.recfileRetList.pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.online.dataretrieve.RecFileRetrieve","msgFileRetrieveCmd",obj,msgFileRetrieveCmdBack,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id));
+			}
+			
+			private function msgFileRetrieveCmdBack(arr:ArrayCollection):void{
+				body.recfileRetList.msgFileRetrieveCmdBack(arr);
+			}
+		]]>
+	</fx:Script>
+	
+	<s:HGroup width="100%" height="25" verticalAlign="middle">
+		<s:Label text="站点:"/><global:HeadendList id="headend" />
+		<s:Spacer width="2"/>
+		<s:Label text="频率:"/><utils:RegExpTextInput id="freq" width="65" regex="/^[0-9]\d*$/" /> 
+		<!--s:Label text="频率:"/><s:DropDownList id="freqList" width="75" labelField="freq"  requireSelection="true" selectedIndex="0" dataProvider="{freqArray}"/-->
+		
+		<s:Spacer width="2"/>
+		<s:Label text="波段:"/><s:DropDownList id="bandList" width="75" labelField="name" requireSelection="true" selectedIndex="0" dataProvider="{bandArray}"/>
+		<s:Spacer width="2"/>
+		<s:Label text="任务ID:"/><utils:RegExpTextInput id="taskId" width="65" regex="/^[0-9]\d*$/" /> 
+		<s:Spacer width="2"/>
+		<s:Label text="开始时间:"/><timecomp:DateEditor id="startDatetime" starttime="00:00:00"/>
+		<s:Spacer width="2"/>
+		<s:Label text="结束时间:"/><timecomp:DateEditor id="endDatetime"/>
+		<s:Spacer width="2"/>
+		<s:Button buttonMode="true" label="查询" click="msgFileQueryCmd()"/>
+		<s:Button buttonMode="true" label="站点录音文件重新上传" click="streamRecoveryReportCmd()"/>
+		<s:Button buttonMode="true" label="获取选中文件" click="msgFileRetrieveCmd()" id="getFileBtn" visible="false" includeInLayout="false"/>
+	</s:HGroup>
+	
+</s:HGroup>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="400" height="300"
+		 horizontalAlign="center" verticalAlign="middle" implements="com.morcha4.customization.interfaces.IConfigPan"
+		 focusIn="IME.enabled = true;">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.customization.CustomizationManager;
+			import com.morcha4.frame.system.AdvancedEvent;
+			[Bindable] private var l:String;
+			private var _config:XML;
+			public function set config(value:XML):void{
+//				if(value.input.length()!=0){
+//					l=value.input[0];
+//				}
+				l=value.@color;
+				_config=value;
+			}
+			public function get config():XML{
+//				if(_config.input.length()==0){
+//					_config.appendChild(new XML("<input>"+t.text+"</input>"));
+//				}else{
+//					_config.input[0]=t.text;
+//				}
+				_config.@color=t.text
+				return _config;
+			}
+		]]>
+	</fx:Script>
+	<s:TextInput prompt="请输入颜色值" text="{l}" id="t"/>
+	<s:HGroup>
+		<s:Button buttonMode="true" label="确定" click="dispatchEvent(new AdvancedEvent(CustomizationManager.CONFIG_COMPLETED,false,false,true))"/>
+		<s:Button buttonMode="true" label="取消" click="dispatchEvent(new AdvancedEvent(CustomizationManager.CONFIG_COMPLETED,false,false,false))"/>
+	</s:HGroup>
+</s:VGroup>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark"  creationComplete="init(event)"
+			   xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="955" minHeight="600" xmlns:spectrum="com.viewscenes.lib.atom.spectrum.*" xmlns:timecomp="com.viewscenes.utils.timecomp.*" xmlns:spectrum1="com.viewscenes.lib.module.spectrum.*" xmlns:quality="com.viewscenes.lib.atom.quality.*" xmlns:local="*" xmlns:playBar="com.viewscenes.lib.atom.player.playBar.*"
+			   >
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 
+		
+		-->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.editor.ComboBoxEditor;
+			import com.morcha4.editor.EditorManager;
+			import com.morcha4.editor.TextEditor;
+			import com.morcha4.util.RendererUtil;
+			
+			import flash.utils.setTimeout;
+			
+			import mx.controls.Alert;
+			import mx.controls.listClasses.ListBase;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.TextInput;
+			import spark.events.GridItemEditorEvent;
+			
+			protected function init(event:FlexEvent):void
+			{
+				var obj:Object = new Object();
+				if(!obj){
+					Alert.show("test");
+				} else{
+					Alert.show("test111");
+				}
+				return;
+				if(!obj.book){
+					Alert.show("mybook"+obj.book+"mybook");
+				} else{
+					Alert.show(obj.book+"==");
+				}
+				// TODO Auto-generated method stub
+//				pb.status="play";
+//				pb.time_total=100000;
+			}
+			private function onEditStart(event:GridItemEditorEvent){
+				var dataField:String=EditorManager.getRelatedField(event);
+				var data:Object=EditorManager.getRelatedData(event);
+				if(data["a"]=="b"){
+					event.preventDefault();
+					return;
+				}
+				switch(dataField){
+					case "a":{
+						ComboBoxEditor.dataProvider=new ArrayList([{a:"asd",b:"abs"},{a:"asdf",b:"bbs"}])
+//						setTimeout(function(){ComboBoxEditor.dataProvider=new ArrayList([{a:"asd",b:"abs"},{a:"asdf",b:"bbs"}])},3000)
+						break;
+					}
+				}
+			}
+			private function onEditEnd(event:GridItemEditorEvent){
+				var dataField:String=EditorManager.getRelatedField(event);
+				var data:Object=EditorManager.getRelatedData(event);
+				switch(dataField){
+					case "a":{
+						data["b"]=data["a"];
+						break;
+					}
+				}
+			}
+			
+			protected function test(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				for(var i:int=0;i<dg.dataProvider.length;i++){
+					trace(dg.dataProvider.getItemAt(i).isEdited+"=="+dg.dataProvider.getItemAt(i).t+"=="+dg.dataProvider.getItemAt(i).a);
+				}
+			}
+		]]>
+	</fx:Script>
+	<!--
+	<spectrum:SpectrumDrawing x="100" y="200" width="600" height="300"/>
+	
+	<quality:QualityDrawing  x="100" y="200"  width="600" height="300"/>
+	
+	
+	
+	<s:DropDownList x="400" y="100"  dataProvider="{new ArrayList(['aa','bbbb','中国王晓斌王晓斌王晓斌','bbbb','bbbb','bbbb','bbbb','bbbb','bbbb','bbbb','bbbb'])}"/>
+	<s:ComboBox x="400" y="130" width="112" requireSelection="true" dataProvider="{new ArrayList(['aa','bbbb','中国王晓斌王晓斌王晓斌','bbbb','bbbb','bbbb','bbbb','bbbb','bbbb','bbbb','bbbb'])}"/>
+	<playBar:playBar mode="record" id="pb" y="100" click="PopUpManager.createPopUp(this,TitleWindow,true,null,this.moduleFactory)"/>
+	<s:TextInput y="400" />
+	<s:TabBar dataProvider="{new ArrayList(['aaaa','bbbb','vvcvv'])}"/>
+	-->
+	<s:TitleWindow styleName="map" id="pan" x="400" y="400" width="400" height="300">
+	</s:TitleWindow>
+	<mx:HBox width="100%" height="200" x="0" y="0">
+		
+	<s:DataGrid dataProvider="{new ArrayList([{a:'asdf'},{a:'b'},{t:'2010-03-12 14:32:56'}])}" id="dg" editable="true" width="100%" height="300" x="400" y="130"
+				gridItemEditorSessionSave="onEditEnd(event);"
+				gridItemEditorSessionStarting="onEditStart(event)">
+		<s:columns>
+			<s:ArrayList>
+				<s:GridColumn itemEditor="com.morcha4.editor.ComboBoxEditor" width="100" dataField="a"
+							  />
+				<s:GridColumn dataField="b"/>
+				<s:GridColumn itemEditor="com.viewscenes.utils.timecomp.DateEditor" width="200" dataField="t"/>
+			</s:ArrayList>
+		</s:columns>
+	</s:DataGrid>
+	<s:Button buttonMode="true" label="test" click="test(event)" x="100" y="10"/>
+		
+	</mx:HBox>
+	<s:HGroup width="100%"  x="0" y="300"  >
+		<s:BitmapImage source="com/viewscenes/images/default/global1/banner_bg.png" fillMode="clip" />
+	</s:HGroup>
+</s:Application>

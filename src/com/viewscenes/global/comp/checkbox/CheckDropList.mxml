@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--下拉多选框-->
+<mx:VBox xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"  height="24"
+		 creationComplete="init()">
+	<fx:Declarations>
+		<mx:WipeDown id="downwipe"  duration="500"/>
+		<mx:WipeUp id="upwipe" />
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import flash.utils.setInterval;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			[Bindable]
+			public var _dataProvider:ArrayCollection=new ArrayCollection;  
+			private var mylist:List;
+			private var flag:Boolean;
+			public var filedLabel:String ="label";
+			
+			protected function init():void
+			{
+				mylist = this.removeChild(list) as List;
+				
+				list_changeHandler();
+			}
+			
+			public function set dataProvider(arr:ArrayCollection):void{
+				
+				var item:Object = new Object();
+				item.selected = false;
+				item.value = "all";
+				item.label = "全部";
+				arr.addItemAt(item,0);
+				_dataProvider = arr;
+				list.dataProvider = _dataProvider;
+			}
+			protected function doClick():void
+			{
+				if(flag){
+					PopUpManager.removePopUp(list);
+					flag = false;
+				}else{
+					list.dataProvider = _dataProvider;
+					PopUpManager.addPopUp(mylist,this.parent);
+					var point:Point = this.localToGlobal(new Point(0,this.height-1));
+					flag = true;
+					mylist.move(point.x,point.y);
+				}     
+			}
+			protected function doFoucsOut():void
+			{
+				if(flag){
+					PopUpManager.removePopUp(list);
+					flag = false;
+				}   
+			}
+			private var len:int;
+			protected function list_changeHandler():void
+			{
+				
+				
+				var arr:Array = selectItems;
+				if(arr.length != len){
+					len =  arr.length;
+					var str:String ="";
+					for each(var obj:Object in arr){
+						str += obj[filedLabel]+",";
+					}
+					if(str!=""){
+						str = str.substr(0,str.length-1);
+					}
+					myText.text = str;
+					myText.toolTip = str;
+				}            
+			}
+			
+			public function get selectItems():Array{
+				var arr:Array =[];
+				for(var i:int = 1;i<_dataProvider.length; i++){
+					var obj:Object = _dataProvider.getItemAt(i);
+					if(obj.selected){
+						arr.push(obj);
+					}
+				}
+				return arr;    
+			}
+			
+			public function getText(type:String):String{
+				var res:String = "";
+				for(var i:int = 1;i<_dataProvider.length; i++){
+					var obj:Object = _dataProvider.getItemAt(i);
+					if(obj.selected){
+						res += obj[type]+",";
+					}
+				}
+				if(res!=""){
+					res = res.substr(0,res.length-1);
+				} else{
+					res = myText.text;
+				}
+				return res;
+			}
+			
+			public function setText(str:String,type:String):void{
+				var res:String = "";
+				var strArr:Array = str.split(",");
+				var num:int = 0;
+				for(var i:int = 1;i<_dataProvider.length; i++){
+					var obj:Object = _dataProvider.getItemAt(i);
+					obj.selected = false;
+					for(var j:int = 0;j<strArr.length; j++){
+						if(obj[type] == strArr[j]){
+							res += obj[type]+",";
+							obj.selected = true;
+							_dataProvider.setItemAt(obj,i);
+							num++;
+							break;
+						}
+					}
+				}
+				//				mx.controls.Alert.show(num+"");
+				if(num == _dataProvider.length-1){
+					var ite:Object = _dataProvider.getItemAt(0);
+					ite.selected = true;
+					_dataProvider.setItemAt(ite,0);
+				} else {
+					var ite:Object = _dataProvider.getItemAt(0);
+					ite.selected = false;
+					_dataProvider.setItemAt(ite,0);
+				}
+				if(res!=""){
+					res = res.substr(0,res.length-1);
+				}
+				//myText.text=res;
+				list_changeHandler();
+			}
+			
+			private function changeInput():void{
+				var temp_dataProvider:ArrayCollection=new ArrayCollection;
+				var inputVal:String = myText.text;
+				if(inputVal == ""){
+					for(var i=0;i<_dataProvider.length;i++){
+						_dataProvider[i].selected = false;
+					}
+					list.dataProvider = _dataProvider;
+				} else{
+					for(var i=0;i<_dataProvider.length;i++){
+						_dataProvider[i].selected = false;
+						if(_dataProvider[i].label.indexOf(inputVal)>-1){
+							temp_dataProvider.addItem(_dataProvider[i]);
+						}
+					}
+					if(temp_dataProvider.length == 1){
+						temp_dataProvider.getItemAt(0).selected = true;
+					}
+					list.dataProvider = temp_dataProvider;
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<mx:HBox horizontalGap="0" horizontalScrollPolicy="off" width="100%">
+		<s:TextInput id="myText"  width="100%" click="doClick()" focusOut="doFoucsOut()" change="changeInput()"/>
+		<!--s:Button label="按钮" click="doClick()"  height="23"/-->
+	</mx:HBox>        
+	<mx:List id="list" itemRenderer="com.viewscenes.global.comp.checkbox.CheckBoxItemRenderer" 
+			 dataProvider="{_dataProvider}" 
+			 allowMultipleSelection="true"
+			 width="{this.width}"
+			 borderStyle="inset"
+			 change="list_changeHandler()"
+			 color="0x000000"
+			 >
+		
+	</mx:List>    
+	<!--mx:List id="list" itemRenderer="com.viewscenes.global.comp.checkbox.CheckBoxItemRenderer" 
+	dataProvider="{_dataProvider}" 
+	allowMultipleSelection="true"
+	showEffect="{downwipe}" 
+	removedEffect="{upwipe}"
+	width="{this.width}"
+	borderStyle="inset"
+	change="list_changeHandler()" >
+	
+	</mx:List--> 
+</mx:VBox>

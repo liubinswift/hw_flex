@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 PAGE_SHOW="checkInfo(event)"
+				 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:system="com.morcha4.frame.system.*" width="100%" height="100%">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.viewscenes.global.DataManager;
+			[Bindable] 
+			private var info:ArrayCollection = new ArrayCollection();
+			private function checkInfo(event:Event):void{
+				info.removeAll();
+				clew_label.visible=true;
+				clew_label.includeInLayout=true;
+				clew_label.text="正在生成,请稍候......";
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","checkInfo",null,checkInfoBack,DataManager.showErrorMessageBack));
+			}
+            private function checkInfoBack(arr:ArrayCollection):void{
+				if(arr.length>0){
+					clew_label.visible=false;
+					clew_label.includeInLayout=false;
+					info=arr;
+				}else{
+					clew_label.text="没有相关查询数据!";
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<mx:Canvas  width="100%" height="100%">
+	<s:DataGrid width="100%" height="100%" dataProvider="{info}" id="grid" showDataTips="true" textAlign="center">
+		<s:columns>
+			<s:ArrayCollection>
+				<s:GridColumn dataField="id" headerText="节点ID"/>
+				<s:GridColumn dataField="ip" headerText="节点IP"/>
+				<s:GridColumn dataField="work_port" headerText="节点工作端口"/>
+				<s:GridColumn dataField="manage_port" headerText="节点管理端口"/>
+				<s:GridColumn dataField="status" headerText="节点工作状态"/>
+				<s:GridColumn dataField="update_time" headerText="更新时间"/>
+				<s:GridColumn dataField="cpu_performance" headerText="CPU工作状态"/>
+				<s:GridColumn dataField="memory_all" headerText="内存总额"/>
+				<s:GridColumn dataField="memory_used" headerText="内存占用额"/>
+			</s:ArrayCollection>
+		</s:columns>
+	</s:DataGrid>
+	<s:Label text="正在查询，请稍候..."  color="0x000000" id="clew_label" y="{grid.columnHeaderGroup.height+10}" width="100%" textAlign="center" visible="false" includeInLayout="false"/>
+	</mx:Canvas>	
+</system:BasePage>

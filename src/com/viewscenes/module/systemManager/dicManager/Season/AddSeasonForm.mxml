@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" close="close(event);"
+			   xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+			   creationComplete="init();" 
+			   xmlns:timecomp="com.viewscenes.utils.timecomp.*"
+			   xmlns:ip="com.viewscenes.utils.tools.*"
+			   mouseDown="startDrag()"
+			   title="添加季节信息"
+			   mouseUp="stopDrag();">
+	<s:layout>
+		<s:FormItemLayout/>
+	</s:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.viewscenes.beans.ZdicSeasonBean;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.comp.MM;
+			import com.viewscenes.utils.timecomp.DateUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.managers.PopUpManager;
+			[Bindable]
+			private var lineArray:ArrayCollection = new ArrayCollection([{label:"当前",code:"0"},{label:"不当前",code:"1"}]);
+			//语言
+			[Bindable]
+			private var lanaguageArr:ArrayCollection = new ArrayCollection;
+			
+			//国家
+			[Bindable]
+			private var countryArr:ArrayCollection = new ArrayCollection;
+			[Bindable]
+			private var SeasonObj:Object = {
+				"code":"",
+				"start_time":DateUtil.date2str(new Date),
+					"end_time":DateUtil.date2str(new Date),
+					"is_now":"0"};
+			private function init():void{
+				
+			}
+			
+			public function setSeason(obj:Object):void{
+				SeasonObj = obj;
+				
+			}
+			
+			private function AddSeason():void{
+				var bean:ZdicSeasonBean = new ZdicSeasonBean();
+				if(SeasonObj.code==""){
+				  MM.show("请输入季节代号！");
+				  return;
+				}
+				if(SeasonObj.code.length>4){
+					MM.show("季节代号不能超过4位");
+					return;
+				}
+				if(SeasonObj.start_time>SeasonObj.end_time){
+					MM.show("开始时间不能晚于结束时间");
+						return;
+				}
+				bean.code=code.text.toLocaleUpperCase();
+				bean.start_time=start_time.text;
+				bean.end_time =end_time.text;
+				bean.is_now=is_now.selectedItem.code;
+		    
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.dicManager.SeasonTab","AddSeasonIs",bean,_updateSeason,_updateSeason));
+			}
+			
+			public function _updateSeason(arr:ArrayCollection):void{
+				
+				if (arr.length>0){
+					MM.show(RPCException(arr[0]).message);
+				}else{
+					MM.show("添加季节信息成功！");
+					this.dispatchEvent(new Event("Season_list_refresh"));
+					close(null);
+				}
+				
+			}
+			
+			private function close(e:Event):void{
+				
+				PopUpManager.removePopUp(this);
+				
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:HGroup width="100%"  horizontalAlign="right" verticalAlign="middle">
+		<s:VGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle">
+			<s:Form>
+				
+				<s:FormItem label="CODE" height="20">
+					<s:TextInput id="code"  restrict="A-Z\0-9" maxChars="20" change="{SeasonObj.code=code.text}"/><s:Label text="*" color="0xff0000"/>
+				</s:FormItem>
+				
+				
+				<s:FormItem label="开始时间"  height="20">
+					<timecomp:TimeNew id="start_time" starttime="00:00:00" TimeNewChanged="{SeasonObj.start_time=start_time.text}"/>
+				</s:FormItem>
+				<s:FormItem label="结束时间"  height="20">
+					<timecomp:TimeNew id="end_time" starttime="00:00:00" TimeNewChanged="{SeasonObj.end_time=end_time.text}"/>
+				</s:FormItem>
+				
+				<s:FormItem label="在线是否" height="20">
+					
+					<s:ComboBox id="is_now" dataProvider="{lineArray}" selectedIndex="0" change="{SeasonObj.is_now=is_now.selectedItem.code}"/>
+				</s:FormItem>
+				
+			</s:Form>
+			<s:FormItem width="216"  height="30">
+				<s:layout>
+					<s:HorizontalLayout/>
+				</s:layout>
+				<s:Button buttonMode="true" label="添加" click="AddSeason();"/>
+				<s:Button buttonMode="true" label="关闭" click="close(event)"/>
+			</s:FormItem>
+		</s:VGroup>
+	</s:HGroup> 
+	
+</s:TitleWindow>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:mx="library://ns.adobe.com/flex/mx" 
+				 xmlns:system="com.morcha4.frame.system.*" 
+				 PAGE_CLOSE="basepage1_PAGE_CLOSEHandler(event)"
+				 PAGE_SHOW="setCode(event)"
+				 width="100%" height="100%" xmlns:record="com.viewscenes.module.onlineBusiness.dataCallback.record.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.viewscenes.global.DataManager;
+			
+			import mx.collections.ArrayCollection;
+			/**
+			 * 关闭页面时，关闭播放器
+			 */ 
+			protected function basepage1_PAGE_CLOSEHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				body.radioMark.player.stop();
+			}
+			private function setCode(event:Event):void{
+				if(DataManager.code!=""){
+					this.header.headend.selectedIndex = 1;
+					
+					for(var i:int=0;i<(this.header.headend.dataProvider as ArrayCollection).length;i++){
+						if(DataManager.code==(this.header.headend.dataProvider as ArrayCollection)[i].code){
+							this.header.headend.selectedIndex=i;
+						}
+					}
+				}
+				
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:VGroup width="100%" height="100%">
+		<!--recplay:Header id="header" body="{body}" width="100%" height="40" paddingTop="20" paddingLeft="15" />
+		<recplay:MonitorRecPlayBody id="body" width="100%" height="100%" paddingLeft="5"/-->
+		
+		
+		<record:RecFileRetrieveHeader id="header" body="{body}" width="100%" height="40" paddingTop="20" paddingLeft="15" paddingRight="15" />
+		<record:RecFileRetrieveBody  id="body" width="100%" height="100%" paddingLeft="5"/>
+		
+	</s:VGroup>
+</system:BasePage>

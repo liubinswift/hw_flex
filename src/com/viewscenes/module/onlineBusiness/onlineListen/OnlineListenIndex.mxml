@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:mx="library://ns.adobe.com/flex/mx" 
+				 xmlns:system="com.morcha4.frame.system.*" 
+				 width="100%" height="100%" 
+				 creationComplete="init()"
+				 PAGE_SHOW="setCode(event)"
+				 PAGE_CLOSE="basepage1_PAGE_CLOSEHandler(event)"
+				 xmlns:onlineListen="com.viewscenes.module.onlineBusiness.onlineListen.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.frame.nav.NavManager;
+			import com.morcha4.frame.nav.NavParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.morcha4.frame.system.EventBus;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.EventDeclare;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			
+			import spark.events.IndexChangeEvent;
+			private function init():void{
+				EventBus.addEventListener(EventDeclare.SHOW_MENU_2,basepage1_PAGE_CLOSEHandler);
+				
+			}
+			
+			private function setCode(event:Event):void{
+				if(DataManager.code!=""){
+					vs.selectedIndex = 1;
+					mediaplayer.showHeadendOption(true);
+					for(var i:int=0;i<(mediaplayer.headend.dataProvider as ArrayCollection).length;i++){
+						if(DataManager.code==(mediaplayer.headend.dataProvider as ArrayCollection)[i].code){
+							mediaplayer.headend.selectedIndex=i;
+						}
+					}
+				}
+		
+			}
+			
+			private function itemClick(event:IndexChangeEvent):void{
+				if (event.target.selectedItem.id == "runplanContent"){
+					vs.selectedIndex = 0;
+					mediaplayer.showHeadendOption(false);
+				}else{
+					vs.selectedIndex = 1;
+					
+					mediaplayer.showHeadendOption(true);
+				}
+			}
+			
+			/**
+			 * 关闭页面时，关闭播放器
+			 */ 
+			protected function basepage1_PAGE_CLOSEHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				mediaplayer.player.stop();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:HGroup width="100%" height="100%">
+		
+		<s:VGroup  width="70%" height="100%" >
+			
+			
+			<s:TabBar dataProvider="{vs}" change="itemClick(event)"/> 
+			
+			<mx:ViewStack id="vs" width="100%" height="100%" creationPolicy="all">
+				<s:NavigatorContent id="runplanContent" label="运行图"> 
+					<onlineListen:Runplan id="runplan"  myParent="{this}" width="100%" height="100%"/>
+				</s:NavigatorContent> 
+				<s:NavigatorContent id="ituContent" label="国际电联频率表"> 
+					<onlineListen:ITUFreqList id="itu" myParent="{this}" width="100%" height="100%"/>
+				</s:NavigatorContent>
+			</mx:ViewStack>
+			
+			
+			
+			<mx:HRule strokeWidth="1" strokeColor="#a0a0a0" shadowColor="#000000" width="100%" />
+			<onlineListen:MediaPlayer id="mediaplayer" myParent="{this}" width="100%" height="100%"/>
+			<mx:HRule strokeWidth="1" strokeColor="#a0a0a0" shadowColor="#000000" width="100%" />
+			<onlineListen:Mark id="mark" myParent="{this}" width="100%" height="100%"/>
+			
+			
+		</s:VGroup>
+		<s:HGroup  width="30%" height="100%">
+			
+			<onlineListen:Quality id="quality" myParent="{this}" width="100%" height="100%"/>
+		</s:HGroup>
+		
+	</s:HGroup>
+	
+</system:BasePage>

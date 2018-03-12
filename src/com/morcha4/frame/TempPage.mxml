@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+		 preinitialize="init()" xmlns:system="com.viewscenes.system.*"-->
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" useSkin="false"
+				 preinitialize="init()" xmlns:system="com.morcha4.frame.system.*" backgroundColor1="0xcccccc" backgroundColor2="0x333333"
+				 PAGE_SHOW="onShow(event)" PAGE_CLOSE="onClose(event)">
+
+	<system:layout>
+		<s:VerticalLayout horizontalAlign="center" verticalAlign="middle"/>
+	</system:layout>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.morcha4.frame.system.ProgressEvent;
+			
+			import mx.controls.Alert;
+			public var currPath:String;
+			public var currUrl:String;
+			public var currLabel:String;
+			[Bindable]private var _text:String="";
+			private static var _instance:TempPage;
+			public static function getInstance():TempPage{
+				if(!_instance){
+					_instance=new TempPage();
+				}
+				return _instance;
+			}
+			private function init():void{
+				this.addEventListener(com.morcha4.frame.system.ProgressEvent.PROGRESS_ERROR,onFail);
+				this.addEventListener(com.morcha4.frame.system.ProgressEvent.PROGRESS_COME,onPro);
+				this.addEventListener(com.morcha4.frame.system.ProgressEvent.PROGRESS_READY,onReady);
+			}
+			/**
+			 * 若为等待代理则需调用此方法，若为等待初始化则不需要
+			 */ 
+			private var transParam:Object;
+			public function initPage(path:String,url:String,param:Object,label:String):void{
+				if(currPath){
+					newParam={"path":path,"url":url,"param":param,"label":label};
+					return;
+				}
+				if(this.currPath&&PageProxyManager.getInstance().hasProxy(this.currPath)){
+					PageProxyManager.getInstance().activateProxy(this.currPath,null,false);
+				}
+				_text="正在加载资源...\nurl:["+url+"]";
+				this.currPath=path;
+				this.currUrl=url;
+				this.currLabel=label;
+				transParam=param;
+			}
+			private var newParam:Object;
+			
+			private function onShow(e:Event):void{
+				if(newParam){
+					initPage(newParam.path,newParam.url,newParam.param,newParam.label);
+					newParam=null;
+				}
+				if(currPath){
+					PageProxyManager.getInstance().activateProxy(this.currPath,this,true);
+				}else{//throw new Error();
+					_text="正在初始化...";
+				}
+			}
+			private function onClose(e:Event):void{
+				if(this.currPath&&PageProxyManager.getInstance().hasProxy(this.currPath)){
+					PageProxyManager.getInstance().activateProxy(this.currPath,null,false);
+				}
+				this.currPath=null;
+				this.currUrl=null;
+				_text="";
+				retryBtn.visible=false;
+			}
+			private function onFail(e:com.morcha4.frame.system.ProgressEvent):void{
+				_text="路径为【"+currUrl+"】的资源加载失败.\n";
+				retryBtn.visible=true;
+			}
+			private function onReady(e:com.morcha4.frame.system.ProgressEvent):void{
+				_text="资源加载成功.";
+				retryBtn.visible=false;
+				PageTransformManager.getInstance().dispatchEvent(new AdvancedEvent(PageTransformManager.TRANSFORM_PAGE
+				,false,false,transParam));
+			}
+			private function onPro(e:com.morcha4.frame.system.ProgressEvent):void{
+				_text="加载"+currLabel+"                    "+parseInt(e.loaded/e.total*100+"")+"%";
+				retryBtn.visible=false;
+			}
+			private function onRetry():void{
+				_text="正在加载资源...";
+				retryBtn.visible=false;
+				PageProxyManager.getInstance().getProxy(currPath).reload();
+			}
+		]]>
+	</fx:Script>
+	<s:Label id="ll" text="{_text}" backgroundColor="0xcccccc"/>
+	<s:Button buttonMode="true" id="retryBtn" label="重试" click="onRetry()" visible="false"/>
+	
+</system:BasePage>
+<!--/s:Group-->

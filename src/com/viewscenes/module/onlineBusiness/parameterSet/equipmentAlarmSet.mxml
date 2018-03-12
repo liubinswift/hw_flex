@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:mx="library://ns.adobe.com/flex/mx" 
+				 xmlns:system="com.morcha4.frame.system.*" 
+				 xmlns:global="com.viewscenes.global.*"
+				 PAGE_SHOW="setCode(event)"
+				 xmlns:contaners="com.morcha4.ui.contaners.*" 
+				 width="100%" height="100%">
+	<system:layout>
+		<s:VerticalLayout gap="0"  horizontalAlign="center"  />
+	</system:layout>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		s|Panel {
+			chrome-color: #e9d3d5;
+			border-alpha: 0.4;
+			background-alpha: 0.4;
+			background-color: #cbdccb;
+		}
+	</fx:Style>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.viewscenes.global.DataManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			
+			import spark.events.IndexChangeEvent;
+			[Bindable]
+			private var listResume:ArrayCollection =new ArrayCollection([
+				{label:"全部",value:"all"},
+				{label:"采集点",value:"101"},
+				{label:"遥控站 ",value:"102"}]);	
+			private function setCode(event:Event):void{
+				if(DataManager.code!=""){
+					station.selectedIndex = 1;
+					
+					for(var i:int=0;i<(station.dataProvider as ArrayCollection).length;i++){
+						if(DataManager.code==(station.dataProvider as ArrayCollection)[i].code){
+							station.selectedIndex=i;
+						}
+					}
+				}
+				
+			}
+			private function setParameter():void{
+				if(!this.checkValue())
+					return;
+				//setButton.enabled=false;
+				var obj:Object = new Object();
+				obj.user_id ="10042" //DataManager.user.userId;
+				obj.priority = "5"//DataManager.user.priority;
+				obj.code = this.station.selectedItem.code;   //站点代码
+				obj.head_id = this.station.selectedItem.head_id;  //站点id
+				obj.type_id = this.station.selectedItem.type_id; //站点类型  101:采集点 102:遥控站
+				obj.AbnormityLength1Gd = this.AbnormityLength1Gd.text; //供电异常持续时间
+				obj.InputLineLevelDownThreshold1Gd = this.InputLineLevelDownThreshold1Gd.text;//外电电压下限
+				obj.InputLineLevelUpThreshold1Gd = this.InputLineLevelUpThreshold1Gd.text;  //外电电压上限
+				obj.AbnormityLength2Jsh = this.AbnormityLength2Jsh.text;    //接收机异常持续时间
+				obj.AbnormityLength3Tzh = this.AbnormityLength3Tzh.text;    //调制度卡异常持续时间
+				obj.AbnormityLength4Tf = this.AbnormityLength4Tf.text;   //调幅度卡异常持续时间
+				obj.AbnormityLength5Yy = this.AbnormityLength5Yy.text;   //语音压缩卡异常持续时间
+				obj.AbnormityLength6Pp = this.AbnormityLength6Pp.text;   //频偏卡异常持续时间
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.parameterSet.EquAlarmParameterSet","EquipmentAlarmParamSet",obj,processSetParameter,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id));
+			}
+			
+			private function processSetParameter(res:String):void{
+				//setButton.enabled=true;
+				DataManager.showErrorMessage(res);
+			}
+			private function checkValue():Boolean{
+				if(this.AbnormityLength1Gd.text == ""){
+					Alert.show("供电异常持续时间不能为空!");
+					return false;
+				}
+				if(this.InputLineLevelDownThreshold1Gd.text == ""){
+					Alert.show("外电电压下限不能为空!");
+					return false;
+				}
+				if(this.InputLineLevelUpThreshold1Gd.text == ""){
+					Alert.show("外电电压上限不能为空!");
+					return false;
+				}
+				if(this.AbnormityLength2Jsh.text == ""){
+					Alert.show("接收机异常持续时间不能为空!");
+					return false;
+				}
+				if(this.AbnormityLength3Tzh.text == ""){
+					Alert.show("调制度卡异常持续时间不能为空!");
+					return false;
+				}
+				if(this.AbnormityLength4Tf.text == ""){
+					Alert.show("调幅度卡异常持续时间不能为空!");
+					return false;
+				}
+				if(this.AbnormityLength5Yy.text == ""){
+					Alert.show("语音压缩卡异常持续时间不能为空!");
+					return false;
+				}
+				if(this.AbnormityLength6Pp.text == ""){
+					Alert.show("频偏卡异常持续时间不能为空!");
+					return false;
+				}
+				return true;
+			}
+			
+			protected function otype_changeHandler(s:String):void
+			{
+				// TODO Auto-generated method stub
+				station.setDataProvider("type_id##"+s);
+			}
+			
+			protected function station_changeHandler(head_id:String):void
+			{
+				// TODO Auto-generated method stub
+//				var obj:Object = new Object();
+//				obj.head_id = head_id;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.parameterSet.EquAlarmParameterSet","getParamByHeadID",head_id,processQueryParam,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id));
+				
+			}
+			
+			private function processQueryParam(obj:Object):void{
+				this.clearParam();
+				if(obj.param_id==null){
+					Alert.show("站点"+this.station.selectedItem.code+"没有进行初始化参数值设置!");
+				}else{
+			      this.AbnormityLength1Gd.text = obj.ABNORMITYLENGTH1GD;
+				  this.InputLineLevelDownThreshold1Gd.text = obj.INPUTLINELEVELDOWNTHRESHOLD1GD;
+				  this.InputLineLevelUpThreshold1Gd.text = obj.INPUTLINELEVELUPTHRESHOLD1GD;
+				  this.AbnormityLength2Jsh.text = obj.ABNORMITYLENGTH2JSH;
+				  this.AbnormityLength3Tzh.text = obj.ABNORMITYLENGTH3TZH;
+				  this.AbnormityLength4Tf.text = obj.ABNORMITYLENGTH4TF;
+				  this.AbnormityLength5Yy.text = obj.ABNORMITYLENGTH5YY;
+				  this.AbnormityLength6Pp.text = obj.ABNORMITYLENGTH6PP;
+				}
+			}
+			
+			private function clearParam():void{
+				this.AbnormityLength1Gd.text = "";
+				this.InputLineLevelDownThreshold1Gd.text = "";
+				this.InputLineLevelUpThreshold1Gd.text ="";
+				this.AbnormityLength2Jsh.text = "";
+				this.AbnormityLength3Tzh.text = "";
+				this.AbnormityLength4Tf.text = "";
+				this.AbnormityLength5Yy.text = "";
+				this.AbnormityLength6Pp.text = "";
+			}
+			
+			private function setDefaultParameter():void{
+				this.AbnormityLength1Gd.text = "60";
+				this.InputLineLevelDownThreshold1Gd.text = "180";
+				this.InputLineLevelUpThreshold1Gd.text ="250";
+				this.AbnormityLength2Jsh.text = "60";
+				this.AbnormityLength3Tzh.text = "60";
+				this.AbnormityLength4Tf.text = "60";
+				this.AbnormityLength5Yy.text = "60";
+				this.AbnormityLength6Pp.text = "60";
+			}
+			
+		]]>
+	</fx:Script>
+	<s:VGroup width="100%" height="100%" gap="10">
+		
+	
+	<s:VGroup  width="100%" height="50" paddingTop="10">
+		<s:HGroup width="100%"  horizontalAlign="center" verticalAlign="middle">
+			<s:Label text="站点类型："/>
+			<s:ComboBox width="100" id="otype" height="30" change="otype_changeHandler(this.otype.selectedItem.value)" selectedIndex="0"  dataProvider="{listResume}" />
+			<s:Label text="站点名称:"/>
+			<global:HeadendList id="station" change="station_changeHandler(this.station.selectedItem.head_id)"  height="30" width="200"/>
+			<s:Spacer width="10"/>
+			<s:Button buttonMode="true" label="设置" id="setButton" click="setParameter()"/>
+			<s:Spacer width="10"/>
+			<s:Button buttonMode="true" label="加载默认值" click="setDefaultParameter()"/>
+		</s:HGroup>
+	</s:VGroup>
+	<s:VGroup width="100%" height="50" gap="5">
+		<contaners:BGAbleContainer backgroundImageMode="scale" backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/title_bg.png')" width="100%" height="30">
+			<contaners:layout>
+				<s:HorizontalLayout verticalAlign="middle"/>
+			</contaners:layout>	
+			<s:Label text="供电异常" paddingLeft="5"/>
+		</contaners:BGAbleContainer>
+		<s:HGroup width="100%" paddingLeft="10" height="100%" gap="10" verticalAlign="middle">
+			<s:Label text="持续时间:" color="white"  />
+			<s:TextInput  id="AbnormityLength1Gd" text="60" restrict="0-9" maxChars="10" width="100"/>
+			<s:Label text="秒"/>
+			<s:Label text="外电电压下限:" color="white"  />
+			<s:TextInput  id="InputLineLevelDownThreshold1Gd" text="180" restrict="0-9" maxChars="10" width="100"/>
+			<s:Label text="V" />
+			<s:Label text="外电电压上限:" color="white" />
+			<s:TextInput width="100" id="InputLineLevelUpThreshold1Gd" text="250" restrict="0-9" maxChars="10"/>
+			<s:Label text="V"/>	
+		</s:HGroup>
+	</s:VGroup>
+	    <s:VGroup width="100%" height="50">
+		   <contaners:BGAbleContainer backgroundImageMode="scale" backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/title_bg.png')" width="100%" height="30">
+			 <contaners:layout>
+				<s:HorizontalLayout verticalAlign="middle"/>
+			 </contaners:layout>	
+			 <s:Label text="接收机异常" paddingLeft="5"/>
+		   </contaners:BGAbleContainer>
+		   <s:HGroup width="100%" paddingLeft="10" height="100%" gap="10" verticalAlign="middle">
+			<s:Label text="持续时间:" color="white"  />
+			<s:TextInput  id="AbnormityLength2Jsh" text="600" restrict="0-9" maxChars="10" width="100"/>
+			<s:Label text="秒"/>
+		   </s:HGroup>
+	    </s:VGroup>
+		<s:VGroup width="100%" height="50">
+			<contaners:BGAbleContainer backgroundImageMode="scale" backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/title_bg.png')" width="100%" height="30">
+				<contaners:layout>
+					<s:HorizontalLayout verticalAlign="middle"/>
+				</contaners:layout>	
+				<s:Label text="调制度卡异常" paddingLeft="5"/>
+			</contaners:BGAbleContainer>
+			<s:HGroup width="100%" paddingLeft="10" height="100%" gap="10" verticalAlign="middle">
+				<s:Label text="持续时间:" color="white"  />
+				<s:TextInput  id="AbnormityLength3Tzh" text="600" restrict="0-9" maxChars="10" width="100"/>
+				<s:Label text="秒"/>
+			</s:HGroup>
+		</s:VGroup>
+		<s:VGroup width="100%" height="50">
+			<contaners:BGAbleContainer backgroundImageMode="scale" backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/title_bg.png')" width="100%" height="30">
+				<contaners:layout>
+					<s:HorizontalLayout verticalAlign="middle"/>
+				</contaners:layout>	
+				<s:Label text="调幅度卡异常" paddingLeft="5"/>
+			</contaners:BGAbleContainer>
+			<s:HGroup width="100%" paddingLeft="10" height="100%" gap="10" verticalAlign="middle">
+				<s:Label text="持续时间:" color="white"  />
+				<s:TextInput  id="AbnormityLength4Tf" text="600" restrict="0-9" maxChars="10" width="100"/>
+				<s:Label text="秒"/>
+			</s:HGroup>
+		</s:VGroup>
+		<s:VGroup width="100%" height="50">
+			<contaners:BGAbleContainer backgroundImageMode="scale" backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/title_bg.png')" width="100%" height="30">
+				<contaners:layout>
+					<s:HorizontalLayout verticalAlign="middle"/>
+				</contaners:layout>	
+				<s:Label text="语音压缩卡异常" paddingLeft="5"/>
+			</contaners:BGAbleContainer>
+			<s:HGroup width="100%" paddingLeft="10" height="100%" gap="10" verticalAlign="middle">
+				<s:Label text="持续时间:" color="white"  />
+				<s:TextInput  id="AbnormityLength5Yy" restrict="0-9" text="600" maxChars="10" width="100"/>
+				<s:Label text="秒"/>
+			</s:HGroup>
+		</s:VGroup>
+		<s:VGroup width="100%" height="50">
+			<contaners:BGAbleContainer backgroundImageMode="scale" backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/title_bg.png')" width="100%" height="30">
+				<contaners:layout>
+					<s:HorizontalLayout verticalAlign="middle"/>
+				</contaners:layout>	
+				<s:Label text="频偏卡异常" paddingLeft="5"/>
+			</contaners:BGAbleContainer>
+			<s:HGroup width="100%" paddingLeft="10" height="100%" gap="10" verticalAlign="middle">
+				<s:Label text="持续时间:" color="white"  />
+				<s:TextInput  id="AbnormityLength6Pp" text="600" restrict="0-9" maxChars="10" width="100"/>
+				<s:Label text="秒"/>
+			</s:HGroup>
+		</s:VGroup>
+	</s:VGroup>
+</system:BasePage>

@@ -1,0 +1,550 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow close="onClose()" title="任务详细信息" textAlign="center"
+			   xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+		         width="100%"	
+				  height="100%"
+				  x="{stage.width/2-this.width/2}" y="{stage.height/2-this.height/2}" 
+			   fontSize="12"
+			    
+			   creationComplete="init()"
+			   mouseDown="startDrag()"
+			   mouseUp="stopDrag();" xmlns:task="com.viewscenes.module.dailyBusiness.task.*" xmlns:timecomp="com.viewscenes.utils.timecomp.*" xmlns:global="com.viewscenes.global.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.morcha4.frame.system.EventBus;
+			import com.viewscenes.beans.pub.ResHeadendBean;
+			import com.viewscenes.beans.task.CycleSubTask;
+			import com.viewscenes.beans.task.SingleSubTask;
+			import com.viewscenes.beans.task.Subtask;
+			import com.viewscenes.beans.task.Task;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.comp.MM;
+			import com.viewscenes.module.dailyBusiness.task.addTask.LoopTime;
+			import com.viewscenes.module.dailyBusiness.task.addTask.SingleTime;
+			import com.viewscenes.module.dailyBusiness.task.addTask.TaskChannel;
+			import com.viewscenes.utils.StringTool;
+			import com.viewscenes.utils.timecomp.DateUtil;
+			
+			import flash.utils.setTimeout;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			[Bindable]
+//			public var equColl:ArrayCollection = new ArrayCollection(
+//				[ {label:"自动选择", data:""},
+//					{label:"R1", data:"R1"}, 
+//					{label:"R2", data:"R2"} ]);
+			[Bindable]
+			public var timeType:ArrayCollection = new ArrayCollection(
+				[  {label:"分钟", data:"2"}, 
+					{label:"秒钟", data:"1"}, 
+					{label:"小时", data:"3"} ]);
+			
+			private var taskType:String="";//任务类型
+			
+			[Bindable]
+			public var task:Task = new Task();
+			
+			private function onClose():void{						
+				PopUpManager.removePopUp(this);
+			}
+			protected function init():void
+			{
+				this.shortname.setDataProviderOtherStationByCode(task.head_code,false);		
+				this.shortname.setHeadCode(task.head_code);
+			}
+			public function onShowTaskData(obj:Object):void{
+			
+				 task = obj.data;
+				if(obj.pageType == "plan" || task.is_send=="已下达"){
+					modifyBut.visible = modifyBut.includeInLayout = false;
+				}
+				taskType = task.task_type;
+				var taskchannel:TaskChannel=new TaskChannel();
+				if("101" == task.head_type_id){
+					taskchannel._equ_code.dataProvider = taskchannel.equColl;
+				} else{
+					taskchannel._equ_code.dataProvider = DataManager.taskHeadenEqu;
+				}
+				
+				this.shortname.setHeadCode(task.head_code);
+				taskchannel.LoopContainer.enabled = false;
+				taskchannel.SingleContainer.enabled = false;
+				channelVBox.addElement(taskchannel);
+				taskchannel.addLoop.visible=false;
+				taskchannel.addSingle.visible=false;
+				taskchannel._delechannel.visible=false;
+				var sublist:ArrayCollection=task.subtask
+				var sub:Subtask=sublist.getItemAt(0) as Subtask;
+				var cycList:ArrayCollection=sub.cyctask;
+				var sinList:ArrayCollection=sub.sintask;
+				this.task_id.text+=task.task_id;
+			
+//				this.head_code.text+=task.head_code;
+				this.task_type.text+=task.task_type;
+				this.record_type.text+=(task.record_type==""?"":"["+task.record_type+"]");
+				this.is_temporary.text+=task.is_temporary;
+				this.create_user.text+=task.create_user;
+				this.authentic_user.text+=task.authentic_user;
+				this.send_user.text+=task.send_user;
+				this.is_send.text+=task.is_send;
+				if(task.task_type=="频谱任务")
+				{
+						if("101" == task.head_type_id){
+							sequ_code.dataProvider = taskchannel.equColl;
+						} else{
+							sequ_code.dataProvider = DataManager.taskHeadenEqu;
+						}
+					this.task_levelGroup.visible=false;
+					this.quality_sleeptimeGroup.visible=false;
+					this.offset_sleeptimeGroup.visible=false;
+//					this.stream_sleeptime.visible=false;
+//					this.spectrum_sleeptime.visible=true;
+					taskchannel.channelHgroup.visible=false;
+					taskchannel.includeInLayout=false;
+					taskchannel.visible = false;
+					this.oGeneralTaskTab.visible=false;
+					this.oGeneralTaskTab.includeInLayout=false;
+					this.oSpectrumTaskTab.visible=true;
+					this.oSpectrumTaskTab.includeInLayout=true;
+					this.valid_startdatetime.visible=false;
+					this.valid_startdatetime.includeInLayout=false;
+					this.valid_enddatetime.visible=false;
+					this.valid_enddatetime.includeInLayout=false;
+					
+					this.spriority.text = task.priority;
+					this.svalid_startdatetime.text=task.valid_startdatetime;
+					this.svalid_enddatetime.text=task.valid_enddatetime;
+ //          StringTool.getDropDownListIndex(  sunit,task.unit);\
+				
+					 sunit.text = task.unit
+					 this.ssample_number.text=task.samples_number;
+					 this.ssleep_time.text=task.spectrum_sleeptime;
+					 StringTool.getDropDownListIndex(  sband,sub.band);
+					 this.sstartfreq.text=sub.startfreq;
+					 this.sendfreq.text=sub.endfreq;
+					 this.sstepfreq.text=sub.stepfreq;
+					 taskchannel.task_type="SpectrumTask";
+					 taskchannel._bps.visible=false;
+					 taskchannel._equ_code.visible=false;
+					 taskchannel._freq.visible=false;
+					 taskchannel._delechannel.visible=false;
+					
+					 StringTool.getDropDownListIndex(  sequ_code,task.equ_code);
+					 
+					 
+				}else
+				{
+					
+//					this.stream_sleeptime.visible=true;
+//					this.spectrum_sleeptime.visible=false;
+				
+					var task_level:String="";
+					
+					this.unit.text+=task.unit;
+					taskchannel.task_type="GeneralTask";
+					this.samples_number.text+=task.samples_number;
+					
+					if(task.check_level=="1")
+					{
+						task_level+="电平,";
+					}
+					if(task.check_am_modulation=="1"&&StringTool.getBandFromFreq(task.freq)!="2")
+					{
+						task_level+="调幅度,";
+					}
+					if(task.check_fm_modulation=="1"&&StringTool.getBandFromFreq(task.freq)=="2")
+					{
+						task_level+="调制度,";
+					}
+					if(task.check_bandwidth=="1")
+					{
+						task_level+="带宽，";
+					}
+				
+					this.oGeneralTaskTab.visible=true;
+					this.oGeneralTaskTab.includeInLayout=true;
+					this.oSpectrumTaskTab.visible=false;
+					this.oSpectrumTaskTab.includeInLayout=false;
+					task_level=task_level.substr(0,task_level.length-1);
+					this.task_level.text+=task_level;
+					
+					this.task_levelGroup.visible=false;
+					this.quality_sleeptimeGroup.visible=false;
+					this.offset_sleeptimeGroup.visible=false;
+				
+					if(task.task_type=="指标任务")
+					{
+						
+						this.task_levelGroup.visible=true;
+						this.quality_sleeptimeGroup.visible=true;
+						
+//						this.stream_sleeptime.visible=false;
+//						this.stream_sleeptime.includeInLayout=false;
+						this.quality_sleeptime.text=task.quality_sleeptime;	
+						taskchannel.qualityBox.visible = taskchannel.qualityBox.includeInLayout = false;
+						taskchannel.bpsHBox.visible = taskchannel.bpsHBox.includeInLayout = false;
+//						taskchannel.level.selected = (task.check_level=="1"?true：false);
+//						taskchannel.am_mod.selected = (task.check_am_modulation=="1"?true：false);
+//						taskchannel.fm_mod.selected = (task.check_fm_modulation=="1"?true：false);
+//						taskchannel.bandwidth.selected = (task.check_bandwidth=="1"?true：false);
+//						taskchannel.qualityRecordAlarm.selected = (task.check_alarm=="0"?true：false);
+					}else if(task.task_type=="录音任务")
+					{
+//						this.stream_sleeptime.visible=true;
+//						this.stream_sleeptime.includeInLayout=true;
+						
+//						this.stream_sleeptime.text=task.stream_sleeptime;	
+						taskchannel.qualityBox.visible = taskchannel.qualityBox.includeInLayout = false;
+						taskchannel.bpsHBox.visible = taskchannel.bpsHBox.includeInLayout = true;
+						
+						taskchannel.setBps(sub.bps);
+						taskchannel.recordlength.text = task.recordlength;
+						taskchannel.stream_sleeptime.text = task.stream_sleeptime;
+						taskchannel.station.selectedItemValue = ['name',task.subtask.getItemAt(0).station_name];
+						taskchannel.language.selectedItemValue = ['language_name',task.subtask.getItemAt(0).language];
+					}else if(task.task_type=="频偏任务")
+					{
+						
+						this.offset_sleeptimeGroup.visible=true;
+//						this.stream_sleeptime.visible=false;
+//						this.stream_sleeptime.includeInLayout=false;
+						this.offset_sleeptime.text=task.offset_sleeptime;	
+						taskchannel.qualityBox.visible = taskchannel.qualityBox.includeInLayout = false;
+						taskchannel.bpsHBox.visible = taskchannel.bpsHBox.includeInLayout = false;
+					}else if(task.task_type=="指标录音任务")
+					{
+						
+						this.task_levelGroup.visible=true;
+						this.quality_sleeptimeGroup.visible=true;
+						this.quality_sleeptime.text=task.quality_sleeptime;
+						
+						
+						taskchannel.bpsHBox.visible = taskchannel.bpsHBox.includeInLayout = true;
+						taskchannel.setBps(sub.bps);
+						taskchannel.recordlength.text = task.recordlength;
+						taskchannel.stream_sleeptime.text = task.stream_sleeptime;
+						taskchannel.station.selectedItemValue = ['name',task.subtask.getItemAt(0).station_name];
+						taskchannel.language.selectedItemValue = ['language_name',task.subtask.getItemAt(0).language];
+					}
+						
+
+//					this.recordlength.text=task.recordlength;
+					this.valid_startdatetime.visible=true;
+					this.valid_startdatetime.includeInLayout=true;
+					this.valid_enddatetime.visible=true;
+					this.valid_enddatetime.includeInLayout=true;
+					this.valid_startdatetime.text=task.valid_startdatetime;
+					this.valid_enddatetime.text=task.valid_enddatetime;
+
+					StringTool.getDropDownListIndex(  taskchannel._equ_code,sub.equ_code);
+					taskchannel._freq.text=sub.freq;
+					
+					
+		
+				}
+			
+				
+				taskchannel.LoopContainer.removeAllElements();
+		
+			
+			 for(var i:int=0;i<cycList.length;i++)
+			 {
+				 var cyc:CycleSubTask=cycList.getItemAt(i) as CycleSubTask;
+				
+				 if(cyc.starttime=="")
+				 {
+					 break;
+				 }
+				 var loop:LoopTime=new LoopTime();
+				 loop.deleteLoop.visible=false;
+				 loop.defaultValue=false;
+			      loop._cycle_expiredays.text=cyc.expiredays;
+				  
+				  StringTool.getDropDownListIndex(  loop._dayOfweek,cyc.dayofweek);
+				 
+				  loop._endTime.text=cyc.endtime;
+				  loop._reportInterval.text=cyc.reportinterval;
+				  
+				  StringTool.getDropDownListIndex( loop._reportMode,cyc.reportmode);
+				
+				  loop._startTime.text=cyc.starttime;
+				  taskchannel.LoopContainer.addElement(loop);
+				  
+			 }
+			 taskchannel.SingleContainer.removeAllElements();
+			 for(var i:int=0;i<sinList.length;i++)
+			 {
+			
+				 var sin:SingleSubTask=sinList.getItemAt(i) as SingleSubTask;
+				 if(sin.startdatetime=="")
+				 {
+					 break;
+				 }
+				 var single:SingleTime=new SingleTime();
+				 single.deleteSingle.visible=false;
+				 single.defaultValue=false;
+				 single._endDatetime.text=sin.enddatetime;
+				 single._reportInterval.text=sin.reportinterval;
+				 StringTool.getDropDownListIndex( single._reportMode,sin.reportmode);
+				
+				 single._single_expiredays.text=sin.expiredays;
+				 single._startDatetime.text=sin.startdatetime;
+					 
+				 taskchannel.SingleContainer.addElement(single); 
+			 }
+
+			 setTimeout(initHeadend, 1000); 
+
+			}		
+			private function initHeadend():void{
+				if(this.shortname.head_code!=null)
+				{
+					//StringTool.getHeadendListIndex(this.shortname,this.shortname.head_code);
+					for(var i:int=0;i< this.shortname.dataProvider.length;i++)   
+					{
+						var bean:ResHeadendBean=this.shortname.dataProvider.getItemAt(i) as ResHeadendBean;
+						
+						if(bean.code==this.shortname.head_code)
+						{
+							this.shortname.selectedIndex=i; 
+						}
+					}
+				}
+			}
+			private function bandChang(b:String):void{
+				if (b == "0"){//短波
+					sstepfreq.text = '5';
+					sstartfreq.text = '2300';
+					sendfreq.text = '26100';
+				}else if (b == "1"){//中波
+					sstepfreq.text = '9';
+					sstartfreq.text = '531';
+					sendfreq.text = '1602';
+				}else if (b == "2"){//调频
+					sstepfreq.text = '100';
+					sstartfreq.text = '87000';
+					sendfreq.text = '108000';
+				}
+			}
+			/**
+			 * 修改任务信息
+			 * 
+			 * */
+			private function updateTask():void{
+				
+				var obj:Object = new Object();
+				obj.task_id = task_id.text;
+				obj.task_type = taskType;
+				obj.valid_starttime = valid_startdatetime.text;
+				obj.valid_endtime = valid_enddatetime.text;
+				obj.record_length = "";
+				var taskch:TaskChannel = (channelVBox.getElementAt(0) as TaskChannel);
+				//田雅静要求不要显示发射台，这个不用修改
+				taskch.station.visible=false;
+				taskch.station.includeInLayout=false;
+				obj.equ_code = taskch._equ_code.selectedItem.data;
+				obj.freq = taskch._freq.text;
+				obj.head_code=this.shortname.selectedItem.code;
+				obj.band=StringTool.getBandFromFreq(taskch._freq.text);
+				switch(taskType){
+					case '指标任务':
+						obj.sleep_time_quality = quality_sleeptime.text;
+						break;
+					case '录音任务':
+						obj.sleep_time_record = taskch.stream_sleeptime.text;
+						obj.record_length = taskch.recordlength.text;
+						obj.bps = taskch._bps.selectedItem.data;
+						//obj.station_name = taskch.station.selectedItem.name;
+						obj.language = taskch.language.selectedItem.language_name;
+						break;
+					case '频偏任务':
+						obj.sleep_time_offset = offset_sleeptime.text;
+						if(obj.band == "2"){
+							DataManager.showErrorMessage(this.shortname.selectedItem.shortname+"调频频率"+obj.freq+"不能做频偏任务");
+							return ;
+						}
+						break;
+					case '频谱任务':
+						obj.valid_starttime = svalid_startdatetime.text;
+						obj.valid_endtime = svalid_enddatetime.text;
+						obj.equ_code = sequ_code.selectedItem.data;
+						obj.sband = sband.selectedItem.data;
+						obj.ssleep_time  = ssleep_time.text;
+						obj.sstepfreq = sstepfreq.text;
+						obj.sstartfreq = sstartfreq.text;
+						obj.sendfreq = sendfreq.text;
+						break;
+					case '指标录音任务':
+						obj.sleep_time_quality = quality_sleeptime.text;
+						obj.sleep_time_record = taskch.stream_sleeptime.text;
+						obj.record_length = taskch.recordlength.text;
+						obj.bps = taskch._bps.selectedItem.data;
+						//obj.station_name = (taskch.station.selectedItem==null?"":taskch.station.selectedItem.name);
+						obj.language = (taskch.language.selectedItem==null?"":taskch.language.selectedItem.language_name);
+//						if(this.record_type.text == "[质量]"){
+//							if(taskch._equ_code.selectedItem.data == ""){
+//								MM.show(this.shortname.text+"质量录音必须指定一个接收机","","",null,false,null,this);
+//								return;
+//							}
+//						}
+//						if(taskch._equ_code.selectedItem.data == "R1"&&this.shortname.selectedItem.manufacturer.indexof("713")!=-1){
+//							MM.show(this.shortname.selectedItem.shortname+"日常任务不能选择R1接收机","","",null,false,null,this);
+//							return;
+//						}
+						break;
+				}
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.task.TaskManager","updateTask",obj,updateTaskBack,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id);
+				RPCManager.sendCmd(request);
+			}
+			
+			private function updateTaskBack(res:String):void{
+				DataManager.showErrorMessage(res);
+				EventBus.dispatchEvent(new AdvancedEvent("TASK_QUERY",false,false,null));
+				onClose();
+			}
+			
+		]]>
+	</fx:Script>
+	
+
+	<s:VGroup  gap="10" horizontalAlign="left"  paddingLeft="10"  paddingTop="20" width="100%" height="100%" verticalAlign="middle" mouseDown="event.stopImmediatePropagation();">
+		  
+			
+		<s:HGroup gap="10">
+			<s:Label text="任务id：" width="133" textAlign="right"/> <s:Label id="task_id" />
+		</s:HGroup>
+		<s:HGroup gap="10" verticalAlign="middle">
+			<s:Label text="任务类型：" width="133" textAlign="right"/> <s:Label id="task_type"/> <s:Label id="record_type"/>
+		</s:HGroup>
+		<s:HGroup gap="10">
+			<s:Label text="任务状态：" width="133" textAlign="right"/> <s:Label id="is_send"/>
+		</s:HGroup>
+	
+		<s:HGroup gap="10">
+			<s:Label text="站点名称：" width="133" textAlign="right"/>
+			<global:HeadendList id="shortname" height="30" width="180" />
+			
+			<!--s:Label  text="站点代号："/> <s:Label id="head_code" /-->
+		</s:HGroup>
+		<s:HGroup gap="10" verticalAlign="middle">  
+		     <s:Label  text="有效期开始时间：" width="133" textAlign="right"> </s:Label>
+			<timecomp:TimeNew id="valid_startdatetime"/>
+		     <s:Label  text="有效期结束时间："> </s:Label>
+			<timecomp:TimeNew id="valid_enddatetime" />
+		</s:HGroup>
+		<s:HGroup gap="10">
+		    <s:Label  text="任务生成方式：" width="133" textAlign="right"/> <s:Label id="is_temporary"/>
+		</s:HGroup>
+		<s:HGroup gap="10">  
+		     <s:Label text="任务创建人：" width="133" textAlign="right"/> <s:Label id="create_user" />
+		     <s:Label id="authentic_user"  text="任务审核人："> </s:Label>
+		     <s:Label id="send_user"  text="任务下达人："> </s:Label>
+		</s:HGroup>
+	<s:VGroup id="oGeneralTaskTab" width="100%"  visible="false" includeInLayout="false">
+		<s:HGroup gap="10"> 
+		     <s:Label  text="任务收测单元：" width="133" textAlign="right"/> <s:Label id="unit"/>
+		     <s:Label  text="任务收测个数："/> <s:Label id="samples_number"/>
+		</s:HGroup>
+		<s:HGroup gap="10" id="task_levelGroup"> 
+			<s:Label  text="指标收测任务数据类型："/> <s:Label id="task_level"/>
+		</s:HGroup>
+		<s:HGroup id="quality_sleeptimeGroup" verticalAlign="middle">
+			<s:Label  text="指标任务时间间隔：" width="133" textAlign="right"> </s:Label>
+			<timecomp:TimeNew id="quality_sleeptime" dateDisplay="time"/>
+		</s:HGroup>
+		<s:HGroup id="offset_sleeptimeGroup" verticalAlign="middle">
+		 	<s:Label  text="频偏任务时间间隔："> </s:Label>
+			<timecomp:TimeNew id="offset_sleeptime" dateDisplay="time"/>
+		</s:HGroup>
+			 <!--s:Label  text="录音任务时间间隔："> </s:Label>
+			<timecomp:TimeNew id="stream_sleeptime" dateDisplay="time"/-->
+			<!--s:HGroup gap="10" verticalAlign="middle" horizontalAlign="center">
+			 <s:Label  text="录音文件长度："> </s:Label>
+			 <timecomp:TimeNew id="recordlength" dateDisplay="time"/>	
+			</s:HGroup-->
+	  </s:VGroup>
+		<s:VGroup id="oSpectrumTaskTab" width="100%"  visible="false" includeInLayout="false">
+			
+			<s:VGroup width="100%"  >
+				<s:VGroup width="100%"  >
+					<s:HGroup width="100%"   height="40" verticalAlign="middle">
+						<s:Spacer width="16"/>
+						<s:Label text="有效期    从："/>
+						
+						<timecomp:TimeNew  id="svalid_startdatetime" width="150"/>	
+						<s:Label text="到："/>
+						
+						<timecomp:TimeNew  id="svalid_enddatetime"  width="150"/>	
+						<s:Spacer width="15"/>
+						<s:Label text="优先级："/>
+						<!-- s:TextInput maxChars="1" restrict="0-9" width="60" id="spriority" text="1"/-->
+						<s:Label  width="60" id="spriority"/>
+						<s:Label id="yxj" text="(0~9级)"/>
+						<s:Spacer width="15"/>
+						<s:Label text="每"/>
+						<!-- s:DropDownList id="sunit" dataProvider="{timeType}" selectedIndex="1">
+							
+						</s:DropDownList-->
+						<s:Label  width="35" id="sunit"/>
+						<s:Spacer width="15"/>
+						<s:Label text="采样个数："/>
+						<!-- s:TextInput  restrict="0-9"  width="35" id="ssample_number" text="1"/-->
+						<s:Label  width="35" id="ssample_number"/>
+						<s:Spacer width="15"/>
+						
+					</s:HGroup>
+				</s:VGroup>
+				<s:VGroup width="100%" >
+					<s:HGroup width="100%"    height="40" verticalAlign="middle">
+						<s:Spacer width="16"/>
+						<s:Label text="收测时间间隔(秒)："/>
+						<timecomp:TimeNew id="ssleep_time" dateDisplay="time"/>
+						<s:Spacer width="10"/>
+						<s:Label text="频段扫描："/>
+						<s:DropDownList id="sband" change="bandChang(sband.selectedItem.data);" dataProvider="{DataManager.bandColl}">
+							
+						</s:DropDownList>
+						<s:Spacer width="10"/>
+						<s:Label text="步长频率："/>
+						<s:TextInput restrict="0-9"  width="40" id="sstepfreq"/>
+						<s:Label text="KHz"/>
+						<s:Spacer width="10"/>
+						<s:Label text="起始扫描频率："/>
+						<s:TextInput restrict="0-9"  width="90" id="sstartfreq"/>
+						<s:Label text="KHz"/>
+						<s:Spacer width="26"/>
+						<s:Label text="终止扫描频率："/>
+						<s:TextInput restrict="0-9"  width="90" id="sendfreq"/>
+						<s:Label text="KHz"/>
+						<s:Spacer width="10"/>
+						<s:Label text="接收机："/>
+						<s:DropDownList id="sequ_code"  dataProvider="{DataManager.taskHeadenEqu}" selectedIndex="0">
+							
+						</s:DropDownList>
+						<s:Spacer width="15"/>
+						
+					</s:HGroup>
+				</s:VGroup>
+				<s:Spacer height="10"/>
+				
+			</s:VGroup>
+		</s:VGroup>
+		<s:VGroup id="channelVBox" width="100%" height="100%" horizontalAlign="center" verticalAlign="middle" paddingLeft="-10">
+	
+		</s:VGroup> 
+		<s:HGroup width="100%" height="25" horizontalAlign="center" verticalAlign="middle">
+			<s:Button buttonMode="true" label="修改任务" click="updateTask()" id="modifyBut"/>
+		</s:HGroup>
+		
+	</s:VGroup>	
+</s:TitleWindow>		

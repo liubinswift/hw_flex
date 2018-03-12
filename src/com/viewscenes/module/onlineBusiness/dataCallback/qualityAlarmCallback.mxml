@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:mx="library://ns.adobe.com/flex/mx" 
+				 xmlns:system="com.morcha4.frame.system.*" 
+				 xmlns:global="com.viewscenes.global.*" 
+				 PAGE_SHOW="setCode(event)"
+				 xmlns:flipBar="com.viewscenes.utils.flipBar.*"
+				 xmlns:timecomp="com.viewscenes.utils.timecomp.*"
+				 width="100%" height="100%" creationComplete="init()">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.viewscenes.global.DataManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			
+			import spark.events.IndexChangeEvent;
+			[Binadble]
+			var alarmArr:ArrayCollection = new ArrayCollection();
+			[Binadble]
+			var _receiver:ArrayCollection = new ArrayCollection();
+			
+			private function init():void{
+				//				var date:Date = new Date();
+				//				var _year:String = date.getFullYear().toString();
+				//				var _month:String = (date.getMonth()+1)<10?"0"+(date.getMonth()+1):(date.getMonth()+1).toString();
+				//				var _day:String = date.getDate()<10?"0"+date.getDate():date.getDate().toString();
+				this.startTime.text=this.startTime.text.split(' ')[0]+" 00:00:00";
+				this.getEquByCode(this.station.selectedItem.code);
+				this.getFreqByCode(this.station.selectedItem.code);
+			}
+			private function setCode(event:Event):void{
+				if(DataManager.code!=""){
+					station.selectedIndex = 1;
+					
+					for(var i:int=0;i<(station.dataProvider as ArrayCollection).length;i++){
+						if(DataManager.code==(station.dataProvider as ArrayCollection)[i].code){
+							station.selectedIndex=i;
+						}
+					}
+				}
+				
+			}
+			/**
+			 * 根据站点代码获取接收机
+			 * */
+			private function getEquByCode(code:String):void{
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getEquList",code,processGetEquList,DataManager.showErrorMessageBack));
+			}
+			
+			private function processGetEquList(arr:ArrayCollection):void{
+				this.receiver.dataProvider=arr;
+				this.receiver.selectedIndex=0;
+				
+			}
+			/**
+			 * 根据站点code查询下发过任务的频率
+			 * */
+			private function getFreqByCode(code:String):void{
+				var obj:Object = new Object;
+				obj.code = code;
+				obj.start_time = startTime.text;
+				obj.end_time = endTime.text;
+				obj.type = "quality";
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.dataretrieve.QualityAlarmCallback","getFreqList",obj,processGetFreqList,DataManager.showErrorMessageBack));
+			}
+			
+			private function processGetFreqList(arr:ArrayCollection):void{
+				arr.addItemAt("全部",0);
+				this.freq.dataProvider=arr;
+				this.freq.selectedIndex=0;
+			}
+			/**
+			 * 下发指标报警回收接口，回收的数据入库
+			 * */
+			private function alarmCallback():void{
+				datagrid.dataProvider = new ArrayCollection();
+				var paraObj:Object = new Object();
+				var startDate:String=startTime.text;
+				var endDate:String=endTime.text;
+				if(startDate>endDate)
+				{
+					DataManager.showErrorMessage("起始时间不能大于结束时间，请重新输入！");
+					return;
+				}
+				paraObj.user_id = DataManager.user.userId;
+				paraObj.priority = DataManager.user.priority;
+				paraObj.head_id = this.station.selectedItem.head_id;
+				paraObj.code = this.station.selectedItem.code;
+				paraObj.receiverCode = this.receiver.selectedItem.data;
+				paraObj.startDate = startDate;
+				paraObj.endDate = endDate;
+				paraObj.band = this.band.selectedItem.value;
+				paraObj.freq = this.freq.selectedItem=="全部"?"":this.freq.selectedItem;
+				clew_label.visible=true;
+				clew_label.includeInLayout=true;
+				clew_label.text ="正在回收,请稍候...";
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.dataretrieve.QualityAlarmCallback","qualityAlarmCallback",paraObj,processAlarmCallback,processAlarmCallback,true,null,DataManager.server_app_id));
+				
+			}
+			
+			private function processAlarmCallback(res:String):void{
+				if(res=="指标异态回收成功"){
+					this.queryAlarm();
+				}else{
+					DataManager.showErrorMessage(res);
+					clew_label.visible=false;
+					clew_label.includeInLayout=false;	
+				}
+				
+			}
+			/**
+			 * 数据库查询指标报警数据
+			 * */
+			private function queryAlarm():void{
+				var paraObj:Object = new Object();
+				paraObj.head_id = this.station.selectedItem.head_id;
+				paraObj.code = this.station.selectedItem.code;
+				paraObj.receiverCode = this.receiver.selectedItem.data;
+				paraObj.startDate = startTime.text;
+				paraObj.endDate = endTime.text;
+				paraObj.band = this.band.selectedItem.value;
+				paraObj.freq = this.freq.selectedItem=="全部"?"":this.freq.selectedItem;;
+				clew_label.visible=true;
+				clew_label.includeInLayout=true;	
+				clew_label.text ="正在查询,请稍候...";
+				pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.online.dataretrieve.QualityAlarmCallback","queryQualityAlarm",paraObj,processQueryAlarm,DataManager.showErrorMessageBack));
+				
+			}
+			
+			private function processQueryAlarm(arr:ArrayCollection):void{
+				if(arr.length==0){
+					clew_label.text="无相关查询数据";
+				}else{
+					clew_label.visible=false;
+					clew_label.includeInLayout=false;  
+					//alarmArr=arr;
+					datagrid.dataProvider = arr;
+				}
+			}
+			/**
+			 * 根据选择的频率值判断波段
+			 * */
+			protected function freq_changeHandler(freq:String):void{
+				
+				if(freq=="全部"){
+					band.selectedIndex = 0;
+				}
+				//短波范围
+				if(parseInt(freq)>=2300 && parseInt(freq) <= 26100){
+					
+					band.selectedIndex = 1;
+				}
+				//中波范围
+				if(parseInt(freq)>=531 && parseInt(freq) <= 1602){
+					
+					band.selectedIndex = 2;
+				}
+				//调频范围
+				if(parseInt(freq)>=87000 && parseInt(freq) <= 108000){
+					
+					band.selectedIndex = 3;
+				}
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<s:VGroup width="100%" height="100%" paddingTop="10">
+		<s:HGroup width="100%" paddingLeft="2" verticalAlign="middle">
+			<s:Label text="站点名称"/>
+			<global:HeadendList id="station" change="this.getEquByCode(this.station.selectedItem.code);this.getFreqByCode(this.station.selectedItem.code);"/>
+			<s:Label text="接收机"/>
+			<s:DropDownList id="receiver" width="100" dataProvider="{_receiver}" />
+			<s:Label text="频率"/>
+			<s:DropDownList id="freq" width="100" selectedIndex="0" change="freq_changeHandler(this.freq.selectedItem)" dataProvider="{new ArrayCollection([{label:'全部',value:''}])}"/>
+			<s:Label text="波段"/>
+			<s:DropDownList id="band" width="100" selectedIndex="0" dataProvider="{new ArrayCollection([{label:'全部',value:''},{label:'短波',value:'0'},{label:'中波',value:'1'},{label:'调频',value:'2'}])}"/>
+			<s:Label text="开始时间"/>
+			<timecomp:TimeNew id="startTime"/>
+			<s:Label text="结束时间"/>
+			<timecomp:TimeNew id="endTime"/>
+			<s:Button buttonMode="true" label="回收" click="alarmCallback()"/>
+			<s:Button buttonMode="true" label="查询" click="queryAlarm()"/>
+		</s:HGroup>
+		<mx:Canvas  width="100%" height="100%">
+			<s:DataGrid width="100%" height="100%" textAlign="center" id="datagrid" dataProvider="{alarmArr}">
+				<s:columns>
+					<s:ArrayCollection>
+						<s:GridColumn dataField="head_name"  headerText="报警站点" />
+						<s:GridColumn dataField="type_name"  headerText="报警类型" />
+						<s:GridColumn dataField="frequency"  headerText="频率(KHZ)" />
+						<s:GridColumn dataField="alarm_datetime"  headerText="发生时段" />
+						<s:GridColumn dataField="is_handle"  headerText="处理状态" />
+					</s:ArrayCollection>
+				</s:columns>
+			</s:DataGrid>
+			<s:Label text="正在查询，请稍候..." id="clew_label" y="{datagrid.columnHeaderGroup.height+10}" color="0x000000" fontSize="15" width="100%" textAlign="center"  visible="false" includeInLayout="false" />
+		</mx:Canvas>
+		
+		<flipBar:PageBar width="100%" id="pagebar" rowConutOfPage="40" totalPageQuery="5" height="20"/>
+	</s:VGroup>
+</system:BasePage>

@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:flipBar="com.viewscenes.utils.flipBar.*"
+			   xmlns:recplay="com.viewscenes.module.onlineBusiness.recplay.*"
+			   xmlns:player="com.viewscenes.utils.player.*"
+			   xmlns:timecomp="com.viewscenes.utils.timecomp.*"
+			   xmlns:advancedComboBox="com.morcha4.ui.advancedComboBox.*"
+			   creationComplete="init();"
+			   mouseUp="stopDrag();"
+			   mouseDown="startDrag()"
+			   x="{(Capabilities.screenResolutionX - width) / 2}" y="{(Capabilities.screenResolutionY - height) / 2 - 50}"
+			   width="1000" height="600" close="close(event)">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:VGroup width="100%" height="100%" verticalAlign="middle">
+		<s:VGroup width="100%" height="15%" paddingLeft="10" verticalAlign="middle">
+			<s:HGroup width="100%" height="100%" verticalAlign="middle">
+				<s:Label text="收测站点:"/>
+				<s:Label id="remote_name"/>
+				<s:Spacer width="12"/>
+				<s:Label text="频率:"/>
+				<s:Label id="frequency"/>
+				<s:Spacer width="12"/>
+				<s:HGroup id="wgtsomeGroup" verticalAlign="middle">
+					<s:Spacer width="12"/>
+					<s:Label text="发射台"/>
+					<advancedComboBox:DropDownListSet id="station" width="90" dataProvider="{DataManager.stationBeanAll}"
+													  labelField="name" selectedIndex="0"/>					
+					<s:Spacer width="12"/>
+					<s:Label text="机号:"/>
+					<s:TextInput id="tran_no"/>
+					<s:Spacer width="12"/>
+					<s:Label text="功率:"/>
+					<s:TextInput id="power" width="40"/>
+				</s:HGroup>
+				<s:HGroup id="hwldsomeGroup" verticalAlign="middle">
+					<s:Label text="  发射国家"/>
+					<!--advancedComboBox:DropDownListSet id="send_county" dataProvider="{countryArr}" selectedIndex="0"/-->
+					<s:TextInput id="send_county"/>
+					<s:Spacer width="12"/>
+					<s:Label text="发射城市"/>
+					<!--advancedComboBox:DropDownListSet id="send_city" width="100" dataProvider="{cityArr}" labelField="city"/-->
+					<s:TextInput id="send_city"/>
+					<s:Label text="转播机构:"/>
+					<s:TextInput id="redisseminators"/>
+					
+				</s:HGroup>
+			</s:HGroup>
+			<s:HGroup width="100%" height="100%" verticalAlign="middle">
+				<s:Spacer width="12"/>
+				<s:Label text="语言"/>
+				<advancedComboBox:DropDownListSet id="language_name" width="80" dataProvider="{DataManager.languageBeanAll}"
+												  labelField="language_name"/>
+				<s:Label id="language_id" visible="false" includeInLayout="false"/>
+				
+				
+				
+				<s:Spacer width="12"/>
+				<s:Label text="播音时间:"/>
+				<s:Label id="play_time"/>
+				
+			</s:HGroup>
+			<s:HGroup width="100%" height="100%" verticalAlign="middle">
+				<!--s:Label text="收测方式:"/-->
+				<s:ComboBox id="get_type" width="60"
+							dataProvider="{new ArrayCollection([{label:'实时',value:'1'},{label:'录音',value:'2'}])}" visible="false" includeInLayout="false"/>
+				
+				<s:Spacer width="12"/>
+				<s:Label text="异态类型:"/>
+				<s:ComboBox id="abnormal_type" dataProvider="{abnormalArr}" selectedIndex="1"/>
+				
+				<s:Spacer width="12"/>
+				<s:Label text="记录类型:"/>
+				<s:ComboBox id="type" change="type_changeHandler()" valueCommit="type_changeHandler()"
+							dataProvider="{new ArrayCollection([{label:'国外发射台质量异态',value:'1'},{label:'海外落地节目质量异态',value:'2'}])}"/>
+				<s:Spacer width="12"/>
+				<s:Label text="备注:"/>
+				<s:TextInput id="remark" width="100"/>
+				
+			</s:HGroup>
+			<s:HGroup width="100%" height="100%" verticalAlign="middle">
+				<s:Label text="异态日期:" textAlign="center"/>
+				<timecomp:TimeNew id="abnormal_date" dateDisplay="date"/>
+				
+				<s:Label text="异态开始时间:" textAlign="center"/>
+				<timecomp:TimeNew id="starttime"/>
+				
+				<s:Spacer width="12"/>
+				<s:Label text="异态结束时间:" textAlign="center"/>
+				<timecomp:TimeNew id="endtime"/>
+				
+				<s:Spacer width="12"/>
+				<s:Button buttonMode="true" label="审核" click="auditAlarm()" id="autitBut"/>
+				<s:Button buttonMode="true" label="关闭" click="close(event)"/>
+			</s:HGroup>
+		</s:VGroup>
+		<s:VGroup width="100%" height="70%" verticalAlign="middle">
+			<mx:Canvas width="100%" height="100%">
+				<s:DataGrid id="result" width="100%" height="100%" dataProvider="{recFileArray}">
+					<s:columns>
+						<s:ArrayCollection>
+							<!--s:GridColumn headerText="波段" 
+							
+							dataField="band" width="60" /-->
+							<s:GridColumn width="60" dataField="frequency" headerText="频率"/>
+							<s:GridColumn dataField="start_datetime" headerText="开始时间"/>
+							<s:GridColumn dataField="end_datetime" headerText="结束时间"/>
+							<!--s:GridColumn headerText="发射台
+							
+							" dataField="station_name" />
+							<s:GridColumn headerText="语言"  
+							
+							dataField="language_name"/>
+							<s:GridColumn headerText="分数" 
+							
+							dataField="fensio" /-->
+							<s:GridColumn width="80" headerText="播放"
+										  itemRenderer="{RendererUtil.getButtonRenderer('播放',playAndMark)}"/>
+						</s:ArrayCollection>
+					</s:columns>
+				</s:DataGrid>
+			</mx:Canvas>
+			<flipBar:PageBar id="pagebar" height="20" color="0x000000" rowConutOfPage="20" totalPageQuery="10"/>
+		</s:VGroup>
+		<player:Player id="player" width="100%" height="80"/>
+	</s:VGroup>
+	<fx:Script>
+		<![CDATA[
+
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.util.RendererUtil;
+			import com.viewscenes.beans.RadioAbnormalBean;
+			import com.viewscenes.beans.RadioStreamResultBean;
+
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.utils.timecomp.DateUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.managers.PopUpManager;
+			
+			import mx.controls.Alert;
+			
+			import spark.events.IndexChangeEvent;
+			[Bindable] private var abnormalArr:ArrayCollection = new ArrayCollection
+				
+				([{label:'停播',value:'1'},{label:'断续停播',value:'2'},
+					{label:'空播',value:'3'},{label:'断续空播',value:'4'},
+					
+					{label:'杂音',value:'5'},{label:'失真',value:'6'},{label:'调幅度低',value:'7'},
+					{label:'错播',value:'8'},{label:'早播',value:'9'},{label:'迟播',value:'10'},{label:'多播',value:'11'},{label:'少播',value:'12'},
+					{label:'跑频',value:'13'},{label:'收不到',value:'14'},
+					
+					{label:'串扰',value:'15'},{label:'其他',value:'16'}]);
+			[Bindable]
+			private var recFileArray:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var AuditQualityObj:Object;
+//			[Bindable]
+//			private var runplan:Object;
+			var startDateTime:String="";
+			var endDateTime:String="";
+			
+			//发射国家
+			[Bindable]
+			private var countryArr:ArrayCollection = new ArrayCollection();
+			//发射城市
+			[Bindable]
+			private var cityArr:ArrayCollection = new ArrayCollection();
+			
+			private function init():void{
+			}
+			/**
+			 * 查询发射城市信息
+			 * */
+			private function queryCity():void{
+				var obj:Object = new Object();
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getCityList",obj,getCityListBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function getCityListBack(arr:ArrayCollection):void{
+//				cityArr.removeAll();
+//				cityArr = arr;
+//				cityArr.addItemAt({city:"",id:""},0);
+//				send_city.selectedIndex = 0;
+//				getInfoFromRunplan();
+			}
+			/**
+			 * 查询国家
+			 * */
+			private function queryCountry():void{
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getCountryList",null,getCountryListBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function getCountryListBack(arr:ArrayCollection):void{
+//				countryArr.removeAll();
+//				countryArr=arr;
+//				countryArr.addItemAt("",0);
+//				send_county.selectedIndex=0;
+//				queryCity();
+			}
+			
+			public function setObj(obj:Object):void{
+				this.title="指标报警详细信息审核";
+				AuditQualityObj=obj;
+				//queryCountry();
+				
+				frequency.text=AuditQualityObj.frequency;
+				remote_name.text=AuditQualityObj.shortname;
+				starttime.text=AuditQualityObj.alarm_datetime;
+				endtime.text = AuditQualityObj.resume_datetime;
+				abnormal_date.text=((AuditQualityObj.alarm_datetime) as String).split(' ')[0];
+				getInfoFromRunplan();
+				//				setTimeout(getInfoFromRunplan,500);
+			}
+			
+			private function getInfoFromRunplan():void{
+				var obj:Object = new Object();
+				obj.freq = AuditQualityObj.frequency;
+				obj.code = AuditQualityObj.head_code;
+				obj.type_id = AuditQualityObj.type_id;
+				obj.alarm_starttime = starttime.text;
+				obj.alarm_endtime = endtime.text;
+				if(obj.alarm_endtime == ""){
+					obj.alarm_endtime = DateUtil.date2str(new Date());
+				}
+				obj.ora_alarm_id = AuditQualityObj.alarm_id;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.daily.alarmHandler.AlertManage","queryRadioAbnormal",obj,getInfoBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function getInfoBack(obj:Object):void{
+				var anbobean:RadioAbnormalBean = obj as RadioAbnormalBean;
+				
+				if(anbobean == null){
+//					runplan=obj;
+					if(obj.runplan_type_id!=null && obj.runplan_type_id!=""){
+						type.selectedIndex=0;
+						if(obj.runplan_type_id=="1"){
+							station.selectedItemValue= ["name",obj.station];
+							type.selectedIndex=0;
+						}else{						
+//							for(var j:int=0;j<countryArr.length;j++){
+//								if(countryArr[j]==obj.send_county){
+//									send_county.selectedIndex=j;
+//								}
+//							}
+//							for(var j:int=0;j<cityArr.length;j++){
+//								if(cityArr[j].city==obj.send_city){
+//									send_city.selectedIndex=j;
+//								}
+//							}
+							send_county.text=obj.send_county;
+							send_city.text=obj.send_city;
+							redisseminators.text=obj.redisseminators;
+							type.selectedIndex=1;
+						}
+						
+						tran_no.text=obj.tran_no;
+						language_name.selectedItemValue=["language_name",obj.language_name];
+						power.text=obj.power;
+						for(var j:int=0;j<abnormal_type.dataProvider.length;j++){
+							if(abnormal_type.dataProvider[j].value==obj.abnormal_type){
+								abnormal_type.selectedIndex=j;
+							}
+						}
+						play_time.text=obj.start_time+"-"+obj.end_time;
+					}
+				} else{
+					remote_name.text = (anbobean.remote_station==""?anbobean.collection_point:anbobean.remote_station);
+					frequency.text = anbobean.frequency;
+					station.selectedItemValue = ["name",anbobean.station_name];
+//					for(var j:int=0;j<countryArr.length;j++){
+//						if(countryArr[j]==anbobean.send_county){
+//							send_county.selectedIndex=j;
+//						}
+//					}
+					send_city.text=obj.send_city;
+					//send_city.selectedItemValue = ["city",anbobean.send_city];
+					redisseminators.text = anbobean.broadcasting_organizations;
+					tran_no.text = anbobean.tran_no;
+					language_name.selectedItemValue=["language_name",anbobean.language_name];
+					power.text = anbobean.power;
+					play_time.text = anbobean.play_time;
+					for(var j:int=0;j<abnormal_type.dataProvider.length;j++){
+						if(abnormal_type.dataProvider[j].value==anbobean.abnormal_type){
+							abnormal_type.selectedIndex=j;
+						}
+					}
+					if(anbobean.type == "1"){
+						type.selectedIndex=0;
+					} else {
+						type.selectedIndex=1;
+					}
+					remark.text = anbobean.remark;
+					abnormal_date.text = anbobean.abnormal_date.split(" ")[0];
+					starttime.text = anbobean.starttime;
+					endtime.text = anbobean.endtime;
+					autitBut.visible = false;
+				}
+				get_type.selectedIndex=1;
+				getRecordFile();
+			}
+			
+			private function getRecordFile():void{
+				var cc:int = int(starttime.oHour.text)+1;
+				
+//				startDateTime=DateUtil.date2str(DateUtil.addMinutes(DateUtil.str2date(starttime.text),-3));
+				startDateTime=starttime.text
+				if(endtime.text == ""){
+					endDateTime = DateUtil.date2str(new Date());
+				} else{
+//					endDateTime=DateUtil.date2str(DateUtil.addMinutes(DateUtil.str2date(endtime.text),3));
+					endDateTime=endtime.text;
+				}
+				var obj:Object = new Object;
+				//录音类型
+				obj.recType = "1";
+				obj.abCode = AuditQualityObj.head_code;
+				
+				obj.dateType = "byTime";
+				obj.startDateTime = startDateTime;
+				obj.endDateTime = endDateTime;
+				obj.freq = AuditQualityObj.frequency;
+				pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.daily.queryData.RecFileQuery","recFileQuery",obj,recFileQueryBack,DataManager.showErrorMessageBack));
+				
+			}
+			
+			private function recFileQueryBack(arr:ArrayCollection):void{
+				recFileArray = arr;
+//				if(arr.length>0){
+//					var streamBean:RadioStreamResultBean = arr.getItemAt(0) as RadioStreamResultBean;
+//					var runplanBean:RunplanBean = streamBean.runplanBean;
+//					if(runplanBean == null){
+//						runplanBean = new RunplanBean();
+//					}
+//					if(runplanBean.runplan_type_id=="1"){
+//						type.selectedIndex=0;
+//						
+//						wgtsomeGroup.visible = wgtsomeGroup.includeInLayout = true;
+//						hwldsomeGroup.visible = 
+//							
+//							hwldsomeGroup.includeInLayout = false;
+//					}else{
+//						type.selectedIndex=1;
+//						
+//						wgtsomeGroup.visible = wgtsomeGroup.includeInLayout = false;
+//						hwldsomeGroup.visible = hwldsomeGroup.includeInLayout = true;
+//					}
+//					get_type.selectedIndex=1;
+//				}
+			}
+			/**
+			 * 审核报警
+			 * */
+			private function auditAlarm():void{
+				var obj:Object = new Object();
+				obj.station = "";
+				obj.station_id = "";
+				obj.send_county = "";
+				obj.send_city = "";
+				obj.redisseminators = "";
+				if(type.selectedItem.value == "1"){
+					if(this.station.selectedItem == null ||  this.station.selectedItem.name == ""){
+						DataManager.showErrorMessage("请选择发射台!");
+						return ;
+					}
+					obj.station = this.station.selectedItem.name;
+					obj.station_id = this.station.selectedItem.station_id;
+				} else if(type.selectedItem.value == "2"){//海外落地
+					if(this.send_county.text == null ||  this.send_county.text == ""){
+						DataManager.showErrorMessage("发射国家不能为空!");
+						return ;
+					}
+					if(send_city.text == null ||  send_city.text==""){
+						DataManager.showErrorMessage("发射城市不能为空!!");
+						return ;
+					}
+					if(redisseminators.text==""){
+						DataManager.showErrorMessage("转播机构不能为空!");
+						return ;
+					}
+					obj.send_county = send_county.text;
+					obj.send_city = send_city.text;
+					obj.redisseminators = redisseminators.text;
+				}
+				if(language_name.selectedItem == null || language_name.selectedItem.language_name==""){
+					DataManager.showErrorMessage("请选择语言!");
+					return ;
+				}
+				obj.tran_no = tran_no.text;
+				obj.language_name = language_name.selectedItem.language_name;
+				obj.language_id = language_name.selectedItem.language_id;
+				obj.frequency = frequency.text;
+				obj.power = power.text;
+				//				
+				obj.remote_name = remote_name.text;
+				obj.get_type = get_type.selectedItem.value;
+				obj.abnormal_type = abnormal_type.selectedItem.value;
+				obj.type = type.selectedItem.value;
+				obj.play_time = play_time.text;
+				obj.abnormal_date = abnormal_date.text;
+				obj.starttime = starttime.text;
+				obj.endtime = endtime.text;
+				obj.remark = remark.text;
+				obj.auditor=DataManager.user.userName;
+				obj.alarm_id=AuditQualityObj.alarm_id;
+				obj.head_code = AuditQualityObj.head_code;
+				obj.head_type_id = DataManager.getHeadendByCode(AuditQualityObj.head_code).type_id;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.daily.alarmHandler.AlertManage","auditQualityAlarm",obj,auditQualityAlarmBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function auditQualityAlarmBack(res:String):void{
+				DataManager.showErrorMessage(res);
+				close(null);
+			}
+			private function close(e:Event):void{
+				
+			    player.stop();
+				
+				this.dispatchEvent(new Event("Quality_list_refresh"));
+				PopUpManager.removePopUp(this);
+			}
+			private function playAndMark(obj:Object):void{ 
+				var radioStreamResultBean:RadioStreamResultBean = obj.data as RadioStreamResultBean;
+				player.setText("正在播放...");
+				player.playUrl(radioStreamResultBean.url);
+			}
+			
+			protected function type_changeHandler():void
+			{
+				// TODO Auto-generated method stub
+				if(type.selectedItem != null && type.selectedItem.value == "1"){
+					wgtsomeGroup.visible = wgtsomeGroup.includeInLayout = true;
+					hwldsomeGroup.visible = hwldsomeGroup.includeInLayout = false;
+				} else if(type.selectedItem != null && 
+					
+					type.selectedItem.value == "2"){
+					wgtsomeGroup.visible = wgtsomeGroup.includeInLayout = false;
+					hwldsomeGroup.visible = hwldsomeGroup.includeInLayout = true;
+				} 
+			}
+			
+		]]>
+	</fx:Script>
+	
+</s:TitleWindow>

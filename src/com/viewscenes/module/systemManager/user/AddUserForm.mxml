@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" close="close(event);"
+			   xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+			   xmlns:controls="com.viewscenes.utils.tree.CheckTree.controls.*" 
+			   creationComplete="init();" xmlns:timecomp="com.viewscenes.utils.timecomp.*"
+			   mouseDown="startDrag()"
+			   title="添加用户信息"
+			   mouseUp="stopDrag();">
+	<s:layout>
+		<s:FormItemLayout/>
+	</s:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.viewscenes.utils.timecomp.DateUtil;
+			import mx.collections.ArrayList;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			
+			[Bindable]
+			private var roleObj:Object ;
+			
+			[Bindable]
+			private var treeXML:XMLList = new XMLList();
+			
+			[Bindable]
+			private var userObj:Object = {"user_id":"","userCode":"", "userName":"", "password":"","age":"", "sex":"1","mobilephone":"", "telephone":"", "address":"","post":"", "email":"",  "description":"","priority":""};
+			
+			[Bindable]
+			private var sexArray:ArrayCollection = new ArrayCollection([{label:"女",code:"0"},{label:"男",code:"1"}]);
+			
+			private function init():void{
+				password.text="123456";
+				password2.text="123456";
+			}
+			
+			public function setRole(obj:Object):void{
+				userObj.role_id = obj.role_id;
+				roleObj = obj;
+				
+			}
+			
+			private function addUser():void{
+				
+				if (validPsw())
+					RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.user.PubUserManager","addUser",userObj,_addUser,onFault));
+			}
+			
+			public function _addUser(newid:String):void{
+				
+				userObj.user_id = newid;
+				addUserCust();
+			}
+			
+			private function onFault(e:RPCException):void
+			{
+				// TODO Auto Generated method stub
+				Alert.show(e.message);
+			}
+			
+			private function addUserCust():void{				
+				var asObj:Object = new Object;
+				asObj.user_id = userObj.user_id;
+				asObj.role_id=userObj.role_id;
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.user.PubUserManager","addUserCustByRoleId",asObj,_addUserCust,onFault));
+			}
+			
+			private function _addUserCust(arr:ArrayCollection):void{
+				Alert.show("用户信息添加成功！");
+				
+				this.dispatchEvent(new Event("user_list_refresh"));
+				close(null);
+			}
+			
+			private function close(e:Event):void{
+				//dispatchEvent(new AdvancedEvent("userListRefresh",true,false,null));
+				PopUpManager.removePopUp(this);
+				
+			}
+			
+			private function validPsw():Boolean{
+				
+				if (password.text== "" || password2.text == ""){
+					pswMark.text='密码不能为空';
+					//password.setStyle('borderColor','0xff0000');
+					
+					return false
+				}
+				
+				if (password.text == password2.text){
+					password.setStyle('borderColor','6908265');
+					pswMark.text='';
+				}else{
+					password.setStyle('borderColor','0xff0000');
+					pswMark.text='两次输入的密码不一致';
+					return false;
+				}
+				
+//				if(userCode.text == ""){
+//					codeMark.text = "用户代码不能为空";
+//					return false;
+//				}else{
+//					codeMark.text ="";
+//				}
+				if(userName.text == ""){
+					nameMark.text = "用户名不能为空";
+					return false;
+				}else{
+					nameMark.text = "";
+				}
+				
+				return true;
+			}
+			
+			
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:HGroup width="100%"  horizontalAlign="right" verticalAlign="middle">
+		<s:VGroup width="50%"  horizontalAlign="right" verticalAlign="middle">
+			<s:Form>
+				
+				<s:FormItem label="角色名称" height="20">
+					<s:Label  text="{roleObj.name}" />
+				</s:FormItem>
+				
+				<!--s:FormItem label="用户代码：" height="20">
+					<s:layout>
+						<s:HorizontalLayout/>
+					</s:layout>
+					<s:TextInput id="userCode" text="" change="{userObj.userCode=userCode.text}"/><s:Label text="*" color="0xff0000"/>
+					<s:Label id="codeMark"/>
+				</s:FormItem-->
+				
+				<s:FormItem label="用 户 名：" height="20">
+					<s:layout>
+						<s:HorizontalLayout/>
+					</s:layout>
+					<s:TextInput id="userName" text="" change="{userObj.userName=userName.text}"/><s:Label text="*" color="0xff0000"/>
+					<s:Label id="nameMark"/>
+				</s:FormItem>
+				
+				<s:FormItem label="密    码：" height="20">
+					<s:layout>
+						<s:HorizontalLayout/>
+					</s:layout>
+					<s:TextInput id="password" text="" change="{validPsw();userObj.password=password.text}" displayAsPassword="true"/><s:Label text="*" color="0xff0000"/>
+					
+				</s:FormItem>
+				
+				<s:FormItem label="确认密码：" height="20">
+					<s:layout>
+						<s:HorizontalLayout/>
+					</s:layout>
+					<s:TextInput id="password2" text="" change="validPsw()" displayAsPassword="true" /><s:Label text="*" color="0xff0000"/>
+					
+					<s:Label id="pswMark"/>
+				</s:FormItem>
+				<s:FormItem label="年纪:"  height="20">
+					<s:TextInput id="age" text="" change="{userObj.age=age.text}" restrict="0-9\" />
+				</s:FormItem>
+				<s:FormItem label="性  别："  height="20">
+					<s:ComboBox id="sex" width="50" dataProvider="{sexArray}" selectedIndex="0" change="{userObj.sex=sex.selectedItem.code}"/>
+				</s:FormItem>
+				<s:FormItem label="移动电  话："  height="20">
+					<s:TextInput id="mobilephone" text="" change="{userObj.mobilephone=mobilephone.text}"/>
+				</s:FormItem>
+				<s:FormItem label="办公电  话："  height="20">
+					<s:TextInput id="telephone" text="" change="{userObj.telephone=telephone.text}"/>
+				</s:FormItem>
+				
+				<s:FormItem label="地  址："  height="20">
+					<s:TextInput id="address" text="" change="{userObj.address=address.text}"/>
+				</s:FormItem>
+				<s:FormItem label="职位："  height="20">
+					<s:TextInput id="post" text="" change="{userObj.post=post.text}"/>
+				</s:FormItem>
+				<s:FormItem label="E-MAIL:"  height="20">
+					<s:TextInput id="email" text="" change="{userObj.email=email.text}"/>
+				</s:FormItem>
+				<s:FormItem label="权限"  height="20">
+					<s:TextInput  id="priority" text="" change="{userObj.priority=priority.text}"/>
+				</s:FormItem>
+				<!--s:FormItem label="有效开始时间："  height="20">
+				<timecomp:TimeNew id="start_time" TimeNewChanged="{userObj.start_time=start_time.text}"/>
+				</s:FormItem>
+				<s:FormItem label="有效结束时间："  height="20">
+				<timecomp:TimeNew id="end_time" text="2050-01-01 00:00:00"   TimeNewChanged="{userObj.end_time=end_time.text}"/>
+				</s:FormItem-->
+				<s:FormItem label="描述信息"  height="35">
+					<s:TextArea id="description" height="30" color="0x000000" text="" change="{userObj.description=description.text}"/>
+				</s:FormItem>
+				
+				<s:FormItem width="100%"  height="30">
+					<s:layout>
+						<s:HorizontalLayout/>
+					</s:layout>
+					<s:Button buttonMode="true" label="确认添加用户" click="addUser();"/>
+					<!--s:Button label="关闭" click="close(event)"/-->
+				</s:FormItem>
+			</s:Form>
+		</s:VGroup>
+		
+		
+	</s:HGroup>
+</s:TitleWindow>

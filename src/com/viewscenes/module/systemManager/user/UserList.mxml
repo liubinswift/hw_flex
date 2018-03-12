@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+		 creationComplete="init();">
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.morcha4.frame.system.EventBus;
+			import com.morcha4.util.RendererUtil;
+			import com.viewscenes.global.DataManager;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			[Bindable]
+			private var userCollection:ArrayCollection;
+			[Bindable]
+			private var roleObj:Object;
+			[Bindable]
+			public var userModule:UserModule=new UserModule;
+			private function init():void{
+			}
+			
+			
+			public function getUserListByRoleId(e:AdvancedEvent):void{
+				userCollection = new ArrayCollection;
+				var obj:Object = new Object;
+				obj = e.data;
+				roleObj = obj;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.user.PubUserManager","getUserListByRoleId",obj,_getUserListByRoleId,_getUserListByRoleId));
+			}
+			
+			private function _getUserListByRoleId(arr:ArrayCollection):void{
+				if (arr.length > 0 && arr[0].hasOwnProperty("message")){
+					Alert.show(arr[0].message);
+				}else{
+					
+					userCollection = arr;
+					userModule.roleList.userArr=arr;
+				}
+			}
+			
+			
+			private function delUser(obj:Object):void{
+				if(DataManager.user.userId == uDg.selectedItem.userId){
+					Alert.show("您无法删除自己");
+					return;
+				}
+				Alert.show("确定要删除？","删除",Alert.OK|Alert.CANCEL,this,delChoose);
+				
+				
+			}
+			private function delChoose(e:CloseEvent):void
+			{
+				// TODO Auto Generated method stub
+				if(e.detail == Alert.OK){
+					delUserById(uDg.selectedItem.userId);					
+				}else{
+					return;
+				}
+				
+				
+			}
+			
+			private function updateUser(obj:Object):void{
+				openEditUserForm(obj.data);
+			}
+			
+			
+			private function delUserById(userId:String):void{
+				var obj:Object = new Object;
+				obj.userId = userId;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.user.PubUserManager","delUserById",obj,_delUserById,_delUserById));
+				
+			}
+			
+			private function _delUserById(arr:ArrayCollection):void{
+				if (arr.length>0 && arr[0].hasOwnProperty("message")){
+					Alert.show(arr[0].message);
+				}else{
+					Alert.show("删除用户成功！");
+					getUserListByRoleId(new AdvancedEvent("",false,false,roleObj));
+				}
+			}
+			
+			private function openEditUserForm(obj:Object):void{
+				var pop:EditUserForm = EditUserForm(PopUpManager.createPopUp(this,EditUserForm,true));
+				
+				pop.setUser(obj);
+				PopUpManager.centerPopUp(pop);
+				
+				pop.addEventListener("user_list_refresh",refreshUserList);
+			}
+			
+			private function addUserBtn_clickHandler(event:MouseEvent):void{
+				
+				var pop:AddUserForm = AddUserForm(PopUpManager.createPopUp(this,AddUserForm,true));
+				
+				pop.setRole(roleObj);
+				PopUpManager.centerPopUp(pop);
+				
+				pop.addEventListener("user_list_refresh",refreshUserList);
+				
+			}
+			
+			protected function refreshUserList(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				getUserListByRoleId(new AdvancedEvent("",false,false,roleObj));
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:Group width="100%" height="100%">
+		
+		<s:layout>
+			<s:VerticalLayout/>
+		</s:layout>
+		
+		<s:DataGrid textAlign="center" id="uDg" width="100%" height="100%" dataProvider="{userCollection}">
+			<s:columns>
+				<s:ArrayCollection>
+					<!--s:GridColumn  minWidth="100" headerText="用户代码" dataField="userCode"/-->
+					<s:GridColumn  minWidth="100" headerText="用户名" dataField="userName"/>
+					<s:GridColumn  minWidth="100" headerText="职位" dataField="post"/>
+					<s:GridColumn  minWidth="70" headerText="年纪" dataField="age"/>
+					<s:GridColumn  minWidth="100" headerText="移动电话" dataField="mobilephone"/>
+					<s:GridColumn  minWidth="100" headerText="办公电话" dataField="telephone"/>
+					<s:GridColumn  minWidth="100" headerText="地址" dataField="address"/>
+					<s:GridColumn  minWidth="100" headerText="E-MAIL" dataField="email"/>
+					
+					<!--<s:GridColumn  minWidth="100" headerText="描述信息" dataField="description"/>
+					<s:GridColumn  minWidth="100" headerText="有效开始时间" dataField="start_time"/>
+					<s:GridColumn  minWidth="100" headerText="有效结束时间" dataField="end_time"/>-->
+					<s:GridColumn  minWidth="50" headerText="修改" dataField="userId" itemRenderer="{RendererUtil.getButtonRenderer('修改',updateUser)}"/>
+					<s:GridColumn  minWidth="50" headerText="删除" dataField="userId" itemRenderer="{RendererUtil.getButtonRenderer('删除',delUser)}"/>
+				</s:ArrayCollection>
+			</s:columns>
+		</s:DataGrid>
+		
+		<s:Button buttonMode="true" id="addUserBtn" label="添加用户" height="30" click="addUserBtn_clickHandler(event)"/>
+	</s:Group>
+</s:Group>

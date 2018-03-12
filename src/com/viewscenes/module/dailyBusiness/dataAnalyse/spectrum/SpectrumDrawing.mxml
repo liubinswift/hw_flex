@@ -1,0 +1,597 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" 
+		  width="100%" height="100%" 
+		  creationComplete="m_init()" 
+		  resize="parentResize()"
+		  xmlns:contaners="com.morcha4.ui.contaners.*" xmlns:utils="com.viewscenes.utils.*" xmlns:quality="com.viewscenes.module.dailyBusiness.dataAnalyse.quality.*" >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:SolidColorStroke id = "s1" color="red" alpha="0.7"/>
+		<s:SolidColorStroke id = "vSolid" color="#222222" alpha="1" /><!--网格纵线颜色-->
+		<s:SolidColorStroke id = "hSolid" color="#ffffff" alpha="1"/><!--网格横线颜色-->
+		<s:SolidColor id = "vFill" color="#000000" alpha="0"/>
+		<s:SolidColor id = "hFill" color="#000000" alpha="0.9"/><!--背景填充颜色-->
+		
+		<s:SolidColorStroke id="chartAxisStrokeThick" caps="square" color="0x363636" weight="6" /><!--纵坐标轴颜色 -->
+		<s:SolidColorStroke id="chartAxisStroke" color="0x363636"/>
+	</fx:Declarations>
+	<contaners:BorderContainer width="100%" height="100%" fontSize="12">
+		<s:Panel styleName="spectrum" width="100%" height="100%" title="" id="_drawPanel" backgroundColor="#363636" minHeight="200" minWidth="250"  color="0x000000">
+			
+			<s:HGroup width="100%" verticalAlign="middle" paddingRight="5" y="-27" color="0x000000">
+				<s:Label text="" id="_vTitle"/>
+				<s:Spacer width="100%"/>
+				<s:Label text="频谱门限"/>
+				<utils:RegExpTextInput id="_spectrumLevel" mouseDown="event.stopImmediatePropagation()" text="{_threshold}" regex="{reg}" width="40"   maxChars="5"  maxWidth="40"/>
+				<s:Button buttonMode="true" label="设置" click="m_setSpectrumLevel()"/>
+				<!--s:Button label="入库" click="m_clickSaveSpectrumLevel()"/-->
+				<s:DropDownList dataProvider="{getDataType}" id="getSomeData" selectedIndex="0"/>
+				<!--s:Button buttonMode="true" label="下发任务" click="sendTaskByFreqData()"/-->
+			</s:HGroup>
+			<mx:LineChart width="100%" height="100%" paddingBottom="1"  dataProvider="{_chartDP}"  itemClick="m_itemClickFun(event)" color="#FFFFFF"
+						  id="linechart" alpha="1.0" showDataTips="true" selectionMode="single" dataTipFunction="m_dtFunc"
+						  dragEnabled="true" dragMoveEnabled="true" dragEnter="m_dragIn(event)" dragDrop="m_complete(event)">
+				<mx:backgroundElements>
+					<mx:GridLines  horizontalTickAligned="true" verticalTickAligned="true" gridDirection="both" verticalChangeCount="-10"
+								   horizontalAlternateFill="{hFill}" horizontalFill="{hFill}" verticalAlternateFill="{hFill}" verticalFill="{hFill}"   
+								   horizontalStroke="{hSolid}" verticalStroke="{vSolid}">
+						
+					</mx:GridLines>
+				</mx:backgroundElements>
+				<mx:horizontalAxis>
+					<mx:LinearAxis  maximumLabelPrecision="1" id="_hAxis"  minimum="{_min}" maximum="{_max}" title="频率(MHz)" />
+					<!--mx:CategoryAxis   id="hor"  categoryField="freq" dataProvider="{chartDP}"/-->
+				</mx:horizontalAxis>
+				<mx:verticalAxis>
+					<mx:LinearAxis maximumLabelPrecision="1" id="_vAxis"/>
+				</mx:verticalAxis>
+				<mx:verticalAxisRenderers>
+					<!-- 定制纵坐标 -->
+					<mx:AxisRenderer textAlign="right" id="_vZuobiaozhou" axis="{_vAxis}" axisStroke="{chartAxisStrokeThick}" color="#FFFFFF" tickStroke="{chartAxisStroke}" />
+				</mx:verticalAxisRenderers>
+				
+				<mx:series>
+					<quality:LineSeriesNew id="_spectrumLine"  maxWidth="1" xField="freq" yField="spectrum"  dataProvider="{_chartDP}"
+										   lineSegmentRenderer="com.viewscenes.module.dailyBusiness.dataAnalyse.spectrum.SpectrumRender" usedUi="{this}"
+										   displayName=""/>
+					<quality:LineSeriesNew id="_holdLine" dataProvider="{_lineAxis}" yField="spectrum"  lineStroke="{s1}"/>
+					<!--holdLine作用 由lineAxis提供Y轴最大值最小值,及鼠标位置的像素,计算门限值在Linechart中的位置-->
+				</mx:series>
+				
+			</mx:LineChart>
+			<s:Image source="com/viewscenes/images/module/onlineListen/realMonitor/levelbg.png"  fillMode="repeat" alpha="0.2" mouseEnabled="false" mouseChildren="false"
+					 id="_levelbg" x="46" y="0" width="100%" height="100%"  dragEnter="m_dragIn(event)" dragDrop="m_complete(event)"/>
+			<s:Image fillMode="repeat" source="com/viewscenes/images/module/onlineListen/realMonitor/levelline2.png" height="100%" width="1" 
+					 id="_middleLine"  x="247" y="0" />
+			<s:Image fillMode="repeat" source="com/viewscenes/images/module/onlineListen/realMonitor/levelline.png" width="100%" height="1"
+					 id="_rule"  x="46" y="300" mouseDown="m_onStartDrag(event)" />
+			<!-- mx:HRule id="_rule"  x="47" y="300" mouseDown="m_onStartDrag(event)"  width="100%" strokeWidth="1" strokeColor="#84b5af"/-->
+			<!-- rule作用：门限  -->
+		</s:Panel>
+	</contaners:BorderContainer>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.nav.NavManager;
+			import com.morcha4.frame.nav.NavParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.morcha4.frame.system.EventBus;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.EventDeclare;
+			
+			import flash.utils.clearInterval;
+			import flash.utils.setInterval;
+			import flash.utils.setTimeout;
+			
+			import mx.charts.HitData;
+			import mx.charts.LineChart;
+			import mx.collections.ArrayCollection;
+			import mx.controls.AdvancedDataGrid;
+			import mx.controls.Alert;
+			import mx.controls.Text;
+			import mx.core.Application;
+			import mx.core.DragSource;
+			import mx.core.UIComponent;
+			import mx.events.DragEvent;
+			import mx.events.ResizeEvent;
+			import mx.managers.DragManager;
+			import mx.rpc.events.*;
+			
+			/**
+			 * 是否画完一遍
+			 */
+			private var _drawState:Boolean = false; 
+			private var _dataType:String 	= "";
+			/**
+			 * 报警门限电平
+			 */
+			private var _level:String		= "";
+			/**
+			 * 画图显示的单位
+			 */
+			private var _units:String        = "kHz";
+			/**
+			 * 前端code
+			 */
+			[Bindable] private var _headcode:String 	= "";
+			/**
+			 * 每个像素占的刻度值	
+			 */
+			[Bindable] private var _po:Number 		= 0;
+			/**
+			 * 门限值
+			 */
+			[Bindable] public  var _threshold:Number = 50;		
+			/**
+			 * 门限Y值
+			 */
+			public  var _thresholdY:Number = 50;	
+			/**
+			 * X轴对应页面像素位置
+			 */
+			public var ZeroX:Number=0;
+			/**
+			 * 坐标Y轴上限
+			 */
+			//			[Bindable] private var _topLimit:Number 	= 100;
+			/**
+			 * 坐标Y轴下限
+			 */
+			//			[Bindable] private var _lowerLimit:Number= 0;
+			
+			[Bindable] private var _min:Number  		= 23;
+			[Bindable] private var _max:Number  		= 26.1;
+			[Bindable] private var _step:Number 		= 8;
+			
+			private var _tempArray:ArrayCollection = new ArrayCollection();
+			/**
+			 * 频谱图数据
+			 */
+			[Bindable] public var _chartDP:ArrayCollection 		= new ArrayCollection();
+			private var _dicChartDP:Object=new Object();
+			[Bindable]private var _lineAxis:ArrayCollection 		= new ArrayCollection([
+				{freq:0,spectrum:0},{freq:0,spectrum:255}]);
+			
+			[Bindable] var getDataType:ArrayCollection = new ArrayCollection([{label:'高于门限数据',data:0},{label:'低于门限数据',data:'低于门限数据'}]);
+			/**
+			 * 
+			 */
+			private var _urltemp:String = "";//
+			/**
+			 * 存放高于门限的数据
+			 */
+			private var _highLeverObj:Object=new Object();
+			/**
+			 * 高门限值
+			 */
+			private var _highlevelLimitValue:Number = 100;
+			
+			[Bindable]private var reg:RegExp =   /^[1-9]\d*\.\d*|0\.\d*[1-9]\d*|[1-9]\d*|0$/;
+			
+			
+			public var ownerParent:UIComponent;
+			public function m_init():void{
+				if(_drawPanel.width>=600){
+					_drawPanel.title = "         频谱分布                       点击频点可以实时监听";
+				} else if(_drawPanel.width>=350 && _drawPanel.width<600){
+					_drawPanel.title = "         频谱分布";
+				} else{
+					_drawPanel.title = "";
+				}
+				
+				//					this.mediaplay.addEventListener("start",getRealUrl);
+				//					this.mediaplay.addEventListener("stop",stopRealUrl);
+				//					EventBus.addEventListener("KLTV_REALTIME_FREQ_SCAN_DATA",m_parseKltvSpectrum);
+				//					m_setChartParam(23,26.1,0,100,"MHz","dBuv");
+				//					m_parseKltvSpectrum(null);
+			}
+			/**
+			 * 初始化门限
+			 */
+			private function m_initLine():void{
+				_lineAxis.removeAll();
+				var tmobj:Object = new Object;
+				tmobj.spectrum = _vAxis.minimum;
+				tmobj.freq 	   =0;
+				_lineAxis.addItemAt(tmobj,0);
+				var tmobj1:Object = new Object;
+				tmobj1.spectrum = _vAxis.maximum;
+				tmobj1.freq 	   =0;
+				_lineAxis.addItemAt(tmobj1,1);
+				
+				setTimeout(m_setSpectrumLevel,100);
+				
+				ZeroX = m_getYByValue(_vAxis.minimum);
+				setTimeout(m_setMiddleLine,800);
+			}
+			
+			/**
+			 * 这种中线位置
+			 */
+			public function m_setMiddleLine():void{
+				_middleLine.x = _drawPanel.width-_spectrumLine.width+_spectrumLine.width/2;
+				_middleLine.height = ZeroX-9;
+				_middleLine.top = m_getYByValue(_vAxis.maximum)+1;
+				_levelbg.height = ZeroX-9;
+				_levelbg.top = m_getYByValue(_vAxis.maximum)+1;
+			}
+			/**
+			 * 设置图表参数
+			 * @param startFreq 开始频点
+			 * @param stopFreq	结束频点
+			 * @param minValue  显示扫描最小值
+			 * @param maxValue	小时扫描最大值
+			 * @param units		频率单位 kHz或MHz
+			 * @param valueUnits 测量值单位 "dBuv"
+			 * @param band 		波段 0短波 1中波 2调频
+			 */
+			public function m_setChartParam(startFreq:String,stopFreq:String,minValue:String,maxValue:String,
+											ferqUnits:String,valueUnits:String,band:String):void{
+				_vAxis.minimum = new Number(minValue);
+				_vAxis.maximum = new Number(maxValue);
+				_highlevelLimitValue = _vAxis.maximum;
+				_units = ferqUnits;
+				
+				_hAxis.minimum = new Number(startFreq);
+				_hAxis.maximum = new Number(stopFreq);
+				if(band == "1"){
+					_hAxis.interval=(_hAxis.maximum-_hAxis.minimum)/9;
+				} else {
+					_hAxis.interval=(_hAxis.maximum-_hAxis.minimum)/10;
+				}
+				_hAxis.title = "频率("+ferqUnits+")";//MHz
+				_vAxis.interval=(_vAxis.maximum-_vAxis.minimum)/10;
+				
+				_vTitle.text = valueUnits;//"dBuv"
+				
+				
+				setTimeout(m_initLine,600);
+			}
+			
+			
+			
+			
+			
+			//			/**
+			//			 * 根据频谱数据画图
+			//			 */
+			//			public function m_parseKltvSpectrum(e:AdvancedEvent):void{
+			//				_chartDP.removeAll();
+			//				var ioob:Object = new Object();
+			//				ioob.freq = "24.7";
+			//				ioob.spectrum="70";
+			//				_chartDP.addItem(ioob);
+			//				var ioob1:Object = new Object();
+			//				ioob1.freq = "25";
+			//				ioob1.spectrum="40";
+			//				_chartDP.addItem(ioob1);
+			//				var ioob2:Object = new Object();
+			//				ioob2.freq = "24.1";
+			//				ioob2.spectrum="100";
+			//				_chartDP.addItem(ioob2);
+			//				_spectrumLine.dataProvider = _chartDP;
+			//				return ;
+			//				var freqs:Array = new Array();
+			//				var values:Array = new Array()
+			//				var freqScanData:SpectrumScanData = e.data as SpectrumScanData;
+			//				
+			//				freqs = freqScanData.freq;
+			//				values = freqScanData.value;
+			//				for(var i:int=0; i<freqs.length; i++){
+			//					var freq:Number = 0;
+			//					var value:Number = 0;
+			//					freq = freqs[i];
+			//					value = values[i];
+			//					
+			//					
+			//					//					progressBar.setProgress(currentFreq-min,max-min);
+			//					if(value == 0 ){
+			//						continue ;
+			//					}
+			//					
+			//					if(value >1000){
+			//						value = value/1000;
+			//					}
+			//					
+			//					var obj:Object = new Object();
+			//					obj.freq = freq/1000;
+			//					obj.spectrum = value;
+			//					_chartDP.addItem(obj);
+			//				}
+			//			}
+			//			
+			/**
+			 * 停止扫描，恢复默认状态
+			 */
+			public function m_setStopScan():void{
+				_chartDP = new ArrayCollection();
+				_dicChartDP=new Object();				
+				_drawState = false;
+				_tempArray = new ArrayCollection();
+			}
+			var lastFreq:String = "0";
+			public function m_setScanData(datalist:ArrayCollection):void{
+				_spectrumLine.dataProvider = null;
+				if(_drawState){
+					_chartDP = new ArrayCollection();
+					_spectrumLine.dataProvider = _chartDP;
+					_dicChartDP=new Object();				
+					_drawState = false;
+					if(_tempArray.length>0){
+						for(var j:int=0;j<_tempArray.length;j++){
+							_chartDP.addItem(_tempArray.getItemAt(j));
+						}
+						_tempArray = new ArrayCollection();
+					}
+					
+				}
+				for(var i:int=0;i<datalist.length;i++){
+					var DataObj:Object = new Object();
+					var obj:Object = datalist.getItemAt(i);
+					if(parseFloat(obj.freq) == _hAxis.maximum){
+						_drawState = true;
+						//Alert.show(dataarry[i]+"------"+_hAxis.maximum);																	
+					}
+					DataObj.freq = obj.freq;
+					if(new Number(lastFreq) > new Number(obj.freq)){
+						_chartDP = new ArrayCollection();
+						_spectrumLine.dataProvider = _chartDP;
+					}
+					lastFreq = obj.freq;
+					
+					if(parseFloat(obj.spectrum)<0){
+						DataObj.spectrum=0;
+					} else{
+						if(parseFloat(obj.spectrum)>_highlevelLimitValue){
+							_highLeverObj[DataObj.freq]=obj.spectrum;
+							DataObj.spectrum=_highlevelLimitValue+"";
+						} else{
+							DataObj.spectrum=obj.spectrum;
+						}
+					}
+					//					if(_dicChartDP[DataObj.freq]){//如果有
+					//						var oldObj:Object = _dicChartDP[DataObj.freq];
+					//						//chartDP.addItem(dicChartDP[DataObj.freq]);
+					//						_chartDP.setItemAt(DataObj,_chartDP.getItemIndex(oldObj));
+					//						_dicChartDP[DataObj.freq]=DataObj;
+					//					} else{
+					//						_dicChartDP[DataObj.freq]=DataObj;
+					//						_chartDP.addItem(_dicChartDP[DataObj.freq]);
+					//					}
+					_dicChartDP[DataObj.freq]=DataObj;
+					_chartDP.addItem(DataObj);
+					if(_drawState && parseFloat(DataObj.freq) !=  _hAxis.maximum){
+						_tempArray.addItem(DataObj);
+					}
+					if(_chartDP.length==1){
+						var obj11:Object = new Object();
+						obj11.freq = "1";
+						obj11.spectrum = "-1";
+						_chartDP.addItem(obj11);
+					}
+					
+				}
+				_spectrumLine.dataProvider = _chartDP;
+			}
+			
+			/**
+			 * 通过频谱数据下发任务
+			 * 返回要下发频率的集合
+			 */
+			private function sendTaskByFreqData():void{
+				/**levelFlag true取高于等于门限的数据 false取低于等于门限的数据*/
+				var levelFlag:Boolean = true;
+				if(getSomeData.selectedItem.label == "高于门限数据"){
+					levelFlag = true;
+				} else if(getSomeData.selectedItem.label == "低于门限数据"){
+					levelFlag = false;
+				}
+				var list:ArrayCollection = new ArrayCollection();
+				for(var i:int=0;i<_chartDP.length;i++){
+					var freq:String = _chartDP.getItemAt(i).freq;
+					if(freq != "1"){
+						if(levelFlag){
+							if(new Number(freq)>=_threshold){
+								list.addItem(freq);
+							}
+						} else{
+							if(new Number(freq)<=_threshold){
+								list.addItem(freq);
+							}
+						}
+					}
+					
+				}
+				
+				var obj:Object = new Object();
+				obj.headcode = _headcode;
+				obj.freqList = list;
+				Alert.show(list.toString());
+				NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MODULE_NAV,false,false,new NavParam(null,"/日常业务/任务管理/新增任务", null)));
+				
+				
+				intervalId = setInterval(checkTask,300,obj);
+			}
+			var intervalId:uint = 0;
+			private function checkTask(obj:Object):void{
+				if(DataManager.createdModuleObj["/日常业务/任务管理/新增任务"] != null){
+					var eventa:AdvancedEvent = new AdvancedEvent(EventDeclare.ADD_TASK_SPECTRUM);
+					eventa.data = obj;
+					EventBus.dispatchEvent(eventa);
+					
+					clearInterval(intervalId);
+				}
+			}
+			/**
+			 * 拖动门限触发
+			 */
+			private function m_onStartDrag(event:MouseEvent):void{
+				//				event.preventDefault();
+				
+				//				var dragInitiator:HRule = HRule(event.currentTarget);
+				var dragInitiator:Image = Image(event.currentTarget);
+				var ds:DragSource = new DragSource();
+				
+				ds.addData( {"x" : event.localX, "y" : event.localY},"move");
+				DragManager.doDrag(dragInitiator,ds,event); // 开始拖动这个物体  btnDrag
+				
+			}
+			private function m_dragIn(event:DragEvent) : void{
+				DragManager.acceptDragDrop(LineChart(event.target));
+				//				DragManager.acceptDragDrop(Image(event.target));
+				// cansAccess 接受被拖进来的物体
+			}
+			private function m_complete( e : DragEvent ) : void
+			{
+				//var xy : Object =  e.dragSource.dataForFormat("move");
+				// 获取数据对象 也就是在doDrag函数中写的DragSource对象
+				//			 rule.x = this.mouseX ;
+				//			 testLine.items.length.toString();
+				_holdLine.dataProvider = null;
+				_holdLine.dataProvider = _lineAxis;
+				
+				var YValue:String = _levelbg.mouseY.valueOf().toString();
+				
+				_threshold = m_getValueByY(_levelbg.mouseY);//getValueByY(this.mouseY-65);
+				
+				//				m_setLevel(_threshold,_levelbg.mouseY );
+				m_setSpectrumLevel();
+			}
+			
+			/**
+			 * 通过显示的值换算画图的位置
+			 */
+			private function m_getValueByY(yy:Number):Number{
+				//				yy += 9;//偏移补偿
+				var y0:Number = _holdLine.items[0].y;
+				var y1:Number = _holdLine.items[1].y;
+				var xx:Number = Math.abs(y1-y0);
+				var linepo:Number = y1>y0?(y1-yy):y0-(yy);
+				//po = (topLimit-lowerLimit)/xx;
+				var nn:Number = new Number(((linepo*(_vAxis.maximum-_vAxis.minimum))/xx+_vAxis.minimum).toFixed(1));
+				//return new Number((nn+lowerLimit).toFixed(1));
+				return nn;
+			}
+			
+			/**
+			 * 通过坐标轴的值获取应该显示的位置
+			 */
+			public function m_getYByValue(value:Number):Number{
+				
+				var y0:Number = _holdLine.items[0].y;
+				var y1:Number = _holdLine.items[1].y;
+				//Alert.show("y1:"+y1+"=="+"y0:"+y0);
+				var xx:Number = Math.abs(y1-y0);		//Y轴像素总数
+				
+				_po = (_vAxis.maximum-_vAxis.minimum)/xx;			//一个像素表示po个数值
+				var pox1:Number = (value-_vAxis.minimum)/_po;	//数值 能用多少个像素来表示
+				//Alert.show(pox1+"pox1");
+				//				Alert.show("y1:"+y1+"=="+"y0:"+y0+"---"+xx+"=="+po+"==="+pox1);
+				var pox:Number = new Number((((value-_vAxis.minimum)*xx)/(_vAxis.maximum-_vAxis.minimum)).toFixed(1));
+				//Alert.show(pox+"pox");
+				var nn:Number = y1>y0?(y1-pox):y0-(pox);
+				nn += 9;
+				return nn;
+			}
+			
+			
+			/**
+			 * 重写弹出提示信息
+			 */ 
+			public function m_dtFunc(hitData:HitData):String{
+				if(parseFloat(hitData.item.spectrum)==_highlevelLimitValue&&_highLeverObj[hitData.item.freq]!=null){
+					return "电平:"+_highLeverObj[hitData.item.freq]+_vTitle.text+","+hitData.item.freq+_units;
+				} else{
+					return "电平:"+hitData.item.spectrum+_vTitle.text+","+hitData.item.freq+_units;
+				}
+			}
+			
+			/**
+			 * 点击频谱线播放该频点
+			 */ 
+			private function m_itemClickFun(dc:MouseEvent):void
+			{
+				if(dc.currentTarget == null || (dc.currentTarget as LineChart).selectedChartItem == null){
+					return;
+				}
+				//				var freq:Number = new Number((dc.currentTarget as LineChart).selectedChartItem.item.freq.toString());
+				var freq:String = (dc.currentTarget as LineChart).selectedChartItem.item.freq.toString();
+				//				if(freq<=108){
+				//					freq = freq*1000;
+				//				}
+				
+				ownerParent.dispatchEvent(new AdvancedEvent("SPECTRUM_SCAN_PLAY_FREQ",false,false,freq));
+			}
+			//切回页面调用
+			public function m_onshow():void
+			{
+				//				if(!this.mediaplay.isClose){
+				//					this.mediaplay.open();
+				//				}
+			}
+			//切走页面调用
+			public function m_onclose():void
+			{
+				//				if(!this.mediaplay.isClose){
+				//					this.mediaplay.setVisiable(false);
+				//				}
+			}
+			
+			
+			/**
+			 * 页面大小改变时调用 重新画图
+			 */
+			protected function parentResize():void
+			{
+				// TODO Auto-generated method stub
+				setTimeout(m_initLine,200);
+			}
+			
+			/**
+			 * 门限保存到数据库
+			 */ 
+			private function m_clickSaveSpectrumLevel():void{
+				ownerParent.dispatchEvent(new AdvancedEvent("SAVA_SPECTRUM_SCAN_LEVEL",false,false,_spectrumLevel.text));
+			}
+			
+			/**
+			 * 根据输入门限值设置页面的门限值
+			 */
+			public function m_setSpectrumLevel():void
+			{
+				var level:Number = new Number(_spectrumLevel.text);
+				var levelY:Number = m_getYByValue(level);
+				m_setLevel(level,levelY);
+			}
+			
+			/**
+			 * 根据输入门限值设置页面的门限值
+			 */
+			private function m_setLevel(level:Number,levelY:Number):void
+			{
+				_threshold = level;
+				_thresholdY = levelY;
+				_rule.y = levelY;
+				_spectrumLevel.text = level+"";
+				
+				_spectrumLine.dataProvider = null;
+				_spectrumLine.dataProvider = _chartDP;
+			}
+			
+			/**
+			 * 设置画图的数据
+			 */
+			public function m_setLineData(lineData:ArrayCollection):void{
+				_chartDP = lineData;
+				//				_spectrumLine.dataProvider = null;
+				//				_spectrumLine.dataProvider = _chartDP;
+			}
+			
+		]]>
+	</fx:Script>
+	
+</s:VGroup>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  horizontalScrollPosition="0" width="150" height="23">
+	<fx:Script>
+		<![CDATA[
+			/**
+			 * ip地址格式输入组件
+			 */
+			import mx.controls.Alert;
+			[Bindable]private var _num1:String="";
+			[Bindable]private var _num2:String="";
+			[Bindable]private var _num3:String="";
+			[Bindable]private var _num4:String="";
+			
+			public function get text():String{
+				var str:String=num1.text+dot1.text+num2.text+dot2.text+num3.text+dot3.text+num4.text;
+				return str;
+			}
+			public function set text(str:String):void{
+				if(str==""||str==null){
+					_num1="";
+					_num2="";
+					_num3="";
+					_num4="";
+				}else{
+					_num1=str.split(".")[0].toString();
+					_num2=str.split(".")[1].toString();
+					_num3=str.split(".")[2].toString();
+					_num4=str.split(".")[3].toString();
+				}
+				if(num1){
+					num1.text=_num1;
+				}
+				if(num2){
+					num2.text=_num2;
+				}
+				if(num3){
+					num3.text=_num3;
+				}
+				if(num4){
+					num4.text=_num4;
+				}
+			}
+			
+			private function input_change(str:String):void{
+				if(str=="num1"){
+					if(Number(num1.text)>255){
+						Alert.show("ip地址只能介于0和255之间的数值!");
+						num1.text="";
+						num1.setFocus();
+					}
+					if(num1.text.indexOf(".")>0){
+						num2.setFocus();
+						num1.text=num1.text.substring(0,num1.text.length-1);
+					}
+					if(num1.text.length==3){
+						num2.setFocus();
+					}
+				}
+				if(str=="num2"){
+					if(Number(num2.text)>255){
+						Alert.show("ip地址只能介于0和255之间的数值!");
+						num2.text="";
+						num2.setFocus();
+					}
+					if(num2.text.indexOf(".")>0){
+						num3.setFocus();
+						num2.text=num2.text.substring(0,num2.text.length-1);
+					}
+					if(num2.text.length==3){
+						num3.setFocus();
+					}
+				}
+				if(str=="num3"){
+					if(Number(num3.text)>255){
+						Alert.show("ip地址只能介于0和255之间的数值!");
+						num3.text="";
+						num3.setFocus();
+					}
+					if(num3.text.indexOf(".")>0){
+						num4.setFocus();
+						num3.text=num3.text.substring(0,num3.text.length-1);
+					}
+					if(num3.text.length==3){
+						num4.setFocus();
+					}
+				}
+				if(str=="num4"){
+					if(Number(num4.text)>255){
+						Alert.show("ip地址只能介于0和255之间的数值!");
+						num4.text="";
+						num4.setFocus();
+					}
+					if(num4.text.indexOf(".")>=0){
+						num4.setFocus();
+						num4.text=num4.text.substring(0,num4.text.length-1);
+					}
+				}
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:HGroup verticalAlign="middle" gap="0">
+		<s:TextInput id="num1" text="{_num1}" width="30" textAlign="center" restrict="0-9." maxChars="3"
+					  focusAlpha="0"  change="input_change('num1')"  borderVisible="false" />
+		<s:TextInput id="dot1" text="." width="8" borderVisible="false"/>
+		<s:TextInput id="num2" text="{_num2}" width="30" textAlign="center" restrict="0-9." maxChars="3"
+					 focusAlpha="0" change="input_change('num2')" borderVisible="false" />
+		<s:TextInput id="dot2" text="." width="8" borderVisible="false"/>
+		<s:TextInput id="num3" text="{_num3}" width="30" textAlign="center" restrict="0-9." maxChars="3"
+					 focusAlpha="0" change="input_change('num3')" borderVisible="false" />
+		<s:TextInput id="dot3" text="." width="8" borderVisible="false"/>
+		<s:TextInput id="num4" text="{_num4}" width="30" textAlign="center" restrict="0-9." maxChars="3"
+					 focusAlpha="0" change="input_change('num4')" borderVisible="false" />
+	</s:HGroup>
+</s:HGroup>

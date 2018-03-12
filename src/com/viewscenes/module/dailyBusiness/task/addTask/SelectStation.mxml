@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark"  xmlns:adobe="http://www.adobe.com/2006/fc" creationComplete="init(event)"
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" xmlns:comp="com.viewscenes.global.comp.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.viewscenes.beans.pub.ResHeadendBean;
+			import com.viewscenes.global.DataManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			
+			import spark.events.ListEvent;
+			
+			
+			[Bindabel]
+			public var headendBeanList:ArrayCollection = new ArrayCollection();
+			[Bindabel]
+			public var headendList:ArrayCollection = new ArrayCollection();
+			[Bindabel]
+			public var headendListQuery:ArrayCollection = new ArrayCollection();
+//			[Bindabel]
+//			public var stateList:ArrayCollection ;
+			[Bindabel]
+			public var selectedNamesAc:ArrayCollection = new ArrayCollection();
+			/**
+			 * 站点类型 all全部 101采集点 102遥控站
+			 */
+			public var headend_type:String = "all";
+			
+			private function queryHeadList():void{
+				headendBeanList = DataManager.headendNoABArr;
+			}
+			
+			//站点列表
+			public function getHeadList():void{
+				
+				var stateVal:String = stateList.selectedItem==null?"":stateList.selectedItem.state;
+//				var list:ArrayCollection = new ArrayCollection();
+				headendList.removeAll();
+				headendListQuery.removeAll();
+				for(var i=0;i<headendBeanList.length;i++){
+					var head:ResHeadendBean = headendBeanList.getItemAt(i) as ResHeadendBean;
+					
+					if(head.state ==stateVal && (headend_type=='all' || head.type_id == headend_type)){
+						headendList.addItem(headendBeanList.getItemAt(i));
+						headendListQuery.addItem(headendBeanList.getItemAt(i));
+					}
+				}
+//				headList.dataProvider = new ArrayCollection(headendList.source);
+				
+			}
+			
+			
+			private function appendHead(headArr:Vector.<Object>):void{
+				for(var i:int=0;i<headArr.length;i++){
+					var item:Object = headArr[i];
+					var insert:Boolean = true;
+					for(var j:int=0;j<selectedNamesAc.length;j++){
+						if (selectedNamesAc[j].code == item.code){
+							insert = false;
+							break;
+						}
+					}
+					
+					if(insert){
+						selectedNamesAc.addItem(item);	
+					}
+				}
+//				selectedHeadList.dataProvider = selectedNamesAc;
+			}
+			
+			private function removeHead():void{
+				var headArr:Vector.<Object> = selectedHeadList.selectedItems;
+				for(var i:int=0;i<headArr.length;i++){
+					var item:Object = headArr[i];
+					for(var j:int=selectedNamesAc.length-1;j>=0;j--){
+						if (selectedNamesAc[j].code == item.code){
+							selectedNamesAc.removeItemAt(j);
+							break;
+						}
+					}
+				}
+				
+			}
+			
+			private function autoFunction(data:Object):String{
+				return data.shortname+'['+data.code+']';
+			}
+			
+			protected function init(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				stateList.selectedIndex = 0;
+				queryHeadList();
+				getHeadList();
+			}
+			
+//			private function getRunplan():void{
+//				var data:Object = new Object();
+//				data.heads = selectedHeadList.selectedItems;
+//				this.dispatchEvent(new AdvancedEvent("GET_RUNPLAN_BY_HEADS",false,false,data));
+//			}
+			/**
+			 * 得到所选站点
+			 */
+			public function getSelectedHeadend():ArrayCollection{
+				return selectedNamesAc;
+			}
+			
+			
+			protected function auto_changeHandler():void
+			{
+				if(headInput.selectedItem==null)
+					return;
+				var headArr:Vector.<Object> = new Vector.<Object>();
+				headArr.push(headInput.selectedItem);
+				appendHead(headArr);
+			}
+
+		]]>
+	</fx:Script>
+	<s:HGroup width="100%" height="100%" horizontalAlign="left" gap="0">
+		<s:Spacer width="16"/>
+		
+		<s:VGroup width="120" height="157"  horizontalAlign="left" verticalAlign="middle">
+			<s:Label text="大洲"/>
+			<s:List  id="stateList" height="157" dataProvider="{DataManager.satateBeanArr}"  labelField="state_name" color="0x000000"
+					 change="getHeadList()" width="120">
+			</s:List>
+		</s:VGroup>
+		
+		<s:Spacer width="16"/>
+		
+		
+		<s:VGroup width="540" height="157"  horizontalAlign="left" verticalAlign="middle">
+			<s:Label text="站点选择"/>
+			<s:List   height="157" id="headList" dataProvider="{headendList}"
+						 horizontalScrollPolicy="off" width="540"  allowMultipleSelection="true"
+						 itemRenderer="com.viewscenes.module.dailyBusiness.task.addTask.HeadCodeRenderer"
+						 doubleClick="appendHead(headList.selectedItems);" doubleClickEnabled="true">
+				<s:layout>
+					<s:TileLayout requestedColumnCount="4" requestedRowCount="6" horizontalGap="10" verticalGap="10" paddingTop="10" paddingBottom="10" paddingRight="10" paddingLeft="10"/>
+				</s:layout>
+
+			</s:List>
+		</s:VGroup>
+		<s:Spacer width="16"/>
+		<s:VGroup height="157" width="130" horizontalAlign="center" verticalAlign="top">
+			<s:Spacer height="0"/>
+			<s:HGroup width="130" horizontalAlign="left">
+				<s:Label text="快速查找"/>
+			</s:HGroup>
+			
+			<comp:AutoComplete  id="headInput" dataProvider="{headendListQuery}" labelFunction="autoFunction" color="0x000000"
+							   IsAutoComplete="false" IsfocusInDropDown="true" selectedIndex="2" change="auto_changeHandler()"/>
+			<!--components:AutoComplete id="headInput" select="handleSelect(event)" requireSelection="true" dataProvider="{headendList}" labelFunction="autoFunction"/>
+			<mx:Button label="增加" styleName="ButtonGray" click="addStation(headInput.text)"/-->
+			<s:HGroup width="100%" height="100%" horizontalAlign="center">
+				<s:Button buttonMode="true" label="&gt;&gt;" click="appendHead(headList.selectedItems);"/>
+				<s:Button buttonMode="true" label="&lt;&lt;" click="removeHead();"/>
+			</s:HGroup>
+		</s:VGroup>
+		<s:Spacer width="16"/>
+		<s:VGroup width="360" height="157"  horizontalAlign="left" verticalAlign="middle">
+			<s:Label text="已选站点"/>
+			<s:List  height="157"  id="selectedHeadList" dataProvider="{selectedNamesAc}"
+						 horizontalScrollPolicy="off" width="360" allowMultipleSelection="true" doubleClickEnabled="true" 
+						 doubleClick="removeHead()" 
+						 itemRenderer="com.viewscenes.module.dailyBusiness.task.addTask.HeadCodeRenderer">
+				<s:layout>
+					<s:TileLayout requestedColumnCount="3" requestedRowCount="6" horizontalGap="10" verticalGap="10" paddingTop="10" paddingBottom="10" paddingRight="10" paddingLeft="10"/>
+				</s:layout>
+				
+			</s:List>
+		</s:VGroup>
+	</s:HGroup>
+</s:VGroup>

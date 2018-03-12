@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:mx="library://ns.adobe.com/flex/mx" 
+				 xmlns:system="com.morcha4.frame.system.*" 
+				 xmlns:global="com.viewscenes.global.*" 
+				 PAGE_SHOW="setCode(event)"
+				 xmlns:flipBar="com.viewscenes.utils.flipBar.*"
+				 xmlns:timecomp="com.viewscenes.utils.timecomp.*"
+				 width="100%" height="100%" creationComplete="init()">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.viewscenes.global.DataManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			
+			import spark.events.IndexChangeEvent;
+			[Bindable]
+			var offsetArr:ArrayCollection = new ArrayCollection();
+			
+			private function init():void{
+				//this.code.text = this.station.selectedItem.code;
+				this.startTime.text=this.startTime.text.split(' ')[0]+" 00:00:00";
+				this.getEquByCode(this.station.selectedItem.code);
+				this.getFreqByCode(this.station.selectedItem.code);
+			}
+			private function setCode(event:Event):void{
+				if(DataManager.code!=""){
+					station.selectedIndex = 1;
+					
+					for(var i:int=0;i<(station.dataProvider as ArrayCollection).length;i++){
+						if(DataManager.code==(station.dataProvider as ArrayCollection)[i].code){
+							station.selectedIndex=i;
+						}
+					}
+				}
+				
+			}
+			/**
+			 * 根据站点代码获取接收机
+			 * */
+			private function getEquByCode(code:String):void{
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getEquList",code,processGetEquList,DataManager.showErrorMessageBack));
+			}
+			
+			private function processGetEquList(arr:ArrayCollection):void{
+				this.receiver.dataProvider = new ArrayCollection();
+				this.receiver.dataProvider=arr;
+				this.receiver.selectedIndex=0;
+			}
+			/**
+			 * 根据站点code查询下发过任务的频率
+			 * */
+			private function getFreqByCode(code:String):void{
+				var obj:Object = new Object;
+				obj.code = code;
+				obj.type = "offset";
+				obj.start_time = startTime.text;
+				obj.end_time = endTime.text;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.dataretrieve.QualityAlarmCallback","getFreqList",obj,processGetFreqList,DataManager.showErrorMessageBack));
+			}
+			
+			private function processGetFreqList(arr:ArrayCollection):void{
+				//				var obj:Object = new Object();
+				//				obj.label ="全部";
+				//				obj.value="";
+				arr.addItemAt("全部",0)
+				this.freq.dataProvider=arr;
+				this.freq.selectedIndex=0;
+			}
+			/**
+			 * 下发频偏数据回收接口，成功数据入库
+			 * */
+			private function dataCallback():void{
+				offsetArr.removeAll();
+				var paraObj:Object = new Object();
+				var startDate:String=startTime.text;
+				var endDate:String=endTime.text;
+				if(startDate>endDate){
+					DataManager.showErrorMessage("起始时间不能大于结束时间，请重新输入！");
+					return;
+				}
+				if(this.sampleNumber.text =="" ) {
+					DataManager.showErrorMessage("单位时间上报个数不能为空");
+					return;
+				}
+				var freq:String = this.freq.selectedItem=="全部"?"":this.freq.selectedItem;
+				paraObj.user_id = DataManager.user.userId;
+				paraObj.priority = DataManager.user.priority;
+				paraObj.head_id = this.station.selectedItem.head_id;
+				paraObj.code = this.station.selectedItem.code;
+				paraObj.receiverCode = this.receiver.selectedItem.data;
+				paraObj.startDate = startDate;
+				paraObj.endDate = endDate;
+				paraObj.taskId = "";
+				paraObj.freq = freq;
+				paraObj.band = this.band.selectedItem.value;
+				paraObj.sampleNumber = this.sampleNumber.text;
+				paraObj.unit = this.unit.selectedItem.value;
+				clew_label.visible=true;
+				clew_label.includeInLayout=true;
+				clew_label.text ="正在回收,请稍候...";
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.dataretrieve.FrequencyOffsetDataCallback","offsetDataCallback",paraObj,processDataCallback,processDataCallback,true,null,DataManager.server_app_id));
+			}
+			
+			private function processDataCallback(res:String):void{
+				if(res=="频偏数据回收成功"){
+					this.queryOffsetData();
+				}else if(res.indexOf("回收数据量过大") != -1){
+					clew_label.text="回收数据量过大,正在接收数据,请稍候...";
+					clew_label.visible=true;
+					clew_label.includeInLayout=true;	
+					setTimeout(queryOffsetData,60000);	
+				}else{
+					DataManager.showErrorMessage(res);
+					clew_label.visible=false;
+					clew_label.includeInLayout=false;	
+				}
+			}
+			/**
+			 * 查询回收的频偏数据
+			 * */
+			private function queryOffsetData():void{
+				var paraObj:Object = new Object();
+				var startDate:String=startTime.text;
+				var endDate:String=endTime.text;
+				var freq:String = this.freq.selectedItem=="全部"?"":this.freq.selectedItem;
+				paraObj.head_id = this.station.selectedItem.head_id;
+				paraObj.receiverCode = this.receiver.selectedItem.data;
+				paraObj.startDate = startDate;
+				paraObj.endDate = endDate;
+				paraObj.freq = freq;
+				paraObj.band = this.band.selectedItem.value;
+				clew_label.text ="正在查询,请稍候...";
+				pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.online.dataretrieve.FrequencyOffsetDataCallback","queryOffsetData",paraObj,processQueryOffsetData,DataManager.showErrorMessageBack));
+				
+			}
+			
+			private function processQueryOffsetData(arr:ArrayCollection):void{
+				offsetArr.removeAll();
+				if(arr.length==0){
+					clew_label.text="无相关查询数据";
+				}else{
+					clew_label.visible=false;
+					clew_label.includeInLayout=false;
+					offsetArr=arr;
+				}
+			}
+			/**
+			 * 根据选择的频率值判断波段
+			 * */
+			protected function freq_changeHandler(freq:String):void
+			{
+				if(freq=="全部"){
+					band.selectedIndex = 0;
+				}
+				//短波范围
+				if(parseInt(freq)>=2300 && parseInt(freq) <= 26100){
+					
+					band.selectedIndex = 1;
+				}
+				//中波范围
+				if(parseInt(freq)>=531 && parseInt(freq) <= 1602){
+					
+					band.selectedIndex = 2;
+				}
+				//调频范围
+				if(parseInt(freq)>=87000 && parseInt(freq) <= 108000){
+					
+					band.selectedIndex = 3;
+				}
+				
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<s:VGroup width="100%" height="100%" paddingTop="10">
+		<s:HGroup width="100%" paddingLeft="2"  verticalAlign="middle">
+			<s:Label text="站点名称"/>
+			<global:HeadendList id="station" change="this.getEquByCode(this.station.selectedItem.code);this.getFreqByCode(this.station.selectedItem.code)"/>
+			<s:Label text="接收机"/>
+			<s:DropDownList id="receiver"  width="100" />
+			<s:Label text="频率"/>
+			<s:DropDownList id="freq" selectedIndex="0" width="70" change="freq_changeHandler(this.freq.selectedItem)" dataProvider="{new ArrayCollection([{label:'全部', value:''}])}"/>
+			<s:Label text="波段"/>
+			<s:DropDownList id="band" selectedIndex="0" width="70" dataProvider="{new ArrayCollection([{label:'全部',value:''},{label:'短波',value:'0'},{label:'中波',value:'1'}])}"	/>
+			<s:Label text="单位时间上报个数"/>
+			<s:TextInput text="1" width="40" restrict="0-9" id="sampleNumber"/>
+			<s:Label text="单位时间"/>
+			<s:DropDownList id="unit" width="70" selectedIndex="0" dataProvider="{new ArrayCollection([{label:'分钟',value:'2'},{label:'秒',value:'1'},{label:'小时',value:'3'}])}"/>
+			<!--s:Label text="开始时间"/>
+			<timecomp:TimeNew id="startTime"/>
+			<s:Label text="结束时间"/>
+			<timecomp:TimeNew id="endTime"/>
+			<s:Button buttonMode="true" label="查询" click="dataCallback()"/-->
+		</s:HGroup>
+		<mx:HRule strokeColor="#a0a0a0" shadowColor="#ffffff" width="100%"/>
+		<s:HGroup width="100%" paddingLeft="2"  verticalAlign="middle">
+			<!--s:Label text="单位时间上报个数"/>
+			<s:TextInput text="1" width="60" id="sampleNumber"/>
+			<s:Label text="单位时间"/>
+			<s:DropDownList id="unit" width="100" selectedIndex="0" dataProvider="{new ArrayCollection([{label:'分钟',value:'2'},{label:'秒',value:'1'},{label:'小时',value:'3'}])}"/-->
+			<s:Label text="开始时间"/>
+			<timecomp:TimeNew id="startTime"/>
+			<s:Label text="结束时间"/>
+			<timecomp:TimeNew id="endTime"/>
+			<s:Button buttonMode="true" label="回收" click="dataCallback()"/>
+			<s:Button buttonMode="true" label="查询" click="queryOffsetData()"/>
+			
+		</s:HGroup>
+		<mx:Canvas width="100%" height="100%">
+			<s:DataGrid width="100%" height="100%" textAlign="center" dataProvider="{offsetArr}" id="grid">
+				<s:columns>
+					<s:ArrayCollection>
+						<s:GridColumn dataField="equ_code"  headerText="接收机标识" />
+						<!--s:GridColumn dataField="task_id"  headerText="任务ID" /-->
+						<s:GridColumn dataField="check_datetime"  headerText="扫描时间" />
+						<s:GridColumn dataField="offset"  headerText="频偏(HZ)" />
+						<s:GridColumn dataField="frequency"  headerText="频率(KHZ)" />
+					</s:ArrayCollection>
+				</s:columns>
+			</s:DataGrid>
+			<s:Label text="正在查询，请稍候..." id="clew_label" y="{grid.columnHeaderGroup.height+10}" color="0x000000" fontSize="15" width="100%" textAlign="center"  visible="false" includeInLayout="false" />
+		</mx:Canvas>
+		
+		<flipBar:PageBar width="100%" id="pagebar" rowConutOfPage="40" totalPageQuery="5" height="20"/>
+	</s:VGroup>
+</system:BasePage>

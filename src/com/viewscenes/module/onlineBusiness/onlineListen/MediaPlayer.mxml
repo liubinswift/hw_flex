@@ -54,7 +54,7 @@
 			[Bindable]
 			private var runplanObj:Object = null;
 			
-			private var reportUrl:String = "http://114.251.47.196:80/video/report/report.mp3";
+			private var reportUrl:String = "http://10.0.1.28:80/video/report/report.mp3";
 			
 			//正在播放的频率
 			[Bindable]

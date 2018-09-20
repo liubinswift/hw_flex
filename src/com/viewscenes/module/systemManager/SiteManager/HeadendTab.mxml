@@ -41,6 +41,9 @@
 			private var listStat:ArrayCollection = new ArrayCollection();
 			private var insertListStat:ArrayCollection = new ArrayCollection();
 			private var updateListStat:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var comprotocolArray:ArrayCollection = new ArrayCollection([{label:"全部",code:"0"},{label:"未迁移",code:"1"},{label:"已迁移",code:"2"}]);
+			
 			[Bindable]private var sTypeArray:ArrayCollection = new ArrayCollection([{label:"全部",value:""},{label:"采集点",value:"101"},{label:"遥控站",value:"102"}]);
 			[Bindable]private var runTypeArray:ArrayCollection = new ArrayCollection([{label:"全部",value:""},{label:"在线",value:"1"},{label:"不在线",value:"0"}]);
 			
@@ -137,6 +140,7 @@
 				obj.shortname =shortname.text;
 				obj.site =site.text;
 				obj.code =code.text;
+				obj.com_protocol = com_protocol.selectedItem.code;
 				pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.dicManager.HeadendTab","getHeadend",obj,_getHeadend,onfault));
 			}
 			
@@ -360,6 +364,18 @@
 			private function type(data:Object):String{																
 				return "遥控站";								
 			}
+			private function proLabelFunc(item:Object):String{
+				if (item.com_protocol == '2')
+					return "已迁移"
+				else
+					return "未迁移";
+			}
+			private function onlineLabelFunc(item:Object):String{
+				if (item.is_online == '1')
+					return "在线"
+				else
+					return "离线";
+			}
 			/**
 			 * 站点信息上传
 			 */
@@ -423,6 +439,8 @@
 			
 			<s:Label width="80" textAlign="right" text="站点类型：" fontSize="12"/>
 			<s:ComboBox width="100" id="sType" dataProvider="{sTypeArray}" requireSelection="true" styleName="text12"/>
+			<s:Label width="80" textAlign="right" text="是否迁移：" fontSize="12"/>
+			<s:ComboBox width="100" id="com_protocol" dataProvider="{comprotocolArray}" requireSelection="true" styleName="text12"/>
 			
 			<s:Label width="80" textAlign="right" text="是否在线"  fontSize="12"/>
 			<s:ComboBox id="runType" dataProvider="{runTypeArray}"  requireSelection="true" styleName="text12" width="100"/>
@@ -454,6 +472,8 @@
 						<s:GridColumn dataField="person_phone" headerText="维护电话"/>
 						<s:GridColumn dataField="time_diff" headerText="时差"/>
 						<!--s:GridColumn dataField="type_id" headerText="站点类型" labelFunction="type"/-->
+						<s:GridColumn dataField="com_protocol" headerText="是否迁移" />
+						<s:GridColumn dataField="is_online" headerText="是否在线" />
 						
 						<s:GridColumn  minWidth="50" headerText="修改" itemRenderer="{RendererUtil.getButtonRenderer('修改',updateHead)}"/>
 						
@@ -462,7 +482,7 @@
 					</s:ArrayCollection>
 				</s:columns>
 			</s:DataGrid>
-			<s:Label text="正在查询，请稍候..."  color="0x000000" id="clew_label" y="{result.columnHeaderGroup.height+10}" width="100%" textAlign="center" visible="false" includeInLayout="false"/>		
+			<s:Label text="正在查询，请稍候..."  color="0x000000" id="clew_label" y="{result.columnHeaderGroup.height+20}" width="100%" textAlign="center" visible="false" includeInLayout="false"/>		
 		</s:Group>	
 		
 		

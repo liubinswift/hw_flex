@@ -132,7 +132,7 @@
 				player.pb.addEventListener("stop",playerStop);
 				player.pb.addEventListener("play",playerPlay);
 				this.addEventListener(KeyboardEvent.KEY_DOWN,this.playReportUrl);//添加监听按键事件 
-				bps.selectedIndex=2;
+				bps.selectedIndex=3;
 				getheadendList();
 				
 			}
@@ -471,7 +471,8 @@
 				playBtn.enabled = true;
 				playBtn.label ="停止";
 				player.playUrl(url);
-				player.setText("正在播放:"+url);
+				var showUrl:String = this.urlCmdBean.code+" "+this.urlCmdBean.equCode+" "+this.urlCmdBean.freq;
+				player.setText("正在播放:"+showUrl);
 				this.lastUrl = url;
 				var sPort:String = url.split(":")[2];
 				var port:int = int( sPort.substring(0,sPort.indexOf("/")));
@@ -487,7 +488,7 @@
 				{  
 					playBtn.enabled = true;
 					playBtn.label ="停止";
-					player.setText("正在播放:"+this.reportUrl);
+					player.setText("正在播放:"+this.reportUrl,0);
 					player.playUrl(this.reportUrl);
 					this.lastUrl = this.reportUrl;
 					showLocalTime();

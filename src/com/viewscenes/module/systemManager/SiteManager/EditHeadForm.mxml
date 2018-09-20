@@ -104,10 +104,10 @@
 				}else{
 					this.com_id.selectedIndex=1;
 				}
-				if(HeadObj.com_protocol=="1"){
-					this.com_protocol.selectedIndex=0;
-				}else{
+				if(HeadObj.com_protocol=="2"){
 					this.com_protocol.selectedIndex=1;
+				}else{
+					this.com_protocol.selectedIndex=0;
 				}
 				
 				

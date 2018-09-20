@@ -17,7 +17,7 @@
 			[Bindable]private var _color:int=0x000000;
 			private function init():void{
 				text.x=this.width;
-				inter=setInterval(ontime,100);
+				//inter=setInterval(ontime,100);
 			}
 			public function setpro(t:String,speed:int=5,color:int=0x000000):void{
 				this._color=color;

@@ -364,13 +364,13 @@
 			private function type(data:Object):String{																
 				return "遥控站";								
 			}
-			private function proLabelFunc(item:Object):String{
-				if (item.com_protocol == '2')
+			private function proLabelFunc(item:Object,gc:GridColumn):String{
+				if (item.com_protocol=='2')
 					return "已迁移"
 				else
 					return "未迁移";
 			}
-			private function onlineLabelFunc(item:Object):String{
+			private function onlineLabelFunc(item:Object,gc:GridColumn):String{
 				if (item.is_online == '1')
 					return "在线"
 				else
@@ -472,8 +472,8 @@
 						<s:GridColumn dataField="person_phone" headerText="维护电话"/>
 						<s:GridColumn dataField="time_diff" headerText="时差"/>
 						<!--s:GridColumn dataField="type_id" headerText="站点类型" labelFunction="type"/-->
-						<s:GridColumn dataField="com_protocol" headerText="是否迁移" />
-						<s:GridColumn dataField="is_online" headerText="是否在线" />
+						<s:GridColumn dataField="com_protocol" headerText="是否迁移" labelFunction="proLabelFunc"/>
+						<s:GridColumn dataField="is_online" headerText="是否在线" labelFunction="onlineLabelFunc"/>
 						
 						<s:GridColumn  minWidth="50" headerText="修改" itemRenderer="{RendererUtil.getButtonRenderer('修改',updateHead)}"/>
 						
@@ -482,7 +482,7 @@
 					</s:ArrayCollection>
 				</s:columns>
 			</s:DataGrid>
-			<s:Label text="正在查询，请稍候..."  color="0x000000" id="clew_label" y="{result.columnHeaderGroup.height+20}" width="100%" textAlign="center" visible="false" includeInLayout="false"/>		
+			<s:Label text="正在查询，请稍候..."  color="0x000000" id="clew_label" y="{result.columnHeaderGroup.height+40}" width="100%" textAlign="center" visible="false" includeInLayout="false"/>		
 		</s:Group>	
 		
 		

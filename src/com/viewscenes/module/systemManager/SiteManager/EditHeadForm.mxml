@@ -20,11 +20,15 @@
 			import com.morcha4.RPC.RPCManager;
 			import com.morcha4.RPC.request.RORequestParam;
 			import com.morcha4.frame.system.AdvancedEvent;
+			import com.viewscenes.global.DataManager;
 			import com.viewscenes.utils.timecomp.DateUtil;
+			
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
 			import mx.managers.PopUpManager;
-			import com.viewscenes.global.DataManager;
+			
+			import spark.events.IndexChangeEvent;
+			[Bindable]private var defaultUrl:String = "";  //默认url;
 			[Bindable]
 			private var HeadObj:Object = {
 				"code":"",
@@ -115,6 +119,7 @@
 				
 				principal_phone2.text=HeadObj.principal_phone.split(",")[1];
 				principal_phone3.text=HeadObj.principal_phone.split(",")[2];
+				defaultUrl = HeadObj.url;
 				
 				
 			}
@@ -147,6 +152,32 @@
 				
 			}
 
+			protected function com_protocol_changeHandler(event:IndexChangeEvent):void
+			{
+			
+				if(com_protocol.selectedItem.code==2){//已迁移
+					url.text ="http://10.0.2.5:8000/HttpRelay";
+				}else {
+					if(defaultUrl=="http://10.0.2.5:8000/HttpRelay"){
+						 if(manufacturer.text.indexOf("圣世祺")!=-1){
+							 url.text =  "http://10.0.0.1:9921/Receiver/Enter/";
+						 }else if(manufacturer.text.indexOf("中电22所")!=-1){
+							 url.text =  "http://10.0.0.1:6666";
+						 }else if(manufacturer.text.indexOf("金石威视")!=-1){
+							 url.text =   "http://10.0.0.1:7070/download";
+						 }else if(manufacturer.text.indexOf("泰顺")!=-1){
+							 url.text =   "http://10.0.0.1:800";
+						 }else if(manufacturer.text.indexOf("聚星")!=-1){
+							 url.text =   "http://10.0.0.1:900";
+						 }else if(manufacturer.text.indexOf("度纬")!=-1){
+							 url.text =   "http://10.0.0.1:9981/Receiver/Enter/";
+						 }
+					}else {
+					   url.text = defaultUrl;
+					}
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	<fx:Declarations>
@@ -219,7 +250,7 @@
 						  <s:ComboBox id="com_id" dataProvider="{comArray}" selectedIndex="{HeadObj.com_id}"  change="{HeadObj.com_id=com_id.selectedItem.code}" requireSelection="true"/>
 					  </s:FormItem>
 					  <s:FormItem label="是否迁移" height="20">
-						  <s:ComboBox id="com_protocol" dataProvider="{comprotocolArray}" selectedIndex="{HeadObj.com_protocol}"   requireSelection="true"/>
+						  <s:ComboBox id="com_protocol" dataProvider="{comprotocolArray}" change="com_protocol_changeHandler(event)" selectedIndex="{HeadObj.com_protocol}"   requireSelection="true"/>
 					  </s:FormItem>
 					  <s:FormItem label="IP地址"  height="20">
 						  <ip:IPComponent width="150" id="ip" text="{HeadObj.ip}"/>

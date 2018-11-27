@@ -372,7 +372,16 @@
 					return item.stationName;
 				}
 			}
-			
+			/**
+			 * 打分人
+			 */
+			private function markUserFunction(item:Object,gc:GridColumn):String{
+				if(item.edit_user!=null&&item.edit_user!=""){
+					return item.edit_user;
+				}else {
+					return item.mark_user
+				}
+			}
 			/**
 			 * 查询时提示信息
 			 */ 
@@ -577,6 +586,7 @@
 								<s:GridColumn headerText="I"  dataField="radioMarkZstViewBean.counti" />
 								<s:GridColumn headerText="O"  dataField="radioMarkZstViewBean.counto" />
 								<s:GridColumn headerText="电平"  dataField="levelValue" />
+								<s:GridColumn headerText="打分人"  	labelFunction="markUserFunction"/>
 								<s:GridColumn headerText="播放"   itemRenderer="{RendererUtil.getButtonRenderer('播放',playAndMark)}"/>
 								<s:GridColumn headerText="下载"   itemRenderer="{RendererUtil.getButtonRenderer('下载',downloadRec)}"/>
 								<s:GridColumn headerText="删除"   itemRenderer="{RendererUtil.getButtonRenderer('删除',delRecFile)}"/>

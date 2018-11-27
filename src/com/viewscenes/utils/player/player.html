@@ -1,0 +1,190 @@
+<html>
+<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE9" />
+<script>
+
+//alert(parent.oPlayer);
+var count=0;
+var vlc = "";
+var player = "media";//vlc
+
+var aspectRatio = "4:3";  //默锟较匡拷弑锟轿�锟斤拷3
+
+
+function setPlayerType(type){
+	if(type[0] == "vlcplayer"){
+		vlcplayer();
+	}else{
+		mediaplayer();
+	}
+}
+
+//锟斤拷锟矫诧拷锟斤拷锟斤拷为vlc
+function vlcplayer(){
+	oMediaPlayer.style.display = "none";
+	
+	player = "vlc";
+}
+
+//锟斤拷锟矫诧拷锟斤拷锟斤拷为mediaplayer
+function mediaplayer(){
+	oMediaPlayer.style.display = "block";
+	
+	player = "media";
+}
+
+function initPlayer(){
+
+
+}
+
+
+
+
+function playUrl(videoUrl){
+	//alert(videoUrl[0]);
+
+		playMediaUrl(videoUrl);
+}
+
+
+
+//mediaplay 锟斤拷锟斤拷
+function playMediaUrl(VideoUrl){
+  // VideoUrl = "vs"+VideoUrl;
+  //VideoUrl = VideoUrl;
+	//alert(">>>>>>play>>>>"+VideoUrl[0]);
+	try{
+		
+		oMediaPlayer.URL=VideoUrl;
+	}catch(e){}
+	
+}
+
+//录锟斤拷锟侥硷拷锟斤拷时锟斤拷
+function getDuration(){
+	return oMediaPlayer.currentMedia.durationString;
+}
+
+function setDuration(val){
+	return oMediaPlayer.controls.currentPosition = val;
+}
+
+//var i=1;
+function setQuickplay(ratetype){  //锟斤拷锟�
+	try{
+		//alert("");
+		var quickrate = ratetype[0]
+		//vlc.set_rate(quickrate);
+	}catch(e){}
+}
+
+function setSlowplay(ratetype){ //锟斤拷
+	try{
+	 var slowrate = ratetype[0]
+		//vlc.set_rate(slowrate);
+	}catch(e){}
+}
+
+function setplay(){
+		setMediaplay();
+}
+
+
+
+function setMediaplay(){
+	try{
+		oMediaPlayer.controls.play();
+	}catch(e){}
+	
+}
+
+function setstop(){
+		setMediastop();
+}
+
+
+function setMediastop(){
+	try{
+		oMediaPlayer.controls.stop();
+	}catch(e){}
+}
+
+function setfull(){
+	try{
+		oMediaPlayer.fullScreen=true;
+	}catch(e){}
+}
+
+function goBack(){
+	//vlc.playlist.prev();
+	//vlc.playlist.play();
+}
+
+function goNext(){
+	try{
+		//vlc.playlist.next();
+		//vlc.playlist.play();
+	}catch(e){
+	}
+	
+}
+
+function setvolume(param){
+		setMediavolume(param);
+}
+
+
+
+function setMediavolume(param){
+	try{
+		oMediaPlayer.settings.volume=param;
+	}catch(e){}
+	
+}
+
+function setReload(){
+//	alert("reload");
+	document.location.reload();
+}
+
+
+
+function setpause(){
+	try{
+		oMediaPlayer.controls.pause();
+	}catch(e){}
+}
+function getPlayState(){
+	try{
+		return oMediaPlayer.playState;
+	}catch(e){}
+}
+function setAspectRatio(ratio){
+	try{
+		aspectRatio = ratio[0];
+		//alert(aspectRatio);
+		//if(aspectRatio=="4:3"){
+		//	vlc.set_aspect_ratio(1);
+		//}else if(aspectRatio=="16:9"){
+		//	vlc.set_aspect_ratio(2);
+		//}
+		
+		//vlc.video.aspectRatio = aspectRatio;
+	}catch(e){}
+}
+
+function onResize(){
+	//vlc.style.width = "100%";
+	//vlc.style.height = "100%";
+}
+
+</script>
+<body leftmargin="0" topmargin="0" onload="initPlayer()" bgcolor="#000000" scroll="no" >
+<OBJECT ID="oMediaPlayer" name="oMediaPlayer" width="100%" height="100%"
+  CLASSID="CLSID:6BF52A52-394A-11d3-B153-00C04F79FAA6" style="display:block">
+  <param   name="uiMode"   value="none"><!--锟斤拷锟斤拷锟斤拷-->
+  <!--param NAME="url" value="rtsp://192.168.1.114:8854/H264VideoTest"> 
+  <param name="AutoStart" value="1"-->
+</OBJECT>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="true">
+	<fx:Script>
+		<![CDATA[
+			override public function set data(value:Object):void{
+				super.data=value;
+				if(value!=null){
+					dataLab.setStyle("color",(value.site_status=="1"?0x337733:0x000000));
+				}else{
+					dataLab.setStyle("color",0x000000);
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:Label text="{data.shortname+'['+data.code+']'}" id="dataLab"/>
+	
+</s:ItemRenderer>

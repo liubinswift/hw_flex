@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+
+    ADOBE SYSTEMS INCORPORATED
+    Copyright 2008 Adobe Systems Incorporated
+    All Rights Reserved.
+
+    NOTICE: Adobe permits you to use, modify, and distribute this file
+    in accordance with the terms of the license agreement accompanying it.
+
+-->
+
+<!--- The default skin class for the Spark Button component.  
+
+       @see spark.components.Button
+        
+      @langversion 3.0
+      @playerversion Flash 10
+      @playerversion AIR 1.5
+      @productversion Flex 4
+-->
+<s:SparkButtonSkin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+             xmlns:s="library://ns.adobe.com/flex/spark" 
+             xmlns:fb="http://ns.adobe.com/flashbuilder/2009"
+             minWidth="21"
+             alpha.disabled="0.5" xmlns:comboBox="com.morcha4.skin.comboBox.*">
+     
+    <fx:Metadata>
+        <![CDATA[ 
+        /** 
+         * @copy spark.skins.spark.ApplicationSkin#hostComponent
+         */
+        [HostComponent("spark.components.Button")]
+        ]]>
+    </fx:Metadata>
+    
+    <!-- states -->
+    <s:states>
+        <s:State name="up" />
+        <s:State name="over" />
+        <s:State name="down" />
+        <s:State name="disabled" />
+    </s:states>
+    
+	<s:Rect left="0" height="100%" right="0" topLeftRadiusX="3" topLeftRadiusY="3" bottomLeftRadiusX="3" bottomRightRadiusY="3"
+			includeIn="over,down">
+		<s:stroke>
+			<s:SolidColorStroke color="0x82c551" />
+		</s:stroke>
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry color="0x8ed616" color.down="0x389702"/>
+				<s:GradientEntry color="0x389702" color.down="0x8ed616"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	<s:Line width="1" top="1" bottom="1" right="13" includeIn="over,down">
+		<s:stroke>
+			<s:SolidColorStroke color="0x82c551"/>
+		</s:stroke>
+	</s:Line>
+    <!-- layer 8: text -->
+    <!--- @copy spark.components.supportClasses.ButtonBase#labelDisplay  -->
+    <s:Label id="labelDisplay"
+             textAlign="center"
+             maxDisplayedLines="1"
+             height="100%" verticalAlign="middle"
+             left="4" right="15" top="4" bottom="4">
+    </s:Label>
+	<s:Path right="3" verticalCenter="0" id="arrow" includeIn="over,down"
+			data="M 4.0 4.0 L 4.0 3.0 L 5.0 3.0 L 5.0 2.0 L 6.0 2.0 L 6.0 1.0 L 7.0 1.0 L 7.0 0.0 L 0.0 0.0 L 0.0 1.0 L 1.0 1.0 L 1.0 2.0 L 2.0 2.0 L 2.0 3.0 L 3.0 3.0 L 3.0 4.0 L 4.0 4.0">
+		<s:fill>
+			<s:RadialGradient rotation="90" focalPointRatio="1">    
+				<!--- @private -->
+				<s:GradientEntry id="arrowFill1" color="0" alpha="0.6" />
+				<!--- @private -->
+				<s:GradientEntry id="arrowFill2" color="0" alpha="0.8" />
+			</s:RadialGradient>
+		</s:fill>
+	</s:Path>
+</s:SparkButtonSkin>

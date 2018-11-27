@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="100%" resize="onresize(event)" rollOver="onrollover(event)" rollOut="onrollout(event)" 
+		 creationComplete="init()" clipAndEnableScrolling="true"
+	>
+	
+	<fx:Script>
+		<![CDATA[
+			import flash.utils.clearInterval;
+			import flash.utils.setInterval;
+			import flash.utils.setTimeout;
+			private var inter:int;
+			[Bindable]public var _textl:String="无节目信息";
+			[Bindable]private var _speed:int=5;
+			[Bindable]private var _color:int=0x000000;
+			private function init():void{
+				text.x=this.width;
+				//inter=setInterval(ontime,100);
+			}
+			public function setpro(t:String,speed:int=5,color:int=0x000000):void{
+				this._color=color;
+				this._speed=speed;
+				this._textl=t;
+			}
+			private function ontime():void{
+				//				this._color=Math.random()*0xffffff;
+				if(text.x>-1*text.width){
+					text.x-=_speed;
+				}
+				else text.x=this.width;
+			}
+			private function onrollover(e:MouseEvent):void{
+				clearInterval(inter);
+			}
+			private function onrollout(e:MouseEvent):void{
+				inter=setInterval(ontime,100);
+			}
+			private function onresize(e:Event):void{
+				text.x=this.width;
+			}
+		]]>
+	</fx:Script>
+	<s:Rect width="100%" height="100%">
+		<s:stroke>
+			<s:SolidColorStroke color="0x565656"/>
+		</s:stroke>
+	</s:Rect>
+	<s:Line left="1" right="1" top="1">
+		<s:stroke>
+			<s:SolidColorStroke color="0x979797"/>
+		</s:stroke>
+	</s:Line>
+	<s:Line left="1" right="1" bottom="1">
+		<s:stroke>
+			<s:SolidColorStroke color="0x979797"/>
+		</s:stroke>
+	</s:Line>
+	<s:Group clipAndEnableScrolling="true" top="3" bottom="3" left="3" right="3">
+		<s:Label id="text" text="{_textl}" fontSize="13" color="{_color}"/>
+	</s:Group>
+</s:Group>

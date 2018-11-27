@@ -1,0 +1,920 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" 
+		  xmlns:utils="com.viewscenes.utils.*"
+		  creationComplete="init()" xmlns:player="com.viewscenes.utils.player.*" xmlns:global="com.viewscenes.global.*" >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.viewscenes.beans.ASRResBean;
+			import com.viewscenes.beans.RealtimeUrlCmdBean;
+			import com.viewscenes.beans.pub.ResHeadendBean;
+			import com.viewscenes.beans.runplan.GJTLDRunplanBean;
+			import com.viewscenes.beans.runplan.GJTRunplanBean;
+			import com.viewscenes.beans.runplan.WGTRunplanBean;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.comp.MM;
+			import com.viewscenes.utils.StringTool;
+			import com.viewscenes.utils.player.playBar.PlayBarEvent;
+			import com.viewscenes.utils.timecomp.DateUtil;
+			
+			import flash.events.TimerEvent;
+			import flash.utils.Timer;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			
+			import spark.formatters.DateTimeFormatter;
+			
+			private var timer:Timer;
+			[Bindable]
+			private var equArray:ArrayCollection = new ArrayCollection();
+			
+			//			//采集点713接收机
+			//			[Bindable]
+			//			private var equ713Array:ArrayCollection = new ArrayCollection([{label:"自动选择",data:""},{label:"R1:BXM-252A-1",data:"R1"},{label:"R2:BXM-252A-2",data:"R2"}]);
+			
+			//父对象
+			[Bindable]
+			public var myParent:OnlineListenIndex = null;
+			
+			//播放的站点信息对象
+			[Bindable]
+			private var headendBean:ResHeadendBean = null;
+			
+			//当前选中的运行图
+			[Bindable]
+			private var runplanObj:Object = null;
+			
+			private var reportUrl:String = "http://10.0.1.28:80/video/report/report.mp3";
+			
+			//正在播放的频率
+			[Bindable]
+			private var freq:String = "";
+			
+			//播放节目所使用的接收机
+			[Bindable]
+			private var equCode:String = "";
+			
+			
+			//播放器状态
+			[Bindable]
+			private var playState:String = "";
+			
+			//上次播放的URL
+			[Bindable]
+			private var lastUrl:String = null;
+			
+			//播放方式0:根据运行图播放,1:根据输入频率播放
+			[Bindable]
+			private var playType:int = 0;
+			
+			//下发监听指令对象
+			[Bindable]
+			private var urlCmdBean:RealtimeUrlCmdBean = null;
+			
+			[Bindable]
+			private var headendArr:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var arrBPS:ArrayCollection = new ArrayCollection([8000,16000,32000,64000,128000]);
+			//信息提示
+			private var err:RPCException = new RPCException();
+			
+			//			public function setUrl(headendBean:ResHeadendBean,runplanObj:Object,url:String):void{
+			//				this.headendBean = headendBean;
+			//				this.runplanObj = runplanObj;
+			//				this.lastUrl = url;
+			//				
+			//				if (this.runplanObj != null){
+			//					//国际台运行图
+			//					if (this.runplanObj.type == "1"){
+			//						var gtjBean:GJTRunplanBean = this.runplanObj.data as GJTRunplanBean;
+			//						
+			//						this.freq = gtjBean.freq;
+			//						
+			//					//国际台落地运行图	
+			//					}else if (this.runplanObj.type == "2"){
+			//						var gjtldBean:GJTLDRunplanBean = this.runplanObj.data as GJTLDRunplanBean;
+			//						
+			//						this.freq = gjtldBean.freq;
+			//					//外国台运行图
+			//					}else if (this.runplanObj.type == "3"){
+			//						var wgtBean:WGTRunplanBean = this.runplanObj.data as WGTRunplanBean;
+			//						
+			//						this.freq = wgtBean.freq;
+			//					}
+			//					
+			//					var band:String = StringTool.getBandFromFreq(this.freq);
+			//					
+			//					if (band == "0"){//短波
+			//						setStep("5");
+			//					}else if (band == "1"){//中波
+			//						setStep("10");
+			//					}else if (band == "2"){//调频
+			//						setStep("100");
+			//					}
+			//				}
+			//				
+			//			}
+			//			
+			
+			
+			private function init():void{
+				//监听播放器停止方法 
+				player.pb.addEventListener("stop",playerStop);
+				player.pb.addEventListener("play",playerPlay);
+				this.addEventListener(KeyboardEvent.KEY_DOWN,this.playReportUrl);//添加监听按键事件 
+				bps.selectedIndex=3;
+				getheadendList();
+				
+			}
+			
+			
+			private function getheadendList():void{
+				headendArr = DataManager.getOnline_Headend();
+				var headendBean:ResHeadendBean = headend.selectedItem as ResHeadendBean;
+				getEquListByCode(headendBean.code);
+				
+			}
+			
+			/**	var headendBean:ResHeadendBean = headend.selectedItem as ResHeadendBean;
+				getEquListByCode(headendBean.code);
+			 *监听播放器停止方法 
+			 */
+			private function playerStop(event:PlayBarEvent):void{
+				playBtn.label = "播放";
+				player.pb.status = "stop";
+				player.stop();
+				//停止画指标图
+				this.myParent.quality.stopQuality();
+				//在这里只需要设置停止状态
+				this.recBtn.selected = false;
+				//录音停止的工作在这里会进行
+				this.stopRealtimeUrl(urlCmdBean);
+				
+			}
+			
+			/**
+			 *监听播放器播放方法 
+			 */
+			private function playerPlay(event:PlayBarEvent):void{
+				player.pb.status = "play";
+				if (urlCmdBean == null){
+					MM.show("请选择要播放的节目","","",null,false,null,null,-1,this.top);
+					return;
+				}
+				urlCmdBean.action = "Start";
+				//录音停止的工作在这里会进行
+				this.getRealtimeUrl(urlCmdBean);
+			}
+			
+			/**
+			 * 根据不同频率值设置步长值
+			 */
+			private function setStep(stepVal:String):void{
+				step.text = stepVal;
+			}
+			
+			
+			/**
+			 * 
+			 * 改变步长值
+			 */
+			private function changeStep(event:Event):void{
+				
+				if (event.currentTarget.label == "-"){
+					this.freq = (int(this.inputfreq.text) - int(step.text))+"";
+					
+				}else{
+					this.freq = (int(this.inputfreq.text) + int(step.text))+"";
+				}	
+				this.inputfreq.text=this.freq;
+				playUrlByFreq2(this.freq);
+			}
+			
+			/**
+			 * 
+			 * 根据手动输入频率生成发送URL请求指令
+			 * */
+			private function buildUrlCmdByFreq(headCode:String,freq:String,action:String,bps:String):RealtimeUrlCmdBean{
+				var urlBean:RealtimeUrlCmdBean = new RealtimeUrlCmdBean;
+				
+				urlBean.freq =  freq;
+				urlBean.band =  StringTool.getBandFromFreq(inputfreq.text);
+				urlBean.userid =  DataManager.user.userId;
+				urlBean.code =  headCode;
+				urlBean.action = action;
+				urlBean.equCode = this.equCode;
+				urlBean.bps = bps;
+				urlBean.priority =  DataManager.user.priority;
+				if (lastUrl != null && lastUrl != "")
+					urlBean.lastUrl =  lastUrl;
+				
+				return urlBean;
+			}
+			
+			
+			
+			
+			/**
+			 * 
+			 * 根据运行图生成发送URL请求指令
+			 * runplanType:运行图类型
+			 * */ 
+			private function buildUrlCmdByRunplan(headCode:String,equCode:String,runplanType:String,obj:Object):RealtimeUrlCmdBean{
+				var urlBean:RealtimeUrlCmdBean = new RealtimeUrlCmdBean;
+				
+				if (runplanType == "1"){
+					var gtjBean:GJTRunplanBean = obj.data as GJTRunplanBean;
+					
+					urlBean.freq =  gtjBean.freq;
+					
+					urlBean.band =  StringTool.getBandFromFreq(gtjBean.freq);
+					
+					runplanObj = new Object;
+					
+					runplanObj.type  = "1";
+					runplanObj.data = gtjBean;
+					
+				}else if (runplanType == "2"){
+					
+					var gjtldBean:GJTLDRunplanBean = obj.data as GJTLDRunplanBean;
+					
+					urlBean.freq =  gjtldBean.freq;
+					
+					urlBean.band =  StringTool.getBandFromFreq(gjtldBean.freq);
+					
+					runplanObj = new Object;
+					
+					runplanObj.type  = "2";
+					
+					runplanObj.data = gjtldBean;
+					
+				}else if (runplanType == "3"){
+					var wgtBean:WGTRunplanBean = obj.data as WGTRunplanBean;
+					
+					urlBean.freq =  wgtBean.freq;
+					
+					urlBean.band =  StringTool.getBandFromFreq(wgtBean.freq);
+					
+					runplanObj = new Object;
+					
+					runplanObj.type  = "3";
+					
+					runplanObj.data = wgtBean;
+				} 
+				urlBean.userid =  DataManager.user.userId;
+				urlBean.code =  headCode;
+				
+				urlBean.equCode = equCode;
+				urlBean.action =  "Start";
+				urlBean.priority =  DataManager.user.priority;
+				
+				
+				urlBean.equCode = this.equCode;
+				
+				if (lastUrl != null && lastUrl != "")
+					urlBean.lastUrl =  lastUrl;
+				
+				return urlBean;
+			}
+			
+			
+			/**
+			 * 
+			 *根据运行图播放节目 
+			 */
+			public function playUrlByRunplan(headendBean:ResHeadendBean,equCode:String,runplanType:String,obj:Object):void{
+				this.playType = 0;
+				this.headendBean = headendBean;
+				this.equCode  = equCode;
+				var urlCmdBean:RealtimeUrlCmdBean = buildUrlCmdByRunplan(headendBean.code,equCode,runplanType,obj);
+				getRealtimeUrl(urlCmdBean);
+			}
+			
+			/**
+			 * 
+			 *根据手动输入频率播放节目 
+			 */
+			private function playUrlByFreq(vFreq:String):void{
+				
+				if (playBtn.label== "停止"){
+					playerStop(null);
+					return ;
+				}
+				
+				this.playType = 1;
+				
+				
+				var band:String = StringTool.getBandFromFreq(vFreq);
+				
+				if (band == ""){
+//					DataManager.showErrorMessage("输入的频率范围不合法,请重新输入");
+					
+					MM.show("输入的频率范围不合法,请重新输入","","",null,false,null,null,-1,this.top);
+					return;
+				}
+				
+				
+				
+				//运行图
+				if (myParent.vs.selectedIndex == 0){
+					if (myParent.runplan.headend.selectedItem != null && 
+						myParent.runplan.headend.selectedItem.code != undefined && 
+						myParent.runplan.headend.selectedItem.code != ""){
+						this.headendBean = myParent.runplan.headend.selectedItem as ResHeadendBean;
+					}
+					
+					if (myParent.runplan.equList.selectedItem != null &&
+						myParent.runplan.equList.selectedItem.data != undefined && 
+						myParent.runplan.equList.selectedItem.data != "")
+						this.equCode = myParent.runplan.equList.selectedItem.data;
+					//国际电联频率表	
+				}else{
+					if (headend.selectedItem != null && 
+						headend.selectedItem.code != undefined && 
+						headend.selectedItem.code != ""){
+						this.headendBean = headend.selectedItem as ResHeadendBean; 
+					}else{
+						MM.show("请选择要播放节目的站点","","",null,false,null,null,-1,this.top);
+						return;
+					}
+					
+					if (equList.selectedItem != null &&
+						equList.selectedItem.data != undefined && 
+						equList.selectedItem.data != "")
+						this.equCode = equList.selectedItem.data;
+				}
+				
+				
+				if (headendBean == null){
+					
+					MM.show("请选择要播放节目的站点","","",null,false,null,null,-1,this.top);
+					return ;
+				}else{
+					
+					if (inputfreq.text == ""){
+						MM.show("请输入要播放的频率","","",null,false,null,null,-1,this.top);
+						return ;
+					}
+					
+					var urlCmdBean:RealtimeUrlCmdBean = buildUrlCmdByFreq(headendBean.code,vFreq,"Start",bps.selectedItem);
+					
+					getRealtimeUrl(urlCmdBean);
+				}
+				
+				
+			}
+			/**
+			 * 
+			 *根据手动输入频率播放节目 
+			 */
+			private function playUrlByFreq2(vFreq:String):void{
+				
+				
+				this.playType = 1;
+				
+				
+				var band:String = StringTool.getBandFromFreq(vFreq);
+				
+				if (band == ""){
+					//					DataManager.showErrorMessage("输入的频率范围不合法,请重新输入");
+					
+					MM.show("输入的频率范围不合法,请重新输入","","",null,false,null,null,-1,this.top);
+					return;
+				}
+				
+				
+				
+				//运行图
+				if (myParent.vs.selectedIndex == 0){
+					if (myParent.runplan.headend.selectedItem != null && 
+						myParent.runplan.headend.selectedItem.code != undefined && 
+						myParent.runplan.headend.selectedItem.code != ""){
+						this.headendBean = myParent.runplan.headend.selectedItem as ResHeadendBean;
+					}
+					
+					if (myParent.runplan.equList.selectedItem != null &&
+						myParent.runplan.equList.selectedItem.data != undefined && 
+						myParent.runplan.equList.selectedItem.data != "")
+						this.equCode = myParent.runplan.equList.selectedItem.data;
+					//国际电联频率表	
+				}else{
+					if (headend.selectedItem != null && 
+						headend.selectedItem.code != undefined && 
+						headend.selectedItem.code != ""){
+						this.headendBean = headend.selectedItem as ResHeadendBean; 
+					}else{
+						MM.show("请选择要播放节目的站点","","",null,false,null,null,-1,this.top);
+						return;
+					}
+					
+					if (equList.selectedItem != null &&
+						equList.selectedItem.data != undefined && 
+						equList.selectedItem.data != "")
+						this.equCode = equList.selectedItem.data;
+				}
+				
+				
+				if (headendBean == null){
+					
+					MM.show("请选择要播放节目的站点","","",null,false,null,null,-1,this.top);
+					return ;
+				}else{
+					
+					if (inputfreq.text == ""){
+						MM.show("请输入要播放的频率","","",null,false,null,null,-1,this.top);
+						return ;
+					}
+					
+					var urlCmdBean:RealtimeUrlCmdBean = buildUrlCmdByFreq(headendBean.code,vFreq,"Start",bps.selectedItem);
+					
+					getRealtimeUrl(urlCmdBean);
+				}
+				
+				
+			}
+			/**
+			 * 
+			 * 发送监听指令
+			 * */
+			private function getRealtimeUrl(urlBean:RealtimeUrlCmdBean):void{
+				//有录音,先停掉
+				if (this.recBtn.selected)
+					stopRecord();
+				
+				this.urlCmdBean = urlBean;
+				this.freq = urlBean.freq;
+				var band:String = StringTool.getBandFromFreq(this.freq);
+				
+				if (band == "0"){//短波
+					setStep("5");
+				}else if (band == "1"){//中波
+					setStep("10");
+				}else if (band == "2"){//调频
+					setStep("100");
+				}
+				//				getRealtimeUrlBack("www.biau.com");
+				playBtn.enabled = false;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.onlineListen.OnlineService","getRealtimeUrl",urlBean,getRealtimeUrlBack,showErrorMessageBack,true,null,DataManager.server_app_id));
+			}
+			
+			private function getRealtimeUrlBack(url:String):void{
+				playBtn.enabled = true;
+				playBtn.label ="停止";
+				player.playUrl(url);
+				var showUrl:String = this.urlCmdBean.code+" "+this.urlCmdBean.equCode+" "+this.urlCmdBean.freq;
+				player.setText("正在播放:"+showUrl);
+				this.lastUrl = url;
+				var sPort:String = url.split(":")[2];
+				var port:int = int( sPort.substring(0,sPort.indexOf("/")));
+				if (port%2==0){
+					equCode = "R1";
+				}else if (port%2==1){
+					equCode = "R2";
+				}
+				showLocalTime();
+			}
+			private function playReportUrl(event:KeyboardEvent):void{
+				if(event.keyCode == 13)//Enter键  
+				{  
+					playBtn.enabled = true;
+					playBtn.label ="停止";
+					player.setText("正在播放:"+this.reportUrl,0);
+					player.playUrl(this.reportUrl);
+					this.lastUrl = this.reportUrl;
+					showLocalTime();
+				}  
+			}
+			private function showLocalTime():void {
+				this.timer = new Timer(1000);
+				this.timer.addEventListener(TimerEvent.TIMER, this.resetNow);
+				this.timer.start();
+			}
+			private function showErrorMessageBack(obj:RPCException,priObj:Object=null):void{
+				playBtn.enabled = true;
+				MM.show(obj.message,"服务器异常","",null,false,null,null,-1,this.top);
+			}
+			private function resetNow(event:TimerEvent):void {
+				//this.player.getPlayState();
+				//this.playState=this.player.playState;
+				this.locTime.text = DateUtil.date2str( DateUtil.addHours(new Date,Number(headendBean.time_diff)));	
+			}
+			/**
+			 * 
+			 * 发送监听停止指令
+			 * */
+			private function stopRealtimeUrl(urlBean:RealtimeUrlCmdBean):void{
+				var _urlBean:RealtimeUrlCmdBean = urlBean;
+				_urlBean.action = "Stop"
+				//playBtn.enabled = false;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.onlineListen.OnlineService","getRealtimeUrl",_urlBean,stopRealtimeUrlBack,null,true,null,DataManager.server_app_id));
+			}
+			
+			private function stopRealtimeUrlBack(msg:String):void{
+				this.equCode = "";
+				this.lastUrl = null;
+				//this.freq = "";
+				playBtn.enabled = true;
+				//				this.urlCmdBean = null;
+				this.timer.stop();
+			}
+			
+			
+			
+			/**
+			 * 
+			 *下发录音指令 
+			 */
+			private function realRecord():void{
+				//				var obj:Object = new Object;
+				//				
+				//				if (this.lastUrl == null && recBtn.selected == true){
+				//					DataManager.showErrorMessage("当前没有可录音的节目");
+				//					recBtn.selected = false;
+				//					return ;
+				//				}
+				//				
+				//				obj.urlCmdBean = this.urlCmdBean;
+				//				obj.url = this.lastUrl;
+				//				obj.cmd = recBtn.selected == true ?"start":"stop";
+				//				
+				//				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.onlineListen.OnlineService","realRecord",obj,realRecordBack,DataManager.showErrorMessageBack));
+				
+				recBtn.selected == true?startRecord():stopRecord();
+				
+			}
+			
+			
+			/**
+			 * 开始录音
+			 */ 
+			private function startRecord():void{
+				var obj:Object = new Object;
+				
+				if (this.lastUrl == null){
+					MM.show("当前没有可录音的节目","","",null,false,null,null,-1,this.top);
+					recBtn.selected = false;
+					return ;
+				}
+				this.urlCmdBean.equCode = equCode;
+				obj.urlCmdBean = this.urlCmdBean;
+				obj.url = this.lastUrl;
+				obj.cmd = "start";
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.onlineListen.OnlineService","realRecord",obj,realRecordBack,DataManager.showErrorMessageBack));
+			}
+			
+			/**
+			 * 停止录音
+			 * 只需要改变按钮为停止状态即可，
+			 * 真正的停止操作在播放器进行停止时已完成
+			 */ 
+			private function stopRecord():void{
+				
+				var obj:Object = new Object;
+				recBtn.selected = false;
+				if (this.lastUrl == null){
+					
+					return ;
+				}
+				
+				obj.urlCmdBean = this.urlCmdBean;
+				obj.url = this.lastUrl;
+				obj.cmd = "stop";
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.onlineListen.OnlineService","realRecord",obj,realRecordBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function realRecordBack(msg:String):void{
+				
+				recBtn.selected == !recBtn.selected;
+				if (msg != "")	
+					MM.show(msg,"","",null,false,null,null,-1,this.top);
+			}
+			
+			
+			/**
+			 * 
+			 *向语音识别发送接口 
+			 */
+			
+			private function sendCmdASRClient():void{
+				var obj:Object = new Object;
+				//与player.pb.status='stop'效果一样
+				if (this.lastUrl == null){
+					MM.show("当前时该没有节目播放,无法进行语音识别","","",null,false,null,null,-1,this.top);
+					return ;
+				}
+				
+				obj.url = this.lastUrl;
+				obj.headend = this.headendBean;
+				obj.freq = this.freq;
+			
+				//按运行图播放
+				if (playType == 0){
+					if (runplanObj.type == "1"){
+						var gtjBean:GJTRunplanBean = runplanObj.data as GJTRunplanBean;
+						obj.language = gtjBean.language;						
+						obj.collectChannel = gtjBean.satellite_channel;
+					}else if (runplanObj.type == "2"){
+						var gjtldBean:GJTLDRunplanBean = runplanObj.data as GJTLDRunplanBean;
+						obj.language = gjtldBean.language;
+						obj.collectChannel = "";
+					}else{
+						var wgtBean:WGTRunplanBean = runplanObj.data as WGTRunplanBean;
+						obj.language = wgtBean.language;
+						obj.collectChannel = "";
+					}
+					
+				}else{
+					//参考源通,有则从运行图是拿，没有则传为空 ,2012-07-31开会确定
+					obj.collectChannel = "";
+					obj.language = "";
+				}
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.onlineListen.OnlineService","sendCmdASRClient",obj,sendCmdASRClientBack,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id));
+			}
+			
+			private function sendCmdASRClientBack(asrResBean:ASRResBean):void{
+				
+				if (asrResBean.taskStatus == "0000"){
+					MM.show("语音识别系统错误:\n"+asrResBean.errorMessage,"","",null,false,null,null,-1,this.top);
+					return;
+				} 
+				
+				if (asrResBean.taskStatus == "204"){
+					MM.show("语音识别返回的错误消息:\n"+asrResBean.errorMessage,"","",null,false,null,null,-1,this.top);
+					return;
+				}
+				//将语音识别结果传给打分模块。
+				myParent.mark.setASRResult(asrResBean);
+				//				asrResult.visible = true;
+				//				asrResult.includeInLayout = true;
+				//可听度分值
+				asrValue.text = asrResBean.audibilityScore;
+				//语言
+				var lanArr:ArrayCollection  = new ArrayCollection;
+				//语言置信度
+				var lanConfArr:ArrayCollection  = new ArrayCollection;
+				lanArr.addItem({label:asrResBean.languageName1,data:asrResBean.languageName1});
+				lanArr.addItem({label:asrResBean.languageName2,data:asrResBean.languageName2});
+				lanArr.addItem({label:asrResBean.languageName3,data:asrResBean.languageName3});
+				lanArr.addItem({label:asrResBean.languageName4,data:asrResBean.languageName4});
+				lanArr.addItem({label:asrResBean.languageName5,data:asrResBean.languageName5});
+				
+				lanConfArr.addItem({label:asrResBean.languageConfidence1,data:asrResBean.languageConfidence1});
+				lanConfArr.addItem({label:asrResBean.languageConfidence2,data:asrResBean.languageConfidence2});
+				lanConfArr.addItem({label:asrResBean.languageConfidence3,data:asrResBean.languageConfidence3});
+				lanConfArr.addItem({label:asrResBean.languageConfidence4,data:asrResBean.languageConfidence3});
+				lanConfArr.addItem({label:asrResBean.languageConfidence5,data:asrResBean.languageConfidence5});
+				this.status.text=asrResBean.status;
+				asrLanguage.dataProvider =lanArr;
+				asrLanguageConfidence.dataProvider = lanConfArr;
+			}
+			
+			/**
+			 * 语音识别，语言改变方法
+			 */ 
+			private function asrLanChange(event:Event):void{
+				asrLanguageConfidence.selectedIndex = event.currentTarget.selectedIndex;
+			}
+			
+			
+			/**
+			 * 根据站点类型不同选择不同的接收机
+			 */ 
+			private function headendChange(event:Event):void{
+				var headendBean:ResHeadendBean = event.currentTarget.selectedItem as ResHeadendBean;
+				getEquListByCode(headendBean.code);
+			}
+			
+			
+			/**
+			 * 运行图列表时不显示，国际电联表时显示
+			 * 是否显示站点列表框
+			 */ 
+			public function showHeadendOption(bool:Boolean):void{
+				headendGroup.visible = bool;
+				headendGroup.includeInLayout = bool;
+			}
+			
+			/**
+			 * 
+			 * 为外部提供的当前播放URL的接口
+			 * */
+			public function getLastUrl():String{
+				return this.lastUrl;
+			}
+			
+			/**
+			 * 
+			 * 为外部提供的当前播放URL的方式
+			 * */
+			public function getPlayType():int{
+				return this.playType;
+			}
+			
+			
+			/**
+			 * 
+			 * 为外部提供的当前播放URL的站点
+			 * */
+			public function getPlayHeadend():ResHeadendBean{
+				return this.headendBean;
+			}
+			
+			/**
+			 * 
+			 * 为外部提供的当前播放URL的运行图对象
+			 * */
+			public function getPlayRunplanObj():Object{
+				return this.runplanObj;
+			}
+			
+			/**
+			 * 
+			 * 为外部提供的当前播放URL的频率
+			 * */
+			public function getPlayFreq():String{
+				return this.freq;
+			}
+			
+			/**
+			 * 
+			 * 为外部提供的当前播放URL的接收机
+			 * */
+			public function getPlayEquCode():String{
+				return this.equCode;
+			}
+			
+			private function getEquListByCode(code:String):void{
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getEquListNew",code,getEquListBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function getEquListBack(arr:ArrayCollection):void{
+				equArray = arr;
+			}
+			
+			/**
+			 * 下载音频播放插件
+			 */
+			protected function downChajian(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+				var sysurl:String = FlexGlobals.topLevelApplication.url;
+				var index:int = sysurl.lastIndexOf("/");
+				var url:String = sysurl.substring(0,index);
+				url = url+"/SHQ在线监听插件.exe";
+//				var arr:Array = new Array();
+//				arr.push(url+"/SHQ在线监听插件.exe");
+//				downloadHtml.callIFrameFunction("downloadByUrl",arr);
+				
+				downLoadFiles(url);
+			}
+			private var downloadURL:URLRequest;
+			private var DownLoadfile:FileReference; //这是要主要的地方
+			/**
+			 * 下使用FileReference组件下载
+			 */
+			private function downLoadFiles(urlAdd:String):void
+			{
+				var filename:String = urlAdd.substring(urlAdd.lastIndexOf("/")+1,urlAdd.length);
+				urlAdd = encodeURI(urlAdd);
+				downloadURL = new URLRequest(urlAdd);
+				DownLoadfile = new FileReference();
+				configureListeners(DownLoadfile);
+				DownLoadfile.download(downloadURL,filename);
+			}
+			private function configureListeners(dispatcher:IEventDispatcher):void {
+				dispatcher.addEventListener(Event.COMPLETE, completeHandler);
+				dispatcher.addEventListener(IOErrorEvent.IO_ERROR, errorShow);
+				
+			}
+			private function completeHandler(event:Event):void {
+				MM.show("文件下载成功");
+			}
+			private function errorShow(event:IOErrorEvent):void {
+				if(event.errorID == 2038){
+					MM.show("文件不存在");
+				} else{
+					MM.show(event.text);
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:HGroup id="playerGroup" width="100%" height="100%">
+		<player:Player id="player" width="100%" height="100%"/>
+	</s:HGroup>
+	
+	<s:BorderContainer width="100%" backgroundColor="0xffffff" >
+		<s:layout>
+			<s:HorizontalLayout verticalAlign="middle"/>
+		</s:layout>	
+		<s:VGroup width="70%" paddingTop="5">
+			
+			<s:HGroup width="100%"  height="26" fontSize="16">
+				<s:Label text="国家:" color="0x000000" fontSize="16"/>
+				<s:Label id="contry" text="{headendBean.country}" color="0x000000"/>
+				<s:Spacer width="3"/>
+				
+				<s:Label text="站点:" color="0x000000" fontSize="16"/>
+				<s:Label id="shortName" text="{headendBean.shortname}" color="0x000000"/>
+				<s:Spacer width="3"/>
+				
+				<!--s:Label text="地理信息:" color="0x000000"/>
+				<s:Label text="{headendBean.longitude}-{headendBean.latitude}" color="0x000000"/>
+				<s:Spacer width="3"/-->
+				
+				<s:Label text="当地时间:" color="0x000000" fontSize="16"/>
+				<s:Label id="locTime" text="{DateUtil.date2str( DateUtil.addHours(new Date,Number(headendBean.time_diff)) )}" color="0x000000"/>
+				<s:Spacer width="3"/>
+				
+				<s:Label text="频率:" color="0x000000" fontSize="16"/><s:Label fontSize="16" text="{freq}" color="0x000000"/>
+				<s:Spacer width="3"/>
+				
+				<s:Label text="接收机:" color="0x000000" fontSize="16"/><s:Label fontSize="16" text="{equCode}" color="0x000000"/>
+				
+				<!--s:Label text="状态:" color="0x000000" fontSize="16"/><s:Label fontSize="16" text="{playState}" color="0x000000"/-->
+			</s:HGroup>
+			
+			<s:HGroup width="100%"  fontSize="16" height="26" verticalAlign="middle">
+				<s:Label text="步长:" color="0x000000"/>
+				<s:Button buttonMode="true" label="-" width="25" click="changeStep(event)" color="0x000000"/>
+				<utils:RegExpTextInput text="5"  id="step" width="30"/>
+				<s:Button buttonMode="true" label="+" width="26" click="changeStep(event)" color="0x000000"/>
+				<s:Spacer width="5"/>
+				
+				<s:HGroup id="headendGroup" includeInLayout="false" visible="false" verticalAlign="middle">
+					<s:Label text="站点:" color="0x000000"/>
+					<!--s:DropDownList id="headend" dataProvider="{DataManager.headendBeanArr}" labelField="shortname" /-->
+					<global:HeadendList id="headend" change="headendChange(event)" dataProvider="{headendArr}" labelField="shortname"/>
+					<s:Spacer width="3"/>
+					<s:Label text="接收机:" color="0x000000"/><s:DropDownList id="equList" width="95" requireSelection="true" selectedIndex="0" dataProvider="{equArray}"/>
+				</s:HGroup>
+				
+				
+				<s:Label text="频率(KHz):" color="0x000000"/>
+				<utils:RegExpTextInput id="inputfreq"  width="50" restrict="0-9"  maxChars="6" />
+				<s:Spacer width="5"/>	
+				<s:Label text="码率(Bps)：" color="0x000000"/>
+				<s:DropDownList id="bps" dataProvider="{arrBPS}"/>
+				<s:Button buttonMode="true" label="播放" id="playBtn" click="playUrlByFreq(inputfreq.text)"/>
+				<s:Spacer width="5"/>
+				<s:ToggleButton  id="recBtn" click="realRecord()" width="70" height="21" styleName="record" color="0x000000"/>
+				<s:Image source="com/viewscenes/images/default/global1/button/down_chajian.png" buttonMode="true" click="downChajian(event)" 
+						  toolTip="下载音频播放插件，安装后重启浏览器"/>
+				
+			</s:HGroup>
+			<s:HGroup width="100%"  height="26" verticalAlign="middle">
+				
+				<s:Button buttonMode="true" label="语音识别" click="sendCmdASRClient();"/>
+				<s:Spacer width="5"/>	
+				<s:Label text="可听度:" color="0x000000"/>
+				<!--s:TextInput id="asrValue" width="50"  editable="false"/-->
+				<s:Label id="asrValue" color="0xff0000" width="50"/>
+				
+				<s:Label text="语言:" color="0x000000"/>
+				<s:DropDownList id="asrLanguage" width="65" requireSelection="true" selectedIndex="0" change="asrLanChange(event)"/>
+				<s:Label text="置信度:" color="0x000000"/>
+				<s:DropDownList id="asrLanguageConfidence" width="65" requireSelection="true" selectedIndex="0" />
+				<s:Label text="异态:" color="0x000000"/>
+				<s:Label id="status" color="0xff0000" />
+			</s:HGroup>
+		</s:VGroup>
+		
+		<!--s:BorderContainer width="30%" height="100%" backgroundColor="0xcccccc" verticalCenter="middle">
+		<s:layout>
+		<s:VerticalLayout verticalAlign="middle"/>
+		</s:layout>
+		<s:HGroup width="100%" verticalAlign="middle" horizontalAlign="center">
+		<s:Button buttonMode="true" label="语音识别" click="sendCmdASRClient();"/>
+		<s:Spacer width="5"/>	
+		<s:Label text="分值:" color="0x000000"/>
+		
+		<s:Label id="asrValue" color="0x000000"/>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="middle">
+		<s:Label text="语言:" color="0x000000"/>
+		<s:DropDownList id="asrLanguage" width="50" requireSelection="true" selectedIndex="0" change="asrLanChange(event)"/>
+		<s:Label text="置信度:" color="0x000000"/>
+		<s:DropDownList id="asrLanguageConfidence" width="50" requireSelection="true" selectedIndex="0" />
+		</s:HGroup>
+		</s:BorderContainer-->
+		
+	</s:BorderContainer>
+	<!--iframe:HTML  id="downloadHtml" source="com/viewscenes/utils/download/download.html"  visible="false" width="0" height="0"/-->
+</s:VGroup>

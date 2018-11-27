@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:system="com.morcha4.frame.system.*" 
+				 width="100%" height="100%"  backgroundColor1="0xe3d4bd" backgroundColor2="0xaf8555" 
+				 xmlns:timecomp="com.viewscenes.utils.timecomp.*" xmlns:DataGrid="mor.DataGrid.*" creationComplete="initApp();"
+				 xmlns:util="com.viewscenes.utils.*"
+				 xmlns:flipBar="com.viewscenes.utils.flipBar.*">
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.editor.ComboBoxEditor;
+			import com.morcha4.editor.EditorManager;
+			import com.morcha4.editor.TextEditor;
+			import com.morcha4.util.RendererUtil;
+			import com.viewscenes.beans.SeasonBean;
+			import com.viewscenes.beans.ZdicSeasonBean;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.SystemInit;
+			import com.viewscenes.global.comp.MM;
+			import mx.core.FlexGlobals;
+			import flash.utils.setTimeout;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.utils.ArrayUtil;
+			import mx.utils.ObjectUtil;
+			
+			import spark.events.GridItemEditorEvent;
+			
+			[Bindable]
+			private var listStat:ArrayCollection = new ArrayCollection();
+			private var insertListStat:ArrayCollection = new ArrayCollection();
+			private var updateListStat:ArrayCollection = new ArrayCollection();
+			private var file:FileReference = new FileReference();//导入对象
+			private var fileRe:FileReference = new FileReference();//上传对象
+			
+			[Bindable]private var selectedCounts:int = 0;  //选择总数
+			
+			
+			private var dellist:String = "";//删除详细数据id (多个id以逗号分隔)
+			
+			
+			public function initApp():void{
+				file.addEventListener(Event.SELECT,clickBrowser);
+			}
+			
+			/**
+			 * 查询
+			 * */
+			private function getSeason():void
+			{ 
+				this.clearPage();
+				listStat.removeAll();
+				con_clewlabel(clew_label,true,'正在查询，请稍候...');
+				var bean:ZdicSeasonBean = new ZdicSeasonBean();
+				if(code.text!=""){
+					bean.code=code.text.toLocaleUpperCase();
+				}
+				pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.dicManager.SeasonTab","getSeason",bean,_getSeason,onfault));
+			}
+			
+			private function _getSeason(list:ArrayCollection):void{ 
+				con_clewlabel(clew_label,false);
+				this.listStat=list;
+				
+				listStat.refresh();
+				if(listStat.length==0){
+					
+					con_clewlabel(clew_label,true,"无查询数据！");
+				}
+			}
+			
+			
+			/**
+			 * 控制datagrid的提示框是否显示，以及显示内容
+			 * author:cht
+			 * **/
+			public function con_clewlabel(_component:Label,_visible:Boolean,_label:String="")
+			{
+				_component.visible=_visible;
+				_component.includeInLayout=_visible;
+				_component.text=_label;
+			}
+			
+			
+			/**
+			 * 导出excel
+			 * */
+			private function getSeasonExcel():void
+			{
+				var url:String="com.viewscenes.web.sysmgr.dicManager.SeasonTab";
+				var func:String="getSeasonExcel";
+				
+				var head:String = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r';
+				head += '<msg type="'+url+'" function="'+func+'">\r';
+				var xmlText:String = head;
+				if(code.text!=""){
+				xmlText += "<code>"+code.text.toLocaleUpperCase()+"</code>";
+				}
+				
+				xmlText += "</msg>";
+				
+				flash.external.ExternalInterface.call("toExcel",xmlText);
+				
+			}
+			
+			
+			//选择点中后执行的方法
+			private function changeSelect(obj:Object):void{
+				selectAll.selected=false;
+				//				Alert.show(obj.data.isSelected);
+				if(obj.data.isSelected=="true"){
+					this.selectedCounts=selectedCounts+1;  
+				}else{
+					this.selectedCounts=selectedCounts-1; 
+				}
+				if(selectedCounts==listStat.length){
+					selectAll.selected=true;
+				}
+			}
+			
+			private function clearPage():void{  //下一页或者上一页时需要把选择状态和选择总数清零
+				selectedCounts = 0;
+				selectAll.selected = false;
+			}
+			
+			
+			/**
+			 * 选择全部
+			 */
+			private function selectAllItem():void{
+				
+				if(listStat == null || listStat.length ==0){
+					return;
+				}
+				var check:Boolean = selectAll.selected;
+				
+				for(var i:int=0; i<listStat.length; i++){
+					var Obj:Object = listStat.getItemAt(i) as Object;
+					Obj.isSelected = check.toString();
+					//					Alert.show(Obj.isSelected);
+				}
+				
+				listStat.refresh(); //这个必须有，因为Obj.isSelected的值有变化，列表结果的dataProvider需要重新装载，即重新渲染
+				if(selectAll.selected){
+					selectedCounts = grid.dataProvider.length;  //selectedCounts赋值
+				} else{
+					selectedCounts = 0; 
+				}
+			}
+			
+			
+			/**
+			 * 删除
+			 **/
+			private function clickDeleteSeason():void{
+				
+				dellist ="";
+				var del_number:Number = 0;
+				for(var i:int=grid.dataProvider.length-1;i>=0;i--)
+				{
+					if(grid.dataProvider[i].isSelected=="true")
+					{
+						var code:String = grid.dataProvider[i].code;
+						
+						if(del_number==0)
+						{
+							
+							dellist = "'"+code+"'";
+							
+							
+						} else{
+							dellist += ","+"'"+code+"'";
+						}
+						del_number++;
+					}
+				}
+				
+				if(dellist!=""){
+					MM.show("您确定删除吗?","删除确认",'',clickDeleteChoose,true,null,null);
+				}
+				else{
+					MM.show("请选择要删除的信息","警告");
+					return;
+				}
+			}
+			
+			
+			//选择删除任务
+			private function clickDeleteChoose():void{
+				deleteDetailData(dellist);
+				
+			}
+			
+			
+			/**
+			 * 删除查询的详细数据
+			 **/
+			public function deleteDetailData(dellist:String):void{
+				selectAll.selected = false;
+				var obj:Object = new Object();//在后台删除
+				obj.dellist=dellist;
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.dicManager.SeasonTab","deleteSeason",
+					obj,_deleteSeason,onfault))
+				
+			}
+			
+			private function _deleteSeason(obj:Object):void{ 
+				var si:SystemInit = new SystemInit();  
+				si.getConfigData();
+				getSeason();
+				MM.show("删除成功");
+				
+			}
+			
+			
+			private function onfault(e:RPCException):void
+			{
+				
+				MM.show(e.message);
+			}
+			
+			/**
+			 * 导出txt
+			 * */
+			private function getSeasonTxt():void
+			{
+				var url:String="com.viewscenes.web.sysmgr.dicManager.SeasonTab";
+				var func:String="getSeasonTxt";
+				
+				var head:String = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r';
+				head += '<msg type="'+url+'" function="'+func+'">\r';
+				var xmlText:String = head;
+				xmlText += "</msg>";
+				
+				flash.external.ExternalInterface.call("toExcel",xmlText);
+				
+			}
+			
+			
+			public function addSeasonData():void{
+				var pop:AddSeasonForm = AddSeasonForm(PopUpManager.createPopUp(this,AddSeasonForm,true));
+				
+				
+				PopUpManager.centerPopUp(pop);
+				
+				pop.addEventListener("Season_list_refresh",refreshSeasonList);
+				
+				
+			}
+			
+			
+			private function updateHead(obj:Object):void{
+				openEditSeasonForm(obj.data);
+			}
+			private function openEditSeasonForm(obj:Object):void{
+				var pop:EditSeasonForm = EditSeasonForm(PopUpManager.createPopUp(this,EditSeasonForm,true));
+				
+				pop.setSeason(obj);
+				PopUpManager.centerPopUp(pop);
+				
+				pop.addEventListener("Season_list_refresh",refreshSeasonList);
+			}
+			protected function refreshSeasonList(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				getSeason();
+				var si:SystemInit = new SystemInit();  
+				si.getConfigData();
+			}
+			
+			private function isnowFuc(item:Object,gc:GridColumn):String
+			{
+				var is_now:String="";
+				if(Number(item.is_now)==0){
+					is_now="当前";
+				}else if(Number(item.is_now)==1){
+					is_now="不当前";
+				}else if(item.is_now==null){
+					is_now="";
+				}
+				return is_now;
+			}
+			/**
+			 * 站点信息上传
+			 */
+			private function submit():void{
+				//上传完成之后执行的事件   
+				fileRe.addEventListener(Event.SELECT,selectHandler);
+				fileRe.addEventListener(Event.COMPLETE,processResult);
+				fileRe.browse();
+			}
+			
+			
+			private function selectHandler(event:Event):void{
+				//根据URL执行文件上传，请求到后台Java的Servlet
+				var sysurl:String = FlexGlobals.topLevelApplication.url;
+				var index:int = sysurl.lastIndexOf("/");
+				var url:String = sysurl.substring(0,index);
+				var urlStr:String=url+"/uploadservlet";
+				var r:URLRequest=new URLRequest(urlStr);
+				fileRe.upload(r);//第二个参数指定文件域的名字，默认为Filedata       
+				//提交三个参数Filename,Filedata,Upload                
+			}
+			private var flag:Boolean=true;
+			private function processResult(event:Event):void{
+				Alert.show("上传文件成功,可以导入文件了！");
+				flag=false;
+			}
+			private function importExcel():void{
+				if(flag){
+					Alert.show("请先上传，再导入");
+					return ;
+				}
+			
+				file.browse();
+				
+			}
+			private function clickBrowser(event:Event):void{
+				var obj:Object = new Object();
+			
+				obj.file_name=file.name;
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.dicManager.SeasonTab","importExcel",obj,importExcelBack,DataManager.showErrorMessageBack));
+				
+			}
+			private function importExcelBack(res:String):void{
+				Alert.show("导入季节代号信息成功");				
+				getSeason();
+				flag=true;
+			}
+		]]>
+	</fx:Script>
+	
+	
+	<s:VGroup width="100%" height="100%">
+		<s:HGroup width="100%" height="25" verticalAlign="middle" horizontalAlign="left">
+			<s:HGroup  verticalAlign="middle" horizontalAlign="left">
+				<s:Label text="季节代号:"/>
+				<s:TextInput id="code" width="100"/>
+			</s:HGroup>
+			<s:HGroup width="100%"  horizontalAlign="right" verticalAlign="middle">
+				
+				<s:Button buttonMode="true" label="查 询" width="100" click="getSeason();"/>
+				<!--s:Button buttonMode="true" id="addset" width="100" label="添加"  click="addSeasonData()"/>
+		
+				<s:Button buttonMode="true" id="delset" width="100" label="删除所选"  click="clickDeleteSeason()"/-->
+				<s:Button buttonMode="true" label="上传" click="submit()"/>
+				<s:Button buttonMode="true" label="导入" click="importExcel()"/>
+			</s:HGroup>
+		</s:HGroup>		
+		<s:Group width="100%" height="100%">
+			<s:DataGrid id="grid" width="100%" height="100%" dataProvider="{listStat}" editable="false" textAlign="center">
+				<s:columns>
+					<s:ArrayCollection>
+						<!--s:GridColumn  headerText="选择" width="60" editable="false" itemRenderer="{RendererUtil.getCheckBoxRenderer(changeSelect)}"  /-->
+						<s:GridColumn dataField="code" headerText="季节代号" />
+						<s:GridColumn dataField="start_time" headerText="开始时间"  />
+						<s:GridColumn dataField="end_time" headerText="结束时间" />
+						<s:GridColumn dataField="is_now" headerText="是否当前"  labelFunction="isnowFuc"/>
+						<!--s:GridColumn  minWidth="50" headerText="修改" itemRenderer="{RendererUtil.getButtonRenderer('修改',updateHead)}"/-->
+						
+					</s:ArrayCollection>
+				</s:columns>
+			</s:DataGrid>
+			<s:Label text="正在查询，请稍候..."  color="0x000000" id="clew_label" y="{grid.columnHeaderGroup.height+10}" width="100%" textAlign="center" visible="false" includeInLayout="false"  />		
+		</s:Group>	
+		
+		
+		<s:HGroup  width="100%" height="30" verticalAlign="middle" gap="10">
+			<s:CheckBox id="selectAll" selected="false" change="selectAllItem()"/>
+			<s:Label text="全选"/> 
+			
+			<s:Label width="20"/>
+			
+			<!--分页组件所在地-->
+			<flipBar:PageBar  id="pagebar" rowConutOfPage="40" totalPageQuery="10" height="20"/>
+			
+			<!--flipBar:PageBar width="100%" id="pagebar" rowConutOfPage="20" totalPageQuery="5" height="20"/-->
+		</s:HGroup> 
+		
+	</s:VGroup>
+	
+	
+	
+</system:BasePage>	

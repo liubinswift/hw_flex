@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 width="100%" height="100%"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:contaners="com.morcha4.ui.contaners.*" >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			public function init():void{
+			}
+			/**
+			 * 设置页面显示值
+			 * 每次设置前先清空
+			 */
+			public function setAllData(equState:String,paramArry:Array):void{
+				_tasktype.text = "";
+				_freq.text = "";
+				
+				_state.text = "";
+				_level.text = "";
+				_fm.text = "";
+				_am.text = "";
+				_band.text = "";
+				_offset.text = "";
+				_attenuation.text = "";
+				_bandwidth.text = "";
+				
+				this._state.text = equState;
+				for(var jit:int=0;jit<paramArry.length;jit++){
+					var pmj:Array = (paramArry[jit] as String).split(":");
+					var strj:String = pmj[0] as String;
+					if(strj=="tasktype"){
+						this._tasktype.text = pmj[1] as String;
+					} else if(strj=="level" ){
+						this._level.text = pmj[1] as String;
+					}else if(strj=="fm-modulation"){
+						this._fm.text = pmj[1] as String;
+					}else if(strj=="am-modulation"){
+						this._am.text = pmj[1] as String;
+					}else if(strj=="band"){
+						var bandStr:String = pmj[1] as String;
+						if(bandStr=="0"){
+							bandStr = "短波";
+						} else if(bandStr=="1"){
+							bandStr = "中波";
+						} else if(bandStr=="2"){
+							bandStr = "调频";
+						}
+						this._band.text = bandStr;
+					}else if(strj=="offset"){
+						this._offset.text = pmj[1] as String;
+					}else if(strj=="attenuation"){
+						this._attenuation.text = pmj[1] as String;
+					}else if(strj=="bandwidth"){
+						this._bandwidth.text = pmj[1] as String;
+					}else if(strj=="freq"){
+						this._freq.text = pmj[1] as String;
+					}
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:VGroup width="100%" height="100%" left="5" right="5" top="5" gap="0">
+	
+		<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg">
+			<contaners:layout>
+				<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+			</contaners:layout>
+			<s:Label  text="型号：" fontWeight="bold" width="40%"  textAlign="center"/>
+			<s:Label id="_type" text="" width="60%" textAlign="center"/>
+		</contaners:BGAbleContainer>
+		<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg">
+			<contaners:layout>
+				<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+			</contaners:layout>
+			<s:Label  text="当前任务：" fontWeight="bold" width="40%"  textAlign="center"/>
+			<s:Label id="_tasktype" text="" width="60%" textAlign="center"/>
+		</contaners:BGAbleContainer>
+		<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg" id="_stateBox">
+			<contaners:layout>
+				<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+			</contaners:layout>
+			<s:Label  text="状态：" fontWeight="bold" width="40%"  textAlign="center"/>
+			<s:Label id="_state" text="" width="60%" textAlign="center"/>
+		</contaners:BGAbleContainer>
+		<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg" id="_freqBox">
+			<contaners:layout>
+				<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+			</contaners:layout>
+			<s:Label  text="频率：" fontWeight="bold" width="40%"  textAlign="center"/>
+			<s:Label id="_freq" text="" width="60%" textAlign="center"/>
+		</contaners:BGAbleContainer>
+		
+		<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg" id="_bandBox">
+			<contaners:layout>
+				<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+			</contaners:layout>
+			<s:Label  text="波段：" fontWeight="bold" width="40%"  textAlign="center"/>
+			<s:Label id="_band" text="" width="60%" textAlign="center"/>
+		</contaners:BGAbleContainer>
+		<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg" id="_levelBox">
+			<contaners:layout>
+				<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+			</contaners:layout>
+			<s:Label  text="电平：" fontWeight="bold" width="40%"  textAlign="center"/>
+			<s:Label id="_level" text="" width="60%" textAlign="center"/>
+		</contaners:BGAbleContainer>
+		<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg" id="_fmBox">
+			<contaners:layout>
+				<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+			</contaners:layout>
+			<s:Label  text="调制度：" fontWeight="bold" width="40%"  textAlign="center"/>
+			<s:Label id="_fm" text="" width="60%" textAlign="center"/>
+		</contaners:BGAbleContainer>
+		<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg" id="_amBox">
+			<contaners:layout>
+				<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+			</contaners:layout>
+			<s:Label  text="调幅度：" fontWeight="bold" width="40%"  textAlign="center"/>
+			<s:Label id="_am" text="" width="60%" textAlign="center"/>
+		</contaners:BGAbleContainer>
+		<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg" id="_offsetBox">
+			<contaners:layout>
+				<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+			</contaners:layout>
+			<s:Label  text="频偏：" fontWeight="bold" width="40%"  textAlign="center"/>
+			<s:Label id="_offset" text="" width="60%" textAlign="center"/>
+		</contaners:BGAbleContainer>
+		<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg" id="_attenuationBox">
+			<contaners:layout>
+				<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+			</contaners:layout>
+			<s:Label  text="衰减：" fontWeight="bold" width="40%"  textAlign="center"/>
+			<s:Label id="_attenuation" text="" width="60%" textAlign="center"/>
+		</contaners:BGAbleContainer>
+		<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg" id="_bandwidthBox">
+			<contaners:layout>
+				<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+			</contaners:layout>
+			<s:Label  text="带宽：" fontWeight="bold" width="40%"  textAlign="center"/>
+			<s:Label id="_bandwidth" text="" width="60%" textAlign="center"/>
+		</contaners:BGAbleContainer>
+	</s:VGroup>
+	
+</s:Panel>

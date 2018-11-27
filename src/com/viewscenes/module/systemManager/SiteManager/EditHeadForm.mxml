@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" close="close(event);"
+			   xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+			   creationComplete="init();" 
+			   xmlns:timecomp="com.viewscenes.utils.timecomp.*"
+			   xmlns:ip="com.viewscenes.utils.tools.*"
+			   xmlns:checkbox="com.viewscenes.global.comp.checkbox.*"
+			   xmlns:advancedComboBox="com.morcha4.ui.advancedComboBox.*"
+			   mouseDown="startDrag()"
+			  
+			   mouseUp="stopDrag();">
+	<s:layout>
+		<s:FormItemLayout/>
+	</s:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.utils.timecomp.DateUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			
+			import spark.events.IndexChangeEvent;
+			[Bindable]private var defaultUrl:String = "";  //默认url;
+			[Bindable]
+			private var HeadObj:Object = {
+				"code":"",
+				"shortname":"",
+				"com_id":"2", 
+				"com_protocol":"",
+				"ip":"", 
+				"longitude":"", 
+				"latitude":"", 
+				"comphone":"",
+				"site":"",
+				"address":"",
+				"site_status":"",
+				"com_status":"",
+				"fault_status":"",
+				"station_name":"",
+				"descript":"",
+				"state":"",
+				"country":"",
+				"version":"",
+				"altitude":"",
+				"occur_time":DateUtil.date2str(new Date), 
+				"summertime_begin":DateUtil.date2str(new Date),
+				"summertime_end":DateUtil.date2str(new Date),
+				"ciraf":"",
+				"person":"",
+				"person_phone":"",
+				"principal":"",
+				"principal_phone":"",
+				"time_diff":"",
+				"default_language":"",
+				"x":"",
+				"y":"",
+				"url":"",
+				"is_delete":"",
+				"type_id":"",
+				"is_online":"",
+				"manufacturer":"",
+				"post":"",
+				"service_name":""};
+			[Bindable]
+			private var comArray:ArrayCollection = new ArrayCollection([{label:"宽带",code:"1"},{label:"拨号",code:"2"}]);
+			[Bindable]
+			private var comprotocolArray:ArrayCollection = new ArrayCollection([{label:"未迁移",code:"1"},{label:"已迁移",code:"2"}]);
+			
+			[Bindable]
+			private var isdel:ArrayCollection = new ArrayCollection([{label:"否",code:"0"},{label:"是",code:"1"}]);
+			[Bindable]
+			private var typeArray:ArrayCollection = new ArrayCollection([{label:"采集点",code:"101"},{label:"遥控站",code:"102"}]);
+			[Bindable]
+			private var lineArray:ArrayCollection = new ArrayCollection([{label:"不在线",code:"0"},{label:"在线",code:"1"}]);
+			//语言
+			[Bindable]
+			public var lanaguageArr:ArrayCollection = new ArrayCollection;
+			//国家
+			[Bindable]
+			public var countryArr:ArrayCollection = new ArrayCollection;
+			//服务区
+			[Bindable]
+			public var serviceArr:ArrayCollection = new ArrayCollection;
+			
+			private function init():void{
+				
+				
+			}
+			
+			public function setHead(obj:Object):void{
+				HeadObj = obj;
+				this.default_language.setText(HeadObj.default_language,"label");	
+				if(HeadObj.type_id==101){
+					this.type_id.selectedIndex=0;
+				}else{
+					this.type_id.selectedIndex=1;
+				}
+				if(HeadObj.com_id=="1"){
+					this.com_id.selectedIndex=0;
+				}else{
+					this.com_id.selectedIndex=1;
+				}
+				if(HeadObj.com_protocol=="2"){
+					this.com_protocol.selectedIndex=1;
+				}else{
+					this.com_protocol.selectedIndex=0;
+				}
+				
+				
+				principal_phone1.text=HeadObj.principal_phone.split(",")[0];
+				
+				principal_phone2.text=HeadObj.principal_phone.split(",")[1];
+				principal_phone3.text=HeadObj.principal_phone.split(",")[2];
+				defaultUrl = HeadObj.url;
+				
+				
+			}
+			
+			private function updateHead():void{
+				    HeadObj.ip=ip.text;
+					HeadObj.id=head_id.text;
+					HeadObj.code=code.text;
+					HeadObj.com_protocol=com_protocol.selectedItem.code;
+					HeadObj.principal_phone=principal_phone1.text+","+principal_phone2.text+","+principal_phone3.text;
+					HeadObj.default_language=default_language.getText("label");
+					HeadObj.url=url.text;
+					RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.dicManager.HeadendTab","updateHead",HeadObj,_updateHead,_updateHead));
+			}
+			
+			public function _updateHead(arr:ArrayCollection):void{
+				
+				if (arr.length>0){
+					Alert.show(RPCException(arr[0]).message);
+				}else{
+					Alert.show("修改前端成功！");
+				}
+				this.dispatchEvent(new Event("Head_list_refresh"));
+				close(null);
+			}
+			
+			private function close(e:Event):void{
+				
+				PopUpManager.removePopUp(this);
+				
+			}
+
+			protected function com_protocol_changeHandler(event:IndexChangeEvent):void
+			{
+			
+				if(com_protocol.selectedItem.code==2){//已迁移
+					url.text ="http://10.0.2.5:8000/HttpRelay";
+				}else {
+					if(defaultUrl=="http://10.0.2.5:8000/HttpRelay"){
+						 if(manufacturer.text.indexOf("圣世祺")!=-1){
+							 url.text =  "http://10.0.0.1:9921/Receiver/Enter/";
+						 }else if(manufacturer.text.indexOf("中电22所")!=-1){
+							 url.text =  "http://10.0.0.1:6666";
+						 }else if(manufacturer.text.indexOf("金石威视")!=-1){
+							 url.text =   "http://10.0.0.1:7070/download";
+						 }else if(manufacturer.text.indexOf("泰顺")!=-1){
+							 url.text =   "http://10.0.0.1:800";
+						 }else if(manufacturer.text.indexOf("聚星")!=-1){
+							 url.text =   "http://10.0.0.1:900";
+						 }else if(manufacturer.text.indexOf("度纬")!=-1){
+							 url.text =   "http://10.0.0.1:9981/Receiver/Enter/";
+						 }
+					}else {
+					   url.text = defaultUrl;
+					}
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+      <s:HGroup width="100%"  horizontalAlign="right" verticalAlign="middle">
+	       <s:VGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle">
+			   <s:Form>
+					<s:FormItem label="前端ID" height="20">
+						<s:TextInput id="head_id" text="{HeadObj.head_id}" editable="false"/>
+					</s:FormItem>
+					<s:FormItem label="前端CODE" height="20">
+						<s:TextInput id="code" text="{HeadObj.code}" restrict="a-z\A-Z\0-9" maxChars="20" change="{HeadObj.code=code.text}"/>
+					</s:FormItem>
+				   <s:FormItem label="前端简称" height="20">
+					   <s:TextInput id="shortname" text="{HeadObj.shortname}"  change="{HeadObj.shortname=shortname.text}"/>
+				   </s:FormItem>
+				
+				   <s:FormItem label="经度" height="20">
+					   <s:TextInput id="longitude" text="{HeadObj.longitude}" change="{HeadObj.longitude=longitude.text}"/>
+				   </s:FormItem>
+				   <s:FormItem label="纬度" height="20">
+					   <s:TextInput id="latitude" text="{HeadObj.latitude}" change="{HeadObj.latitude=latitude.text}"/>
+				   </s:FormItem>
+				   
+					<s:FormItem label="拨号电话"  height="20">
+						<s:TextInput id="comphone" text="{HeadObj.comphone}" change="{HeadObj.comphone=comphone.text}"/>
+					</s:FormItem>
+					<s:FormItem label="站点"  height="20">
+						<s:TextInput id="site"  text="{HeadObj.site}" change="{HeadObj.site=site.text}"/>
+					</s:FormItem>	
+					<s:FormItem label="地址"  height="20">
+						<s:TextInput id="address" text="{HeadObj.address}"  change="{HeadObj.address=address.text}"/>
+					</s:FormItem>
+					<s:FormItem label="站点状态"  height="20">
+						<s:TextInput id="site_status" text="{HeadObj.site_status}" change="{HeadObj.site_status=site_status.text}"/>
+					</s:FormItem>
+					<s:FormItem label="通信状态"  height="20">
+						<s:TextInput id="com_status" text="{HeadObj.com_status}" change="{HeadObj.com_status=com_status.text}"/>
+					</s:FormItem>
+				   <s:FormItem label="失败状态"  height="20">
+					   <s:TextInput id="fault_status" text="{HeadObj.fault_status}" change="{HeadObj.fault_status=fault_status.text}"/>
+				   </s:FormItem>
+				   <s:FormItem label="发射台名称"  height="20">
+					   <s:TextInput id="station_name" text="{HeadObj.station_name}" change="{HeadObj.station_name=station_name.text}"/>
+				   </s:FormItem>
+				   <s:FormItem label="大洲"  height="20">
+					   <!--s:TextInput id="state"  change="{HeadObj.state=state.text}"/-->
+					   <s:DropDownList id="state" width="150" dataProvider="{DataManager.satateBeanArr}" selectedIndex="{HeadObj.state}" change="{HeadObj.state=state.selectedItem.state}" labelField="state_name" />
+				   </s:FormItem>
+				   
+				   
+				   <s:FormItem label="国家"  height="20">
+					   
+					   <advancedComboBox:DropDownListSet id="country" selectedItemValue="{['contry',HeadObj.country]}"  width="150" dataProvider="{countryArr}" change="{HeadObj.country=country.selectedItem.contry}" labelField="contry"/>
+				   </s:FormItem>
+				   <s:FormItem label="服务区"  height="20">
+					   
+					   <s:DropDownList id="service_name" width="150" dataProvider="{serviceArr}" selectedIndex="{HeadObj.service_name}" change="{HeadObj.service_name=service_name.selectedItem.chinese_name}" labelField="chinese_name"/>
+					   
+				   </s:FormItem>
+				   
+				   
+	          </s:Form>
+	        </s:VGroup>
+			<s:VGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle">
+				  <s:Form>
+					  <s:FormItem label="通信类型" height="20">
+						  <s:ComboBox id="com_id" dataProvider="{comArray}" selectedIndex="{HeadObj.com_id}"  change="{HeadObj.com_id=com_id.selectedItem.code}" requireSelection="true"/>
+					  </s:FormItem>
+					  <s:FormItem label="是否迁移" height="20">
+						  <s:ComboBox id="com_protocol" dataProvider="{comprotocolArray}" change="com_protocol_changeHandler(event)" selectedIndex="{HeadObj.com_protocol}"   requireSelection="true"/>
+					  </s:FormItem>
+					  <s:FormItem label="IP地址"  height="20">
+						  <ip:IPComponent width="150" id="ip" text="{HeadObj.ip}"/>
+					  </s:FormItem>
+					  <s:FormItem label="版本"  height="20">
+						  <s:TextInput id="version" text="{HeadObj.version}"  change="{HeadObj.version=version.text}"/>
+					  </s:FormItem>
+					  
+					  <s:FormItem label="海拔"  height="20">
+						  <s:TextInput id="altitude" text="{HeadObj.altitude}" change="{HeadObj.altitude=altitude.text}"/>
+					  </s:FormItem>
+					  <s:FormItem label="X"  height="20">
+						  <s:TextInput id="X" text="{HeadObj.x}" change="{HeadObj.x=X.text}"/>
+					  </s:FormItem>
+					  <s:FormItem label="Y"  height="20">
+						  <s:TextInput id="Y" text="{HeadObj.y}" change="{HeadObj.y=Y.text}"/>
+					  </s:FormItem>
+					  <s:FormItem label="维护人"  height="20">
+						  <s:TextInput id="person" text="{HeadObj.person}" change="{HeadObj.person=person.text}"/>
+					  </s:FormItem>
+					  <s:FormItem label="维护人电话"  height="20">
+						  <s:TextInput id="person_phone" text="{HeadObj.person_phone}" change="{HeadObj.person_phone=person_phone.text}"/>
+					  </s:FormItem>
+					  <s:FormItem label="联系人"  height="20">
+						  <s:TextInput id="principal" text="{HeadObj.principal}" change="{HeadObj.principal=principal.text}"/>
+					  </s:FormItem>
+					  <s:FormItem label="联系人职务"  height="20">
+						  <s:TextInput id="post" text="{HeadObj.post}" change="{HeadObj.post=post.text}"/>
+					  </s:FormItem>
+					  <s:FormItem label="联系人办公电话"  height="20">
+						  <s:TextInput id="principal_phone1"/>
+					  </s:FormItem>
+					  <s:FormItem label="联系人手机"  height="20">
+						  <s:TextInput id="principal_phone2"/>
+					  </s:FormItem>
+					  <s:FormItem label="联系人家庭电话"  height="20">
+						  <s:TextInput id="principal_phone3"/>
+					  </s:FormItem>
+					  
+				  </s:Form>
+		   </s:VGroup>
+		   <s:VGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle">
+			   <s:Form>
+				   <s:FormItem label="时区"  height="20">
+					   <timecomp:TimeNew id="occur_time" text="{HeadObj.occur_time}" TimeNewChanged="{HeadObj.occur_time=occur_time.text}"/>
+				   </s:FormItem>
+				   <s:FormItem label="夏令开始时间"  height="20">
+					  <timecomp:TimeNew id="summertime_begin" text="{HeadObj.summertime_begin}" TimeNewChanged="{HeadObj.summertime_begin=summertime_begin.text}"/>
+				  </s:FormItem>
+				  <s:FormItem label="夏令结束时间"  height="20">
+					  <timecomp:TimeNew id="summertime_end" text="{HeadObj.summertime_end}" TimeNewChanged="{HeadObj.summertime_end=summertime_end.text}"/>
+				  </s:FormItem>
+				   <s:FormItem label="CIRAF区"  height="20">
+					   <s:TextInput id="ciraf" text="{HeadObj.ciraf}" change="{HeadObj.ciraf=ciraf.text}"/>
+				   </s:FormItem>
+				  
+				   <s:FormItem label="时差"  height="20">
+					   <s:TextInput id="time_diff" text="{HeadObj.time_diff}" change="{HeadObj.time_diff=time_diff.text}"/>
+				   </s:FormItem>
+				   <s:FormItem label="默认语言"  height="20">
+					   <checkbox:CheckDropList id="default_language" dataProvider="{lanaguageArr}"  filedLabel="label" />
+				   </s:FormItem>
+				   <s:FormItem label="下发地址"  height="20">
+					   <s:TextInput id="url" text="{HeadObj.url}" change="{HeadObj.url=url.text}"/>
+				   </s:FormItem>
+				   
+				   <s:FormItem label="是否删除" height="20">
+					   <s:ComboBox id="is_delete" dataProvider="{isdel}" selectedIndex="{HeadObj.is_delete}" change="{HeadObj.is_delete=is_delete.selectedItem.code}"/>
+				   </s:FormItem>
+				   <s:FormItem label="站点类型" height="20">
+					   
+					   <s:ComboBox id="type_id" dataProvider="{typeArray}" change="{HeadObj.type_id=type_id.selectedItem.code}"/>
+				   </s:FormItem>
+				   <s:FormItem label="在线是否" height="20">
+					   
+					   <s:ComboBox id="is_online" dataProvider="{lineArray}" selectedIndex="{HeadObj.is_online}" change="{HeadObj.is_online=is_online.selectedItem.code}"/>
+				   </s:FormItem>
+				   <s:FormItem label="制造厂商"  height="20">
+					   <s:TextInput id="manufacturer" text="{HeadObj.manufacturer}" change="{HeadObj.manufacturer=manufacturer.text}"/>
+				   </s:FormItem>
+				   <s:FormItem label="描述"  height="20">
+					   <s:TextInput id="descript" text="{HeadObj.descript}" change="{HeadObj.descript=descript.text}"/>
+				   </s:FormItem>
+			   </s:Form>
+			   <s:FormItem width="216"  height="30">
+				   <s:layout>
+					   <s:HorizontalLayout/>
+				   </s:layout>
+				   <s:Button buttonMode="true" label="修改" click="updateHead();"/>
+				   <s:Button buttonMode="true" label="关闭" click="close(event)"/>
+			   </s:FormItem>
+		  </s:VGroup>
+         </s:HGroup> 
+		
+</s:TitleWindow>

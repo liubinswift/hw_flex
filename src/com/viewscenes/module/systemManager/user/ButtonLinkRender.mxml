@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:GridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					xmlns:s="library://ns.adobe.com/flex/spark" 
+					xmlns:mx="library://ns.adobe.com/flex/mx" clipAndEnableScrolling="true" >
+	<s:layout>
+		<s:HorizontalLayout/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.morcha4.frame.system.EventBus;
+			
+			import mx.controls.Alert;
+			
+			
+			
+		
+			[Bindable]
+			private var srcData:Object;
+			
+			protected function btn_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new AdvancedEvent("itemClick",true,false,{type:lbText.text,data:srcData}));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Script>
+		<![CDATA[
+			
+			override public function set data(value:Object):void{
+				super.data=value
+				if(value){
+					srcData = value;
+					lbText.text = column.headerText;
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:BitmapImage source="assets/player/bf.png"  top="9" />
+	<s:Label  top="9" left="7" id="lbText"  buttonMode="true" mouseChildren="false" click="btn_clickHandler(event)"/>
+	
+</s:GridItemRenderer>

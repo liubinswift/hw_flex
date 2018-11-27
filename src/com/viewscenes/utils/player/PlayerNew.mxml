@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+				   xmlns:iframe="com.morcha4.ui.iframe.*" 
+				   creationComplete="initPlayer();" 
+				   xmlns:playBar="com.viewscenes.utils.player.playBar.*" 
+				   xmlns:contaners="com.morcha4.ui.contaners.*" 
+				   xmlns:layout="com.morcha4.ui.contaners.layout.*"
+				   borderVisible="false"
+				   alpha="0"
+				  >
+	<!--s:Image source="{getStyle('gbImg')}" width="100%" height="100%"/-->
+	<fx:Script>
+		<![CDATA[
+
+			import com.viewscenes.utils.player.playBar.PlayBarEvent;
+			
+			import flash.utils.setTimeout;
+			
+
+			import mx.events.FlexEvent;
+
+			
+			[Bindable]
+			public var mode:String = "realtime";
+			
+			[Bindable]
+			public var overlayDetection:Boolean = false;
+			[Bindable]
+			public var playerVisible:Boolean = true;
+			
+			public var playerType:String = "media";
+			
+			
+			private function initPlayer():void{
+				var arr:Array = new Array();
+				arr.push(playerType);
+				playerHtml.callIFrameFunction("setPlayerType",arr);
+				
+			}
+			
+			
+			protected function pb_playHandler(event:PlayBarEvent):void
+			{
+				// TODO Auto-generated method stub
+				pb.status = "play";
+				setText("播放");
+				playerHtml.callIFrameFunction("setplay");
+				
+				if (mode == "record"){
+					pb.time_go();
+				}
+				playerVisible = true;
+			}
+			
+			protected function pb_stopHandler(event:PlayBarEvent):void
+			{
+				// TODO Auto-generated method stub
+				playerVisible = true;
+				pb.status = "stop";
+				setText("停止");
+				
+				playerHtml.callIFrameFunction("setstop");
+				
+				if (mode == "record"){
+					pb.time_curr = 0;//复位
+					pb.time_stop();
+				}
+			}
+			
+			protected function pb_pauseHandler(event:PlayBarEvent):void
+			{
+				// TODO Auto-generated method stub
+				pb.status = "pause";
+				setText("暂停");
+				
+				playerHtml.callIFrameFunction("setpause");
+				
+				if (mode == "record"){
+					pb.time_stop();
+				}
+			}
+			
+			protected function pb_volumeHandler(event:PlayBarEvent):void
+			{
+				// TODO Auto-generated method stub
+				var arr:Array = new Array();
+				arr.push(event.data);
+				playerHtml.callIFrameFunction("setvolume",arr);
+				
+			}
+			
+			protected function pb_timeHandler(event:PlayBarEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+				var arr:Array = new Array();
+				arr.push(event.data);
+				playerHtml.callIFrameFunction("setDuration",arr);
+				
+			}
+			
+			public function playUrl(url:String):void{
+				playerVisible = true;
+				var arr:Array = new Array();
+				
+				arr.push(url);
+				
+				playerHtml.callIFrameFunction("playUrl",arr);
+				
+				pb.status = "play";
+				if (mode == "record"){
+					pb.time_total = 0;
+					pb.time_curr = 0;
+					setTimeout(getDuration,1000);//取得播音长度
+				}
+			}
+			
+			public function playUrlArr(urlarr:Array):void{
+				playerVisible = true;
+				playerHtml.callIFrameFunction("playUrls",urlarr);
+				pb.status = "play";
+			}			
+			
+			/**
+			 * 返回正在播放录音文件的播音时长
+			 * 
+			 * */
+			public function getDuration():void{
+				playerHtml.callIFrameFunction("getDuration",null,getDurationCallBack);
+			}
+			
+			private function getDurationCallBack(time:String):void{
+				if(time==null||time==""||time.length==0 || time == "00:00"){
+					time="03:00";
+//					MM.show("该文件不存在");
+//					stop();
+//					return ;
+				}
+				var times:Array = time.split(":");
+				var h:int = times[0]*60;
+				var s:int = times[1];
+				//设置录音长度
+				pb.time_total = h+s;
+				pb.time_go();
+			}
+			
+			/**
+			 * 
+			 * 供外部调用的play将直接调用播放器的play方法
+			 * 
+			 * */
+			public function play():void{
+				this.pb_playHandler(null);
+				
+			}
+			/**
+			 * 
+			 * 供外部调用的stop将直接调用播放器的stop方法
+			 * 
+			 * */
+			public function stop():void{
+				this.pb_stopHandler(null);
+				
+			}
+			/**
+			 * 
+			 * 供外部调用的pause将直接调用播放器的pause方法
+			 * 
+			 * */
+			public function pause():void{
+				this.pb_pauseHandler(null);
+				
+			}
+			/**
+			 * 
+			 * 供外部调用的volume
+			 * 
+			 * */
+			public function volume(v:String):void{
+				var arr:Array = new Array();
+				arr.push(v);
+				playerHtml.callIFrameFunction("volume",arr);
+			}
+			
+			public function setText(t:String,speed:int=5,color:int=0x000000):void{
+				pb.setText(t,speed,color);
+			}
+			
+			
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<iframe:HTML  id="playerHtml" bottom="210" left="50" right="50"  top="110" source="com/viewscenes/utils/player/player.html" overlayDetection="{overlayDetection}" visible="{playerVisible}" frameLoad="{this.playerVisible=true}" width="100%" height="100%"/>
+	<playBar:playBarNew id="pb" bottom="150" left="50" right="50" width="100%" play="pb_playHandler(event)" stop="pb_stopHandler(event)" pause="pb_pauseHandler(event)"
+					 volume="pb_volumeHandler(event)" mode="{mode}" time="pb_timeHandler(event)" backgroundColor="#cccccc"/>
+</s:BorderContainer>

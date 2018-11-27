@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" xmlns:layout="com.morcha4.ui.contaners.layout.*"
+		 creationComplete="init();">
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.morcha4.util.RendererUtil;
+			import com.viewscenes.global.DataManager;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			[Bindable]
+			private var roleCollection:ArrayCollection;
+			[Bindable]
+			public var userArr:ArrayCollection=new ArrayCollection();
+			
+			private function init():void{
+				addEventListener("roleListRefresh",getRoleList);
+				getRoleList(null);
+			}
+			
+			private function getRoleList(e:AdvancedEvent):void{
+				
+				var obj:Object = new Object;
+			
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.user.PubUserManager","getRoleList",obj,_getRoleList,onError));
+				
+			}
+			
+			private function _getRoleList(obj:Object):void{
+				roleCollection = obj as ArrayCollection;
+				
+				roleDG.selectedIndex = 0;
+				
+				dispatchEvent(new AdvancedEvent("roleItemClick",true,false,roleDG.selectedItem));
+				
+				
+				
+			}
+			public function onError(e:RPCException):void{
+				Alert.show(e.message);
+			}
+			
+			private function openEditRoleForm(obj:Object):void{
+				
+				var pop:EditRoleForm = EditRoleForm(PopUpManager.createPopUp(this,EditRoleForm,true));
+				
+				pop.setRole(obj);
+				
+				PopUpManager.centerPopUp(pop);
+				
+				pop.addEventListener("roleListRefresh",getRoleList);
+			}
+			
+			private function confirmDel(roleId:String):void{
+				delRoleById(roleId);
+			}
+			
+			private function delRoleById(roleId:String):void{
+				//Alert.show("确定要删除该角色么？删除后该角色对应的用户、权限等信息也将一并删除！","警告",Alert.YES|Alert.NO,this,new Function(){});
+				var obj:Object = new Object;
+				obj.roleId = roleId;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.user.PubUserManager","delRoleById",obj,_delRoleById,onError));
+				
+			}
+			
+			private function _delRoleById(arr:ArrayCollection):void{
+				if (arr.length>0)
+					Alert.show(arr[0].message);
+				getRoleList(null);
+			}
+			
+			
+			private function delRole(obj:Object):void{
+				
+				if(DataManager.user.roleId == roleDG.selectedItem.role_id){
+					Alert.show("您无法删除自己的角色");
+					return;
+				}
+				if(roleDG.selectedItem.role_id=="323"){
+					Alert.show("该角色无法删除，只能修改");
+					return;
+				}
+				
+				if(userArr.length==0){
+					Alert.show("确定要删除？","删除",Alert.OK|Alert.CANCEL,this,delChoose);
+				}else{
+					Alert.show("该角色内有用户，是否把用户一起删除？","删除",Alert.OK|Alert.CANCEL,this,delChoose);
+				}
+				
+			}
+			
+			private function delChoose(e:CloseEvent):void
+			{
+				// TODO Auto Generated method stub
+				if(e.detail == Alert.OK){
+					confirmDel(roleDG.selectedItem.role_id);					
+				}else{
+					return;
+				}
+				
+				
+			}
+			
+			private function updateRole(obj:Object):void{
+				openEditRoleForm(obj.data);
+			}
+			
+			private function roleRowClick():void{
+				//Alert.show(roleDG.selectedItem.name);
+				dispatchEvent(new AdvancedEvent("roleItemClick",true,false,roleDG.selectedItem));
+			}
+			
+			protected function addRoleBtn_clickHandler(event:MouseEvent):void
+			{
+				var pop:AddRoleForm = AddRoleForm(PopUpManager.createPopUp(this,AddRoleForm,true));
+				PopUpManager.centerPopUp(pop);
+				pop.addEventListener("roleListRefresh",getRoleList);
+				
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:VGroup width="100%" height="100%" >
+		
+		
+		
+		<s:DataGrid id="roleDG" textAlign="center" width="100%" height="100%" dataProvider="{roleCollection}" gridClick="roleRowClick()" selectionChange="roleRowClick()"  >
+			<s:columns>
+				<s:ArrayCollection>
+					<s:GridColumn  width="150" headerText="角色" dataField="name"/>
+					<s:GridColumn dataField="role_id" width="75" headerText="修改" itemRenderer="{RendererUtil.getButtonRenderer('修改',updateRole)}"/>
+					<s:GridColumn dataField="role_id" width="75" headerText="删除" itemRenderer="{RendererUtil.getButtonRenderer('删除',delRole)}" />
+				</s:ArrayCollection>
+				
+			</s:columns>
+		</s:DataGrid>
+
+		<s:Button buttonMode="true" id="addRoleBtn" label="添加角色" height="30" click="addRoleBtn_clickHandler(event)"/>
+		
+	</s:VGroup>
+</s:Group>

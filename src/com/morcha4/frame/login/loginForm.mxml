@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+					  xmlns:s="library://ns.adobe.com/flex/spark"
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  defaultButton="{login}" xmlns:transEffects="com.viewscenes.frame.transEffects.*"
+					  minHeight="0" creationComplete="this.currentState='reday'" alpha.deafult="0"
+					  skinClass="{loginFormSkin}">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<mx:Fade id="wd" alphaFrom="0" alphaTo="1" duration="3000"/>
+	</fx:Declarations>
+	<s:layout>
+		<s:VerticalLayout verticalAlign="middle" horizontalAlign="center"/>
+	</s:layout>
+	<s:states>
+		<s:State name="deafult"/>
+		<s:State name="reday"/>
+		<s:State name="process"/>
+		<s:State name="error"/>
+		<s:State name="init"/>
+	</s:states>
+	<s:transitions>
+		<s:Transition fromState="deafult" toState="reday">
+			<s:Parallel>
+				<s:Wipe direction="right" target="{this}"/>
+				<mx:Blur blurXFrom="20" blurXTo="0"  target="{this}"/>
+			</s:Parallel>
+		</s:Transition>
+		<s:Transition fromState="*" toState="process">
+			<s:Sequence>
+				<s:Resize target="{tip}" duration="250"/>
+				<s:Fade target="{tip}"/>
+			</s:Sequence>
+		</s:Transition>
+		<s:Transition fromState="*" toState="error">
+			<s:Sequence>
+				<s:Resize target="{tip}" duration="250"/>
+				<s:Fade target="{tip}"/>
+			</s:Sequence>
+		</s:Transition>
+		<s:Transition fromState="*" toState="init">
+			<s:Sequence>
+				<s:Parallel>
+					<s:Resize target="{form}"/>
+					<s:Fade target="{form}" alphaTo="0"/>
+				</s:Parallel>
+				<s:Resize target="{tip}"/>
+			</s:Sequence>
+		</s:Transition>
+	</s:transitions>
+	<fx:Script>
+		<![CDATA[
+			import flash.utils.setTimeout;
+			
+			import mx.controls.Alert;
+			import mx.effects.WipeUp;
+			[Bindable]public var loginTip:String="正在登陆";
+		]]>
+	</fx:Script>
+	<s:Group id="form" width.init="0" height.init="0" clipAndEnableScrolling="true">
+		<s:TextInput id="password" x="44" y="29" width="132" tabIndex="1"/>
+		<s:TextInput id="userName" x="44" y="0" width="132" tabIndex="2"/>
+		<s:Button buttonMode="true" id="login" x="180" y="10" width="56" height="39" doubleClickEnabled="true" doubleClick="this.currentState='init'" tabFocusEnabled="false" click="if(userName.text==''||password.text==''){this.currentState='error';this.loginTip='信息不全';return;}setTimeout(function(){loginTip='登陆成功，正在初始化';currentState='init'},2000);loginTip='正在登录。。';this.currentState='process'"/>
+		<s:Label  y="33" width="41" text="密    码"/>
+		<s:Label  y="4" fontSize="13" text="用户名"/>
+	</s:Group>
+	<s:Label id="tip" y="65" click="this.currentState='deafult';this.currentState='reday'" width="100%"  width.init="300" height.deafult="0" height.reday="0" color.error="#F02B2B" includeInLayout.deafult="false"
+			 includeInLayout.reday="false" visible.reday="false" fontSize="14"
+			 visible.deafult="false" text="{loginTip}" textAlign="center" verticalAlign="middle"/>
+</s:BorderContainer>

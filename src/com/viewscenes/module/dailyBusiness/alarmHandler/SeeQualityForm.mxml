@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx" width="1200" height="600"
+			   close="close(event);"
+			   mouseUp="stopDrag();"
+			   mouseDown="startDrag()"
+			   x="{(Capabilities.screenResolutionX - width) / 2}" y="{(Capabilities.screenResolutionY - height) / 2 - 50}"
+			   xmlns:timecomp="com.viewscenes.utils.timecomp.*"
+			   xmlns:ip="com.viewscenes.utils.tools.*"
+			   xmlns:player="com.viewscenes.utils.player.*" 
+			   xmlns:flipBar="com.viewscenes.utils.flipBar.*"
+			   xmlns:recplay="com.viewscenes.module.onlineBusiness.recplay.*">
+<s:VGroup height="100%" width="100%"  verticalAlign="middle">
+		<s:VGroup height="15%" width="100%"  verticalAlign="middle">
+			<mx:Form  textAlign="center">
+				<s:HGroup height="100%" width="100%"  verticalAlign="middle">
+					<mx:FormItem label="报警编号:" >
+						<mx:Label id="Alarm_id"/>
+					</mx:FormItem>
+					<mx:FormItem label="报警站点:">
+						<mx:Label id="Site_name"/>
+					</mx:FormItem>
+					<mx:FormItem label="报警设备:">
+						<mx:Label id="Equ_code"/>
+					</mx:FormItem>
+					<mx:FormItem label="报警类型:">
+						<mx:Label id="Type_name"/>
+					</mx:FormItem>
+					<mx:FormItem label="开始时间:" textAlign="center">
+						<timecomp:TimeNew id="Alarm_datetime"/>
+					</mx:FormItem>
+					<mx:FormItem label="结束时间:" textAlign="center">
+						<timecomp:TimeNew id="resume_datetime"/>
+					</mx:FormItem>
+					<mx:FormItem label="异态类型:" textAlign="center">
+						<s:ComboBox id="abnormal_type" dataProvider="{abnormalArr}" selectedIndex="1"/>
+					</mx:FormItem>
+					
+					
+				</s:HGroup>
+				<s:HGroup id="detailform" height="100%" width="100%"  verticalAlign="middle">
+					
+				</s:HGroup>
+				<s:HGroup id="detailform2" height="100%" width="100%"  verticalAlign="middle">
+					
+				</s:HGroup>
+			</mx:Form>
+		</s:VGroup>
+	<player:Player id="player" mode="record" width="100%" height="80"/>
+	 <s:VGroup height="70%" width="100%"  verticalAlign="middle">
+		 <mx:Canvas width="100%" height="100%">
+			 <s:DataGrid width="100%" height="100%" id="result" dataProvider="{recFileArray}" >
+				 <s:columns>
+					 <s:ArrayCollection>
+						 <s:GridColumn headerText="波段" dataField="band" width="60" />
+						 <s:GridColumn headerText="频率" dataField="frequency" width="60" />
+						 <s:GridColumn headerText="开始时间" dataField="start_datetime"/>
+						 <s:GridColumn headerText="结束时间" dataField="end_datetime"/>
+						 <s:GridColumn headerText="发射台"  dataField="station_name"/>
+						 <s:GridColumn headerText="语言"  dataField="language_name"/>
+						 <s:GridColumn headerText="分数" dataField="fensio" />
+						 <s:GridColumn headerText="播放" width="80"  itemRenderer="{RendererUtil.getButtonRenderer('播放',playAndMark)}"/>
+					 </s:ArrayCollection>
+				 </s:columns>
+			 </s:DataGrid>
+		</mx:Canvas>
+		 <flipBar:PageBar  id="pagebar" rowConutOfPage="20" totalPageQuery="10" height="20"  color="0x000000"/>
+	</s:VGroup>
+</s:VGroup>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.morcha4.util.RendererUtil;
+			import com.viewscenes.beans.RadioStreamResultBean;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.utils.timecomp.DateUtil;
+			import com.viewscenes.utils.timecomp.TimeNew;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.CheckBox;
+			import mx.controls.DateField;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.Button;
+			import spark.components.HGroup;
+			import spark.components.TextInput;
+			
+			var timenew:TimeNew=new TimeNew();
+			var remarkText:TextInput=new TextInput();
+			var check_error:CheckBox = new CheckBox();
+			var formitem1:FormItem=new FormItem();
+			var formitem10:FormItem=new FormItem();
+			var formitem11:FormItem=new FormItem();
+			var formitemd:FormItem=new FormItem();
+			var operation:String="";
+			var now:String="";
+			var xmllist:XMLList=new XMLList();
+			var startDateTime:String="";
+			var endDateTime:String="";
+			[Bindable]
+			private var SeeQualityObj:Object;
+			
+			[Bindable] private var abnormalArr:ArrayCollection = new ArrayCollection
+				
+				([{label:'停播',value:'1'},{label:'断续停播',value:'2'},
+					{label:'空播',value:'3'},{label:'断续空播',value:'4'},
+					
+					{label:'杂音',value:'5'},{label:'失真',value:'6'},{label:'调幅度低',value:'7'},
+					{label:'错播',value:'8'},{label:'早播',value:'9'},{label:'迟播',value:'10'},{label:'多播',value:'11'},{label:'少播',value:'12'},
+					{label:'跑频',value:'13'},{label:'收不到',value:'14'},
+					
+					{label:'串扰',value:'15'},{label:'其他',value:'16'}]);
+			//数据库录音文件数据
+			[Bindable]
+			private var recFileArray:ArrayCollection = new ArrayCollection();
+//			public function setQuality(obj:Object):void{
+//				SeeQualityObj = obj;
+//				
+//			}
+			
+			public function setQuality(obj:Object):void{
+				
+				    
+				    SeeQualityObj = obj;
+				
+				    this.title="指标报警详细信息";
+					Alarm_id.text=SeeQualityObj.alarm_id;
+					
+					Site_name.text=SeeQualityObj.shortname;
+					
+					Equ_code.text=SeeQualityObj.equ_code;
+					
+					
+					var type_name:String="";
+					
+					if(SeeQualityObj.type=="1")
+						type_name="电平报警";
+					else if(SeeQualityObj.type=="2")
+						type_name="调制度报警";
+					else if(SeeQualityObj.type=="3")
+						type_name="调幅度报警";
+				
+					Type_name.text=type_name;
+				
+					Alarm_datetime.text=SeeQualityObj.alarm_datetime;
+					resume_datetime.text=SeeQualityObj.resume_datetime;
+					
+					startDateTime=DateUtil.date2str(DateUtil.addMinutes(DateUtil.str2date(Alarm_datetime.text),-3));
+					if(resume_datetime.text == ""){
+						endDateTime = DateUtil.date2str(new Date());
+					} else{
+						endDateTime=DateUtil.date2str(DateUtil.addMinutes(DateUtil.str2date(resume_datetime.text),3));
+					}
+					
+					var obj:Object = new Object;
+					//录音类型
+					obj.recType = "1";
+					obj.headCode = SeeQualityObj.head_code;
+					
+					obj.dateType = "byTime";
+					obj.startDateTime = startDateTime;
+					obj.endDateTime = endDateTime;
+					obj.abCode = SeeQualityObj.head_code;
+					obj.freq=SeeQualityObj.frequency;
+					pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.daily.queryData.RecFileQuery","recFileQuery",obj,recFileQueryBack,DataManager.showErrorMessageBack));
+					
+					
+					formitem1.label="报警状态:";
+					if(SeeQualityObj.resume_datetime.length>0)
+					{
+						var label1:Label=new Label();
+						label1.text="已恢复于"+SeeQualityObj.resume_datetime;
+						formitem1.addElement(label1);
+						
+					}
+					else
+					{
+						var date:Date=new Date();
+						var month=date.getMonth()+1;
+						if(month<10)
+							month="0"+month;
+						var day=date.getDate();
+						if(day<10)
+							day="0"+day;	
+						var hours=date.getHours()
+						if(hours<10)
+							hours="0"+hours;
+						var minutes=date.getMinutes();
+						if(minutes<10)
+							minutes="0"+minutes;
+						var seconds=date.getSeconds()
+						if(seconds<10)
+							seconds="0"+seconds;
+						
+						now=date.getFullYear()+"-"+month+"-"+day+" "+hours+":"+minutes+":"+seconds;
+						
+						var label1:Label=new Label();
+						label1.text="未解除";
+						resume_datetime.text=now;
+
+					
+						formitem1.addElement(label1);
+
+						var button:Button=new Button();
+						
+						button.label="解除报警";
+						button.addEventListener(MouseEvent.CLICK,releaseAlarm);
+					
+						formitem10.addElement(button);
+						
+					}	
+					if(SeeQualityObj.resume_datetime.length>0)
+					{
+						detailform.addElement(formitem1);
+					}else{
+						detailform.addElement(formitem1);
+						detailform.addElement(formitem10);
+					}
+					
+				
+					var description:String=SeeQualityObj.description;
+					var formitem2:FormItem=new FormItem();
+					formitem2.label="现象:";
+					var label2:Label=new Label();
+					label2.text=description;
+					formitem2.addElement(label2);
+					detailform.addElement(formitem2);
+					
+					var reason:String=SeeQualityObj.reason;
+					var formitem3:FormItem=new FormItem();
+					formitem3.label="原因:";
+					var label3:Label=new Label();
+					label3.text=reason;
+					formitem3.addElement(label3);
+					detailform.addElement(formitem3);	
+					
+					
+						var frequency:String=SeeQualityObj.frequency;
+						var formitem4:FormItem=new FormItem();
+						formitem4.label="频率:";
+						var label4:Label=new Label();
+						label4.text=frequency+"(KHz)";
+						formitem4.addElement(label4);
+						detailform.addElement(formitem4);	
+						
+						var e_level:String=SeeQualityObj.e_level;
+						var formitem5:FormItem=new FormItem();
+						formitem5.label="场强:";
+						var label5:Label=new Label();
+						label5.text="表头值:："+e_level+"(uV)";
+						formitem5.addElement(label5);
+						detailform.addElement(formitem5);	
+						
+						var am_modulation:String=SeeQualityObj.am_modulation;
+						var fm_modulation:String=SeeQualityObj.fm_modulation;
+						if(SeeQualityObj.type!="2")
+						{
+							var formitem6:FormItem=new FormItem();
+							formitem6.label="调幅度:";
+							var label6:Label=new Label();
+							label6.text="超标时间比例:"+am_modulation;
+							formitem6.addElement(label6);
+							detailform.addElement(formitem6);	
+						}
+						else if(SeeQualityObj.type=="2")
+						{
+							var formitem6:FormItem=new FormItem();
+							formitem6.label="调制度:";
+							var label6:Label=new Label();
+							label6.text=fm_modulation+"KHz";
+							formitem6.addElement(label6);
+							detailform.addElement(formitem6);	
+						}
+						
+						var attenuation:String=SeeQualityObj.attenuation;
+						var formitem7:FormItem=new FormItem();
+						formitem7.label="衰减:";
+						var label7:Label=new Label();
+						label7.text=attenuation;
+						formitem7.addElement(label7);
+						detailform2.addElement(formitem7);
+					
+					var handle_datetime:String=SeeQualityObj.handle_datetime;
+					
+					formitemd.label="处理状态:";
+					
+					if(handle_datetime.length>0)
+					{
+						var labeld:Label=new Label();
+						labeld.text="已处理于"+handle_datetime;
+						formitemd.addElement(labeld);
+					}
+					else
+					{
+						
+						var labeldd:Label=new Label();
+						
+						labeldd.text="未处理";
+						
+						var button1:Button=new Button();
+						
+						button1.label="处理报警";
+						
+						formitemd.addElement(labeldd);
+					
+						formitem11.addElement(button1);
+						button1.addEventListener(MouseEvent.CLICK,handleAlarm);
+					}
+					
+					var remark:String=SeeQualityObj.remark;
+					var formiteme:FormItem=new FormItem();
+					formiteme.label="处理说明:";
+					remarkText.text=remark;
+					
+					formiteme.addElement(remarkText);
+					
+					if(handle_datetime.length>0)
+					{
+					  detailform2.addElement(formitemd);
+					  detailform2.addElement(formiteme);
+					}else{
+						detailform2.addElement(formitemd);
+						detailform2.addElement(formiteme);
+						detailform2.addElement(formitem11);
+					}
+					
+					
+					var origin_alarmid:String=SeeQualityObj.origin_alarmid;
+					var formitemf:FormItem=new FormItem();
+					formitemf.label="原始报警编号:";
+					var labelf:Label=new Label();
+					labelf.text=origin_alarmid;
+					formitemf.addElement(labelf);
+					detailform2.addElement(formitemf);
+					
+					var formitemg:FormItem=new FormItem();
+					var hbox2:HGroup=new HGroup();
+					var ok_button:Button=new Button();
+					var close_button:Button=new Button();
+					check_error.label = "异态入库";
+					check_error.selected = (SeeQualityObj.errorindb=="1"?true:false);
+					if(check_error.selected==true)
+					{
+						for(var j:int=0;j<abnormal_type.dataProvider.length;j++){
+							if(abnormal_type.dataProvider[j].value==obj.abnormal_type){
+								abnormal_type.selectedIndex=j;
+							}
+						}
+					}
+					ok_button.label="保存";
+					close_button.label="关闭";
+					hbox2.addElement(check_error);
+					hbox2.addElement(ok_button);
+					hbox2.addElement(close_button);
+					formitemg.addElement(hbox2);
+					detailform2.addElement(formitemg);
+					
+					ok_button.addEventListener(MouseEvent.CLICK,setAlarm);
+					close_button.addEventListener(MouseEvent.CLICK,close);
+				
+			}
+			
+			private function releaseAlarm(e:MouseEvent):void
+			{
+				operation="resume";
+				var obj:Object = new Object;
+				obj.alerttab="quality";
+				obj.operation="resume";
+				obj.resume_datetime=resume_datetime.text;
+				obj.alarmtime=Alarm_datetime.text;
+				obj.alarm_id=SeeQualityObj.alarm_id;
+				obj.head_code=SeeQualityObj.head_code;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.daily.alarmHandler.AlertManage","updAlert_DetailList",obj,Processupd_Alarm,onfault));
+
+			}
+			private function handleAlarm(e:MouseEvent):void
+			{
+				
+				var date:Date=new Date();
+				var month=date.getMonth()+1;
+				if(month<10)
+					month="0"+month;
+				var day=date.getDate();
+				if(day<10)
+					day="0"+day;	
+				var hours=date.getHours()
+				if(hours<10)
+					hours="0"+hours;
+				var minutes=date.getMinutes();
+				if(minutes<10)
+					minutes="0"+minutes;
+				var seconds=date.getSeconds()
+				if(seconds<10)
+					seconds="0"+seconds;
+				
+				now=date.getFullYear()+"-"+month+"-"+day+" "+hours+":"+minutes+":"+seconds;
+				operation="handle";
+				var obj:Object = new Object;
+				obj.alerttab="quality";
+				obj.operation="handle";
+				obj.datetime=now;
+				obj.alarm_id=SeeQualityObj.alarm_id;
+				obj.head_code=SeeQualityObj.head_code;
+				obj.operator = DataManager.user.userName;
+				obj.remark = remarkText.text;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.daily.alarmHandler.AlertManage","updAlert_DetailList",obj,Processupd_Alarm,onfault));
+		
+			}
+			
+			private function setAlarm(e:MouseEvent):void
+			{
+				operation="close";
+				var obj:Object = new Object;
+				obj.alerttab="quality";
+				obj.operation="close";
+				if(formitem10.numElements==0){
+				   obj.resume_datetime=resume_datetime.text;
+				}else{
+					obj.resume_datetime="";
+				}
+				
+				obj.alarmtime=Alarm_datetime.text;
+//				obj.datetime=remarkText.text;
+				obj.alarm_id=SeeQualityObj.alarm_id;
+				obj.head_code=SeeQualityObj.head_code;
+				obj.abnormal_type = abnormal_type.selectedItem.value;
+				obj.errorInDb = (check_error.selected == true ? "1":"0");
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.daily.alarmHandler.AlertManage","updAlert_DetailList",obj,Processupd_Alarm,onfault));
+				
+			}
+			
+			private function onfault(e:RPCException):void
+			{
+				
+				Alert.show(e.message);
+			}
+			
+			private function Processupd_Alarm(arr:ArrayCollection):void
+			{
+				if (arr.length>0){
+					Alert.show(RPCException(arr[0]).message);
+				}else{
+					
+					Alert.show("修改成功!");
+					if(operation=="resume")
+					{
+						formitem1.removeAllChildren();
+						formitem10.removeAllChildren();
+						var label1:Label=new Label();
+						label1.text="已恢复于"+resume_datetime.text;
+						formitem1.addElement(label1);
+					}
+					else if(operation=="handle")
+					{
+						formitemd.removeAllChildren();
+						formitem11.removeAllChildren();
+						var labeld:Label=new Label();
+						labeld.text="已处理于"+now;
+						formitemd.addElement(labeld);
+					}
+					else if(operation=="close"){
+//						this.parent.removeChild(this);		
+					}
+									
+				}
+				this.dispatchEvent(new Event("Quality_list_refresh"));
+//				EventBus.getInstance().dispatchEvent(new AppEvent(AppEvent.APP_ALARMREFRESH));
+				
+			}
+			
+			private function close(e:Event):void{
+				player.stop();
+				PopUpManager.removePopUp(this);
+				
+			}
+			
+			private function recFileQueryBack(arr:ArrayCollection):void{
+				
+				recFileArray = arr;
+			}
+			
+			private function playAndMark(obj:Object):void{ 
+				var radioStreamResultBean:RadioStreamResultBean = obj.data as RadioStreamResultBean;
+				
+				player.setText("正在播放...");
+				player.playUrl(radioStreamResultBean.url);
+			}
+		]]>
+	</fx:Script>
+</s:TitleWindow>
+

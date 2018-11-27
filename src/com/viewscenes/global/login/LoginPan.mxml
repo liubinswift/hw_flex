@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   width="100%" height="100%" backgroundColor="0xcccccc"
+				   creationComplete="init();" xmlns:contaners="com.morcha4.ui.contaners.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:Fade id="loginbtnFade" alphaTo="1" duration="1200"/>
+		<s:Fade id="fade" alphaTo="0" effectEnd="fadeEffectEnd()"
+				target="{this}"/>
+		<!-- s:Scale id="loginbtnFade"  scaleXFrom="0.01" scaleXTo="1" scaleYFrom="0.01" scaleYTo="1" duration="1200" effectStart="{this.swfContent.gotoAndPlay(1)}"/-->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.morcha4.frame.system.EventBus;
+			import com.viewscenes.beans.user.PubUserBean;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.EventDeclare;
+			import com.viewscenes.global.SystemInit;
+			
+			import flash.utils.clearTimeout;
+			import flash.utils.setTimeout;
+			
+			import mx.controls.Alert;
+			
+			import spark.components.Group;
+			private var swfContent:MovieClip;
+			
+			public function init():void{
+//				this.swfContent=this.loginSwf.content as MovieClip;
+//				this.swfContent.gotoAndStop(1);
+				Alert.okLabel = "确定";
+				Alert.cancelLabel = "取消";
+				EventBus.addEventListener(EventDeclare.SYSTEM_INIT_STATE,setSatate);
+				setTimeout(showLoginBtn,4000);//正常5400
+			}
+			
+			private function fadeEffectEnd():void{
+				if(this.parent != null){
+					(this.parent as Group).removeElement(this);
+				}
+			}
+			private function showLoginBtn():void{
+				mainLogin.alpha=0;
+				loginbtnFade.target = mainLogin;
+				loginbtnFade.play();
+				userName.setFocus();
+//				login();//test
+			}
+			
+			
+			public function login():void{
+				SystemInit.completeNum = 0;
+				
+				loginBtn.enabled = false;
+				
+				initState.text = "";
+				
+				EventBus.dispatchEvent(new AdvancedEvent(EventDeclare.SYSTEM_INIT_STATE,false,false,{flag:0,message:"验证用户"}));
+				
+//				var si:SystemInit = new SystemInit();  //test
+//				fade.play();//test
+//				initDataComplete();//test
+				
+				var obj:Object = new Object();
+				obj.userName = this.userName.text;
+				obj.password = this.password.text;
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.user.PubUserManagerService","login",obj,loginBack,onFault));
+				
+			}
+			
+			private function loginBack(user:PubUserBean):void
+			{
+				// TODO Auto Generated method stub
+				
+				
+				DataManager.user = user;
+				EventBus.dispatchEvent(new AdvancedEvent(EventDeclare.LOGIN_USERNAME,false,false,user.userName));
+				EventBus.dispatchEvent(new AdvancedEvent(EventDeclare.SYSTEM_INIT_STATE,false,false,{flag:1,message:"验证用户成功"}));
+				
+				var si:SystemInit = new SystemInit();  //加载初始化数据
+				
+			}
+			
+			
+			/**
+			 * 错误处理
+			 * */
+			private function onFault(obj:RPCException):void
+			{
+				// TODO Auto Generated method stub
+				
+				EventBus.dispatchEvent(new AdvancedEvent(EventDeclare.SYSTEM_INIT_STATE,false,false,{flag:0,message:obj.message}));
+				
+			}
+			
+			
+			/**
+			 * 
+			 * 设置状态
+			 * 
+			 * */
+			protected function setSatate(event:AdvancedEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+				var obj:Object = event.data;
+				
+				this.initState.text = obj.message;
+				
+				
+				var flag:int = obj.flag;
+				
+				if(flag == 0){
+					loginBtn.enabled = true;
+				}
+				
+				SystemInit.completeNum += flag;
+//				Alert.show(SystemInit.completeNum+"-----"+SystemInit.initFuncNum);
+				if(SystemInit.completeNum  == SystemInit.initFuncNum){
+					SystemInit.completeNum = SystemInit.initFuncNum+10;
+//					Alert.show("login...");
+					
+					if(DataManager.menu.toString()==""){
+						Alert.show("该角色还没有分配权限，请分配权限!");
+					} else {
+						initDataComplete();
+						fade.play();
+					}
+					
+				}
+				
+			}
+			/**
+			 * 系统初始化完成
+			 */
+			private function initDataComplete():void{
+				
+				EventBus.dispatchEvent(new Event(EventDeclare.SYSTEM_INIT_COMPLETED,false,false));
+			}
+			
+
+			
+		]]>
+	</fx:Script>
+	<s:SWFLoader source="com/viewscenes/images/default/global1/loginPan.swf" width="100%" height="100%" maintainAspectRatio="false"/>
+	<s:Group  width="100%" height="188" visible="true" id="mainLogin" bottom="-80"  alpha="0">
+		<s:Image source="{getStyle('loginBottom')}" width="100%"/>
+		<!--s:SWFLoader source="com/viewscenes/images/default/global1/login.swf" width="100%" height="100%" maintainAspectRatio="false" 
+					  id="loginSwf"/-->
+		
+		<s:HGroup  id="loginpan" alpha="1" fontSize="14" fontFamily="宋体" width="100%" height="100%" top="-45"  color="0xffffff" verticalAlign="middle" horizontalAlign="center">
+			
+			<s:Label text="用户名"/>
+				<s:TextInput id="userName" width="245" text="" height="30"/>
+			
+			<s:Label text="    密码"/>
+				<s:TextInput id="password" width="245" displayAsPassword="true" enter="login();" text="" height="30"/>
+				
+					<!--s:SWFLoader  id="loginBtn" source="com/viewscenes/images/default/global1/button/login_button.swf" maintainAspectRatio="false"/-->
+					<s:Button buttonMode="true"   id="loginBtn" styleName="loginButton" click="login();" width="68" height="33"/>
+			
+		</s:HGroup>
+		<s:Label id="initState" width="230" right="30" top="70" />
+	</s:Group>
+</s:BorderContainer>

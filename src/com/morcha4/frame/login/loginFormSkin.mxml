@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx">
+	<!-- host component -->
+	<fx:Metadata>
+		[HostComponent("com.morcha4.frame.login.loginForm")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[         
+			import mx.skins.halo.ButtonSkin;
+			
+			import spark.components.Button;
+			import spark.components.SkinnableContainer;
+			import spark.skins.spark.ButtonSkin;
+			/**
+			 *  @private
+			 */
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number) : void
+			{spark.skins.spark.ButtonSkin
+				// Push backgroundColor and backgroundAlpha directly.
+				// Handle undefined backgroundColor by hiding the background object.
+//				if (isNaN(getStyle("backgroundColor1"))&&isNaN(getStyle("backgroundColor2")))
+//				{
+//					background.visible = false;
+//				}
+//				else
+//				{
+					background.visible = true;
+					fill1.color = 0xff00ff;//getStyle("backgroundColor1");
+					fill2.color = 0x00ff00;//getStyle("backgroundColor2");
+					fill1.alpha=fill2.alpha = getStyle("backgroundAlpha");
+//				}
+//				
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+			}
+		]]>        
+	</fx:Script>
+	<!-- states -->
+	<s:states>
+		<s:State name="disabled" />
+		<s:State name="normal" />
+		<s:State name="deafult"/>
+		<s:State name="reday"/>
+		<s:State name="process"/>
+		<s:State name="error"/>
+		<s:State name="init"/>
+	</s:states>
+	
+	<s:Rect id="background" left="0" right="0" top="0" bottom="0">
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry id="fill1"/>
+				<s:GradientEntry id="fill2"/>
+			</s:LinearGradient>
+			<!--- @private -->
+			<!--s:SolidColor id="bgFill" color="#FFFFFF"/-->
+		</s:fill>
+	</s:Rect>
+	
+	<!--
+	Note: setting the minimum size to 0 here so that changes to the host component's
+	size will not be thwarted by this skin part's minimum size.   This is a compromise,
+	more about it here: http://bugs.adobe.com/jira/browse/SDK-21143
+	-->
+	<!--- @copy spark.components.SkinnableContainer#contentGroup -->
+		<s:Group id="contentGroup" left="10" right="10" top="10" bottom="10" minWidth="0" minHeight="0">
+		</s:Group>
+</s:Skin>

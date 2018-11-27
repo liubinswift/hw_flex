@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:system="com.morcha4.frame.system.*" 
+				 width="100%" height="100%"  backgroundColor1="0xe3d4bd" backgroundColor2="0xaf8555" 
+				 xmlns:timecomp="com.viewscenes.utils.timecomp.*" xmlns:DataGrid="mor.DataGrid.*" creationComplete="initApp();"
+				 xmlns:util="com.viewscenes.utils.*"
+				 xmlns:flipBar="com.viewscenes.utils.flipBar.*">
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.editor.ComboBoxEditor;
+			import com.morcha4.editor.EditorManager;
+			import com.morcha4.editor.TextEditor;
+			import com.morcha4.util.RendererUtil;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.SystemInit;
+			import com.viewscenes.utils.StringTool;
+			
+			import flash.utils.setTimeout;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.utils.ArrayUtil;
+			import mx.utils.ObjectUtil;
+			
+			import spark.events.GridItemEditorEvent;
+			
+			[Bindable]
+			private var listStat:ArrayCollection = new ArrayCollection();
+			private var insertListStat:ArrayCollection = new ArrayCollection();
+			private var updateListStat:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var comprotocolArray:ArrayCollection = new ArrayCollection([{label:"全部",code:"0"},{label:"未迁移",code:"1"},{label:"已迁移",code:"2"}]);
+			
+			[Bindable]private var sTypeArray:ArrayCollection = new ArrayCollection([{label:"全部",value:""},{label:"采集点",value:"101"},{label:"遥控站",value:"102"}]);
+			[Bindable]private var runTypeArray:ArrayCollection = new ArrayCollection([{label:"全部",value:""},{label:"在线",value:"1"},{label:"不在线",value:"0"}]);
+			
+			[Bindable]private var isdelArray:ArrayCollection = new ArrayCollection([{label:"否",value:0},{label:"是",value:1}]);
+			[Bindable]private var selectedCounts:int = 0;  //选择总数
+			//服务区
+			[Bindable]
+			public var serviceArr:ArrayCollection = new ArrayCollection;
+			//语言
+			[Bindable]
+			public var lanaguageArr:ArrayCollection = new ArrayCollection;
+			//国家
+			[Bindable]
+			public var countryArr:ArrayCollection = new ArrayCollection;
+			private var file:FileReference = new FileReference();//导入对象
+			private var fileRe:FileReference = new FileReference();//上传对象
+			private var dellist:String = "";//删除详细数据id (多个id以逗号分隔)
+			
+			private var flag_channellist:Boolean = true;
+			
+			
+			public function initApp():void{
+				getServiceList();
+				getLanguageList();
+				getCityList();
+				file.addEventListener(Event.SELECT,clickBrowser);
+			}
+			
+			
+			/**
+			 * 
+			 * 语言
+			 * */
+			private function getLanguageList():void{
+				var obj:Object = new Object;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getLanguageList",obj,getLanguageListBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function getLanguageListBack(arr:ArrayCollection):void{
+				lanaguageArr.removeAll();
+				
+				for(var i:int = 0;i<arr.length; i++){
+					var obj:Object = arr.getItemAt(i);
+					
+					lanaguageArr.addItemAt({label:obj.language_name,value:obj.language_id},i);
+				}
+			}
+			/**
+			 * 
+			 * 国家
+			 * */
+			private function getCityList():void{
+				var obj:Object = new Object;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getCityList",obj,getCityListBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function getCityListBack(arr:ArrayCollection):void{
+				
+				countryArr.removeAll();
+				
+				countryArr = arr;
+			}
+			
+			
+			/**
+			 * 
+			 * 服务区
+			 * */
+			private function getServiceList():void{
+				var obj:Object = new Object;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getServiceList",obj,getServiceListBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function getServiceListBack(arr:ArrayCollection):void{
+				
+				serviceArr.removeAll();
+				
+				serviceArr = arr;
+			}
+			/**
+			 * 查询
+			 * */
+			private function getHeadend():void
+			{ 
+				this.clearPage();
+				listStat.removeAll();
+				con_clewlabel(clew_label,true,'正在查询，请稍候...');
+				var obj:Object = new Object;
+				
+				
+				obj.type_id =this.sType.selectedItem.value;
+				obj.is_online =this.runType.selectedItem.value;
+
+				obj.shortname =shortname.text;
+				obj.site =site.text;
+				obj.code =code.text;
+				obj.com_protocol = com_protocol.selectedItem.code;
+				pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.dicManager.HeadendTab","getHeadend",obj,_getHeadend,onfault));
+			}
+			
+			private function _getHeadend(list:ArrayCollection):void{ 
+				con_clewlabel(clew_label,false);
+				this.listStat=list;
+				
+				listStat.refresh();
+				if(listStat.length==0){
+					
+					con_clewlabel(clew_label,true,"无查询数据！");
+				}
+			}
+			
+			
+			/**
+			 * 控制datagrid的提示框是否显示，以及显示内容
+			 * author:cht
+			 * **/
+			public function con_clewlabel(_component:Label,_visible:Boolean,_label:String="")
+			{
+				_component.visible=_visible;
+				_component.includeInLayout=_visible;
+				_component.text=_label;
+			}
+			
+			
+			//选择点中后执行的方法
+			private function changeSelect(obj:Object):void{
+				//				Alert.show(obj.data.isSelected);
+				if(obj.data.isSelected=="true"){
+					this.selectedCounts=selectedCounts+1;  
+				}else{
+					this.selectedCounts=selectedCounts-1; 
+				}
+			}
+			
+			private function clearPage():void{  //下一页或者上一页时需要把选择状态和选择总数清零
+				selectedCounts = 0;
+				//selectAll.selected = false;
+			}
+			
+			
+			
+			
+			/**
+			 * 删除
+			 **/
+			private function clickDeleteHeadend():void{
+				
+				dellist ="";
+				var del_number:Number = 0;
+				for(var i:int=result.dataProvider.length-1;i>=0;i--)
+				{
+					if(result.dataProvider[i].isSelected=="true")
+					{
+						var code:String = result.dataProvider[i].code;
+						
+						if(del_number==0)
+						{
+							
+							dellist = "'"+code+"'";
+							
+							
+						} else{
+							dellist += ","+"'"+code+"'";
+						}
+						del_number++;
+					}
+				}
+				if(dellist!=""){
+					
+					Alert.show("您确定删除吗?","删除确认",Alert.YES | Alert.NO,this,clickDeleteChoose);
+				}
+				else{
+					Alert.show("请选择要删除的信息","警告");
+					return;
+				}
+			}
+			
+			
+			//选择删除任务
+			private function clickDeleteChoose(event:CloseEvent):void{
+				if(event.detail == Alert.NO)
+					return;
+				deleteDetailData(dellist);
+				
+			}
+			
+			
+			/**
+			 * 删除查询的详细数据
+			 **/
+			public function deleteDetailData(dellist:String):void{
+				//selectAll.selected = false;
+				//				Alert.show(IdList);
+				for(var i:int=result.dataProvider.length-1;i>=0;i--) //在前台删除
+				{
+					if(result.dataProvider[i].isSelected=="true")
+					{
+						result.dataProvider.removeItemAt(i);
+						this.selectedCounts=selectedCounts-1;
+					}
+				}
+				
+				var obj:Object = new Object();//在后台删除
+				
+				obj.dellist=dellist;
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.dicManager.HeadendTab","deleteHead",
+					obj,_deleteHeadend,onfault))
+				
+			}
+			
+			private function _deleteHeadend(obj:Object):void{ 
+				var si:SystemInit = new SystemInit();  
+				si.queryHeadList();
+				si.getConfigData();
+				getHeadend();
+				Alert.show("删除成功");
+				
+			}
+			
+			
+			public function addHeadendData():void{
+				var pop:AddHeadForm = AddHeadForm(PopUpManager.createPopUp(this,AddHeadForm,true));
+				
+				pop.lanaguageArr = StringTool.clone(lanaguageArr);
+				pop.countryArr = StringTool.clone(countryArr);
+				pop.serviceArr = StringTool.clone(serviceArr);
+				PopUpManager.centerPopUp(pop);
+				
+				pop.addEventListener("Head_list_refresh",refreshHeadList);
+				
+				
+			}
+			
+			
+			
+			
+			/**
+			 * 提交新增和修改的数据
+			 **/
+			public function commitHeadend():void{
+				
+				insertListStat.removeAll();
+				updateListStat.removeAll();
+				for(var i:int=0;i<listStat.length;i++){
+					if(listStat.getItemAt(i).isSelected=="true"){
+						if(listStat.getItemAt(i).Headend ==""){//说明是插入操作
+							insertListStat.addItem(listStat.getItemAt(i));	
+						}
+						else{//说明是插入更新
+							updateListStat.addItem(listStat.getItemAt(i));
+						}
+					}
+				}
+				
+				if(insertListStat.length==0&&updateListStat.length==0){
+					Alert.show("请选择要确认的信息");
+				}
+				else{
+					var obj:Object = new Object();
+					obj.insert=insertListStat;
+					obj.update=updateListStat;
+					RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.dicManager.HeadendTab","modifyHeadend",obj,resultCommitAllHeadend,onfault));
+				}
+			}
+			
+			private function resultCommitAllHeadend(obj:Object):void{ 
+				var resultList:ArrayCollection =new ArrayCollection;
+				resultList=obj as ArrayCollection;
+				Alert.show("操作成功,成功插入"+resultList.getItemAt(0).toString()+"条,成功更新"+resultList.getItemAt(1).toString()+"条");
+				var si:SystemInit=new SystemInit();
+				si.getConfigData();
+				getHeadend();
+			}
+			
+			
+			private function onfault(e:RPCException):void
+			{
+				
+				Alert.show(e.message);
+			}
+			
+			private function updateHead(obj:Object):void{
+				openEditHeadForm(obj.data);
+			}
+			private function openEditHeadForm(obj:Object):void{
+				var pop:EditHeadForm = EditHeadForm(PopUpManager.createPopUp(this,EditHeadForm,true));
+				pop.lanaguageArr = StringTool.clone(lanaguageArr);
+				pop.countryArr = StringTool.clone(countryArr);
+				pop.serviceArr = StringTool.clone(serviceArr);
+				pop.setHead(obj);
+				PopUpManager.centerPopUp(pop);
+				
+				pop.addEventListener("Head_list_refresh",refreshHeadList);
+			}
+			protected function refreshHeadList(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				getHeadend();
+				var si:SystemInit = new SystemInit();  
+				si.queryHeadList();
+				si.getConfigData();
+			}
+			
+			private function detailHead(obj:Object):void{
+				openSeeHeadForm(obj.data);
+				
+			}
+			
+			private function openSeeHeadForm(obj:Object):void{
+				
+				var popo:SeeHeadForm = SeeHeadForm(PopUpManager.createPopUp(this,SeeHeadForm,true));
+				popo.serviceArr=StringTool.clone(serviceArr);
+				popo.setHead(obj);
+				PopUpManager.centerPopUp(popo);
+				
+			}
+			private function type(data:Object):String{																
+				return "遥控站";								
+			}
+			private function proLabelFunc(item:Object,gc:GridColumn):String{
+				if (item.com_protocol=='2')
+					return "已迁移"
+				else
+					return "未迁移";
+			}
+			private function onlineLabelFunc(item:Object,gc:GridColumn):String{
+				if (item.is_online == '1')
+					return "在线"
+				else
+					return "离线";
+			}
+			/**
+			 * 站点信息上传
+			 */
+			private function submit():void{
+				//上传完成之后执行的事件   
+				fileRe.addEventListener(Event.SELECT,selectHandler);
+				fileRe.addEventListener(Event.COMPLETE,processResult);
+				fileRe.browse();
+			}
+			
+			
+			private function selectHandler(event:Event):void{
+				//根据URL执行文件上传，请求到后台Java的Servlet
+				var sysurl:String = FlexGlobals.topLevelApplication.url;
+				var index:int = sysurl.lastIndexOf("/");
+				var url:String = sysurl.substring(0,index);
+				var urlStr:String=url+"/uploadservlet";
+				var r:URLRequest=new URLRequest(urlStr);
+				fileRe.upload(r);//第二个参数指定文件域的名字，默认为Filedata       
+				//提交三个参数Filename,Filedata,Upload                
+			}
+			private var flag:Boolean=true;
+			private function processResult(event:Event):void{
+				Alert.show("上传文件成功,可以导入文件了！");
+				flag=false;
+			}
+			private function importExcel():void{
+				if(flag){
+					Alert.show("请先上传，再导入");
+					return ;
+				}
+				file.browse();
+			}
+			private function clickBrowser(event:Event):void{
+				var obj:Object = new Object();
+				obj.file_name=file.name;
+
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.dicManager.HeadendTab","importExcel",obj,importExcelBack,DataManager.showErrorMessageBack));
+			}
+			private function importExcelBack(res:String):void{
+				Alert.show("导入站点信息成功");				
+				getHeadend();
+				flag=true;
+			}
+		]]>
+	</fx:Script>
+	
+	
+	<s:VGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle">
+		
+		<s:HGroup left="9" right="9" horizontalAlign="left" verticalAlign="middle" width="100%" height="40">
+			
+			<s:Label width="100" textAlign="right" fontSize="12" text="站点名称缩写："/>
+			<s:TextInput width="100" id="shortname"/>
+			
+			<s:Label width="80" textAlign="right" text="站点名称："  fontSize="12"/>
+			<s:TextInput width="100"  id="site" />
+			
+			<s:Label width="80" textAlign="right" text="站点代码："  fontSize="12"/>
+			<s:TextInput width="100"  id="code" restrict="a-z\A-Z\0-9" maxChars="20"/>
+			
+			<s:Label width="80" textAlign="right" text="站点类型：" fontSize="12"/>
+			<s:ComboBox width="100" id="sType" dataProvider="{sTypeArray}" requireSelection="true" styleName="text12"/>
+			<s:Label width="80" textAlign="right" text="是否迁移：" fontSize="12"/>
+			<s:ComboBox width="100" id="com_protocol" dataProvider="{comprotocolArray}" requireSelection="true" styleName="text12"/>
+			
+			<s:Label width="80" textAlign="right" text="是否在线"  fontSize="12"/>
+			<s:ComboBox id="runType" dataProvider="{runTypeArray}"  requireSelection="true" styleName="text12" width="100"/>
+			<s:Spacer width="100"/>
+			<s:Button buttonMode="true" label="查 询"  click="getHeadend();"/>
+			<s:Button buttonMode="true" label="上传" click="submit()"/>
+			<s:Button buttonMode="true" label="导入" click="importExcel()"/>
+			<s:Button buttonMode="true" label="选择删除"  click="clickDeleteHeadend();"/>
+		</s:HGroup>
+		
+		
+		<s:Group width="100%" height="100%" >
+			<s:DataGrid id="result" width="100%" height="100%" dataProvider="{listStat}" textAlign="center">
+				<s:columns>
+					<s:ArrayCollection>
+						<s:GridColumn  headerText="选择" width="60" editable="false" itemRenderer="{RendererUtil.getCheckBoxRenderer(changeSelect)}"  />
+						<s:GridColumn dataField="code" headerText="站点代码"/>
+						<s:GridColumn dataField="shortname" headerText="站点名称" />
+						<!--s:GridColumn dataField="longitude" headerText="经度"/>
+						<s:GridColumn dataField="latitude" headerText="纬度" />
+						<s:GridColumn dataField="site" headerText="站点"/>
+						<s:GridColumn dataField="site_status" headerText="站点状态"/>
+						<s:GridColumn dataField="station_name" headerText="发射台名称"/-->
+						<s:GridColumn dataField="country" headerText="国家"/>
+						<!--s:GridColumn dataField="occur_time" headerText="时区"/-->
+						<!--s:GridColumn dataField="summertime_begin" headerText="夏令开始"/>
+						<s:GridColumn dataField="summertime_end" headerText="夏令结束"/-->
+						<s:GridColumn dataField="person" headerText="维护人"/>
+						<s:GridColumn dataField="person_phone" headerText="维护电话"/>
+						<s:GridColumn dataField="time_diff" headerText="时差"/>
+						<!--s:GridColumn dataField="type_id" headerText="站点类型" labelFunction="type"/-->
+						<s:GridColumn dataField="com_protocol" headerText="是否迁移" labelFunction="proLabelFunc"/>
+						<s:GridColumn dataField="is_online" headerText="是否在线" labelFunction="onlineLabelFunc"/>
+						
+						<s:GridColumn  minWidth="50" headerText="修改" itemRenderer="{RendererUtil.getButtonRenderer('修改',updateHead)}"/>
+						
+						<s:GridColumn  minWidth="50" headerText="详情" itemRenderer="{RendererUtil.getButtonRenderer('详情',detailHead)}"/>
+						
+					</s:ArrayCollection>
+				</s:columns>
+			</s:DataGrid>
+			<s:Label text="正在查询，请稍候..."  color="0x000000" id="clew_label" y="{result.columnHeaderGroup.height+40}" width="100%" textAlign="center" visible="false" includeInLayout="false"/>		
+		</s:Group>	
+		
+		
+		<s:HGroup  width="100%" height="30" verticalAlign="middle" gap="10">
+			<!--s:CheckBox id="selectAll" selected="false" change="selectAllItem()"/>
+			<s:Label text="全选"/> 
+			
+			<s:Label width="20"/-->
+			
+			<!--分页组件所在地-->
+			<flipBar:PageBar  id="pagebar" rowConutOfPage="25" totalPageQuery="10" height="20"/>
+			
+		</s:HGroup> 
+		
+	</s:VGroup>
+	
+	
+	
+</system:BasePage>	

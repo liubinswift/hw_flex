@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+			   close="close(event);"
+			   x="{(Capabilities.screenResolutionX - width) / 2}" y="{(Capabilities.screenResolutionY - height) / 2 - 50}"
+			   xmlns:timecomp="com.viewscenes.utils.timecomp.*"
+			   xmlns:ip="com.viewscenes.utils.tools.*" >
+	
+	<mx:Form id="detailform" textAlign="center">
+		<mx:FormItem label="报警编号">
+			<mx:Label id="Alarm_id"/>
+		</mx:FormItem>
+		<mx:FormItem label="报警站点">
+			<mx:Label id="Site_name"/>
+		</mx:FormItem>
+		<mx:FormItem label="报警设备">
+			<mx:Label id="Equ_code"/>
+		</mx:FormItem>
+		<mx:FormItem label="报警类型">
+			<mx:Label id="Type_name"/>
+		</mx:FormItem>
+		<mx:FormItem label="发生时间">
+			<mx:Label id="Alarm_datetime"/>
+		</mx:FormItem>
+	</mx:Form>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.utils.timecomp.DateUtil;
+			import com.viewscenes.utils.timecomp.TimeNew;
+			
+			import mx.collections.ArrayCollection;
+			
+			import mx.controls.Alert;
+			import mx.controls.DateField;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.Button;
+			import spark.components.HGroup;
+			import spark.components.TextInput;
+			
+			var timenew:TimeNew=new TimeNew();
+			var remarkText:TextInput=new TextInput();
+			var formitem1:FormItem=new FormItem();
+			var formitemd:FormItem=new FormItem();
+			var operation:String="";
+			var now:String="";
+			var xmllist:XMLList=new XMLList();
+			[Bindable]
+			private var SeeEquObj:Object;
+			
+			
+			public function SeeEqu(obj:Object):void{
+				SeeEquObj = obj;
+				
+				this.title="设备报警详细信息";
+				Alarm_id.text=SeeEquObj.alarm_id;
+				
+				Site_name.text=SeeEquObj.shortname;
+				
+				Equ_code.text=SeeEquObj.equ_code;
+				
+				
+				var type_name:String="";
+				
+				if(SeeEquObj.type=="1")
+					type_name="供电异常报警[UPS]";
+				else if(SeeEquObj.type=="2")
+					type_name="接收机异常报警";
+				else if(SeeEquObj.type=="3")
+					type_name="调制度卡异常报警";
+				else if(SeeEquObj.type=="4")
+					type_name="调幅度卡报警";
+				else if(SeeEquObj.type=="5")
+					type_name="语音压缩卡异常报警";
+				else if(SeeEquObj.type=="6")
+					type_name="频偏卡报警";
+				else if(SeeEquObj.type=="7")
+					type_name="电池电压低系统关机";
+				
+				Type_name.text=type_name;
+				
+				Alarm_datetime.text=SeeEquObj.alarm_datetime;
+				
+				
+				formitem1.label="报警状态";
+				if(SeeEquObj.resume_datetime.length>0)
+				{
+					var label1:Label=new Label();
+					label1.text="已恢复于"+SeeEquObj.resume_datetime;
+					formitem1.addElement(label1);
+				}
+				else
+				{
+					
+					var date:Date=new Date();
+					var month=date.getMonth()+1;
+					if(month<10)
+						month="0"+month;
+					var day=date.getDate();
+					if(day<10)
+						day="0"+day;	
+					
+					
+					var today=date.getFullYear()+"-"+month+"-"+day;
+					
+					var hbox:HGroup=new HGroup();
+					var label1:Label=new Label();
+					label1.text="未解除";
+					
+					hbox.addElement(timenew);
+					
+					formitem1.addElement(label1);
+					
+					formitem1.addElement(hbox);
+					
+					var button:Button=new Button();
+					
+					button.label="解除报警";
+					button.addEventListener(MouseEvent.CLICK,releaseAlarm);
+					
+					formitem1.addElement(button);
+				}	
+				detailform.addElement(formitem1);
+				
+				var description:String=SeeEquObj.description;
+				var formitem2:FormItem=new FormItem();
+				formitem2.label="现象";
+				var label2:Label=new Label();
+				label2.text=description;
+				formitem2.addElement(label2);
+				detailform.addElement(formitem2);
+				
+				var reason:String=SeeEquObj.reason;
+				var formitem3:FormItem=new FormItem();
+				formitem3.label="原因";
+				var label3:Label=new Label();
+				label3.text=reason;
+				formitem3.addElement(label3);
+				detailform.addElement(formitem3);	
+				
+				if(SeeEquObj.type=="1")
+				{
+					var OUTPUTLINELEVEL:String=SeeEquObj.outputlinelevel;
+					var INPUTLINELEVEL:String=SeeEquObj.inputlinelevel;
+					var LINEFREQUENCY:String=SeeEquObj.linefrequency;
+					var BATTERYLEVEL:String=SeeEquObj.batterylevel;
+					var UPSSTATUS:String=SeeEquObj.upsstatus;
+					
+					var formitem8:FormItem=new FormItem();
+					formitem8.label="输出电压";
+					var label8:Label=new Label();
+					label8.text=OUTPUTLINELEVEL;
+					formitem8.addElement(label8);
+					detailform.addElement(formitem8);
+					
+					var formitem9:FormItem=new FormItem();
+					formitem9.label="输入电压";
+					var label9:Label=new Label();
+					label9.text=OUTPUTLINELEVEL;
+					formitem9.addElement(label9);
+					detailform.addElement(formitem9);
+					
+					var formitema:FormItem=new FormItem();
+					formitema.label="供电频率";
+					var labela:Label=new Label();
+					labela.text=LINEFREQUENCY;
+					formitema.addElement(labela);
+					detailform.addElement(formitema);
+					
+					var formitemb:FormItem=new FormItem();
+					formitemb.label="电池电压";
+					var labelb:Label=new Label();
+					labelb.text=BATTERYLEVEL;
+					formitemb.addElement(labelb);
+					detailform.addElement(formitemb);
+					
+					var formitemc:FormItem=new FormItem();
+					formitemc.label="UPS状态字";
+					var labelc:Label=new Label();
+					labelc.text=UPSSTATUS;
+					formitemc.addElement(labelc);
+					detailform.addElement(formitemc);
+				}
+				
+				var handle_datetime:String=SeeEquObj.handle_datetime;
+				
+				formitemd.label="处理状态";
+				
+				if(handle_datetime.length>0)
+				{
+					var labeld:Label=new Label();
+					labeld.text="已处理于"+handle_datetime;
+					formitemd.addElement(labeld);
+				}
+				else
+				{
+					var hbox1:HGroup=new HGroup();
+					var labeldd:Label=new Label();
+					
+					labeldd.text="未处理";
+					
+					var button1:Button=new Button();
+					
+					button1.label="处理报警";
+					
+					hbox1.addElement(labeldd);
+					
+					hbox1.addElement(button1);
+					
+					formitemd.addElement(hbox1);
+					button1.addEventListener(MouseEvent.CLICK,handleAlarm);
+				}
+				
+				detailform.addElement(formitemd);
+				
+				var remark:String=SeeEquObj.remark;
+				var formiteme:FormItem=new FormItem();
+				formiteme.label="处理说明";
+				remarkText.text=remark;
+				formiteme.addElement(remarkText);
+				detailform.addElement(formiteme);
+				
+				var origin_alarmid:String=SeeEquObj.origin_alarmid;
+				var formitemf:FormItem=new FormItem();
+				formitemf.label="原始报警编号";
+				var labelf:Label=new Label();
+				labelf.text=origin_alarmid;
+				formitemf.addElement(labelf);
+				detailform.addElement(formitemf);
+				
+				var formitemg:FormItem=new FormItem();
+				var hbox2:HGroup=new HGroup();
+//				var ok_button:Button=new Button();
+				var close_button:Button=new Button();
+//				ok_button.label="保存";
+				close_button.label="关闭";
+//				hbox2.addElement(ok_button);
+				hbox2.addElement(close_button);
+				formitemg.addElement(hbox2);
+				detailform.addElement(formitemg);
+				
+//				ok_button.addEventListener(MouseEvent.CLICK,setAlarm);
+				close_button.addEventListener(MouseEvent.CLICK,close);
+				
+			}
+			
+			private function releaseAlarm(e:MouseEvent):void
+			{
+				operation="resume";
+				var obj:Object = new Object;
+				obj.alerttab="equ";
+				obj.operation="resume";
+				obj.datetime=timenew.text;
+				obj.alarm_id=SeeEquObj.alarm_id;
+				obj.head_code=SeeEquObj.head_code;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.daily.alarmHandler.AlertManage","updAlert_DetailList",obj,Processupd_Alarm,onfault));
+				
+			}
+			private function handleAlarm(e:MouseEvent):void
+			{
+				
+				var date:Date=new Date();
+				var month=date.getMonth()+1;
+				if(month<10)
+					month="0"+month;
+				var day=date.getDate();
+				if(day<10)
+					day="0"+day;	
+				var hours=date.getHours()
+				if(hours<10)
+					hours="0"+hours;
+				var minutes=date.getMinutes();
+				if(minutes<10)
+					minutes="0"+minutes;
+				var seconds=date.getSeconds()
+				if(seconds<10)
+					seconds="0"+seconds;
+				
+				now=date.getFullYear()+"-"+month+"-"+day+" "+hours+":"+minutes+":"+seconds;
+				operation="handle";
+				var obj:Object = new Object;
+				obj.alerttab="equ";
+				obj.operation="handle";
+				obj.datetime=now;
+				obj.alarm_id=SeeEquObj.alarm_id;
+				obj.head_code=SeeEquObj.head_code;
+				obj.remark=remarkText.text;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.daily.alarmHandler.AlertManage","updAlert_DetailList",obj,Processupd_Alarm,onfault));
+				
+			}
+			
+			private function setAlarm(e:MouseEvent):void
+			{
+				operation="close";
+				var obj:Object = new Object;
+				obj.alerttab="equ";
+				obj.operation="close";
+//				obj.datetime=remarkText.text;
+				obj.alarm_id=SeeEquObj.alarm_id;
+				obj.head_code=SeeEquObj.head_code;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.daily.alarmHandler.AlertManage","updAlert_DetailList",obj,Processupd_Alarm,onfault));
+				
+			}
+			
+			private function onfault(e:RPCException):void
+			{
+				
+				Alert.show(e.message);
+			}
+			
+			private function Processupd_Alarm(arr:ArrayCollection):void
+			{
+				if (arr.length>0){
+					Alert.show(RPCException(arr[0]).message);
+				}else{
+					
+					Alert.show("修改成功!");
+					if(operation=="resume")
+					{
+						formitem1.removeAllChildren();
+						var label1:Label=new Label();
+						label1.text="已恢复于"+timenew.text;
+						formitem1.addElement(label1);
+					}
+					else if(operation=="handle")
+					{
+						formitemd.removeAllChildren();
+						var labeld:Label=new Label();
+						labeld.text="已处理于"+now;
+						formitemd.addElement(labeld);
+					}
+					else if(operation=="close")
+						this.parent.removeChild(this);					
+				}
+				this.dispatchEvent(new Event("Equ_list_refresh"));
+				//				EventBus.getInstance().dispatchEvent(new AppEvent(AppEvent.APP_ALARMREFRESH));
+				
+			}
+			
+			private function close(e:Event):void{
+				
+				PopUpManager.removePopUp(this);
+				
+			}
+			
+			
+		]]>
+	</fx:Script>
+</s:TitleWindow>
+

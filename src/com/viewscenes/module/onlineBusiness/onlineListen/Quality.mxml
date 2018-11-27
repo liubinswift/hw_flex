@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark"  creationComplete="init();"
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" 
+		  xmlns:quality="com.viewscenes.module.onlineBusiness.realMonitor.quality.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.viewscenes.beans.pub.ResHeadendBean;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.comp.MM;
+			import com.viewscenes.utils.StringTool;
+			
+			import mx.controls.Alert;
+			
+			//父对象
+			public var myParent:OnlineListenIndex = null;
+			
+			
+			private function init():void{
+				
+			}
+			
+			private function startQuality():void{
+				
+				var freq:String = myParent.mediaplayer.getPlayFreq();
+				if (freq == ""){
+					MM.show("当前没有播音的频率,无法进行指标测量","","",null,false,null,null,-1,this.top);
+					return;
+				}
+				
+				stopQuality();
+				quality.visible = true;
+				
+				
+				
+				
+				var headendObj:ResHeadendBean = myParent.mediaplayer.getPlayHeadend();
+				
+				var band:String = StringTool.getBandFromFreq(freq);
+				
+				var qualityTypes:String = "_zbLevelV8,_BandWidth";	//默认电平、带宽
+				
+				//中短波
+				if (band != "2"){
+					qualityTypes += ",_tfdV8";
+					//调频	
+				}else{
+					qualityTypes += ",_tzdzdzV8";
+				}
+				var obj:Object = new Object;
+				obj.headCode = headendObj.code;
+				obj.freq = freq
+				obj.qualityTypes = qualityTypes;
+				
+				quality.setRealTime(obj);
+				
+				quality.start();
+			}
+			
+			//录播音停止时需要调用
+			public function stopQuality():void{
+				quality.visible = false;
+				quality.stop();
+				
+			}
+			
+		]]>
+	</fx:Script>
+		
+	<s:VGroup id="selector" width="100%" height="100%" paddingTop="20">
+		<s:HGroup  width="100%">
+			<s:Button buttonMode="true" label="开始测量" click="startQuality()"/>
+			<s:Button buttonMode="true" label="停止测量" click="stopQuality()"/>
+		</s:HGroup>
+		<s:BorderContainer width="100%" height="100%" >
+			<s:SWFLoader source="com/viewscenes/images/module/onlineListen/quality-background.swf" maintainAspectRatio="false"  width="100%" height="100%"/>
+			<quality:QualityScan id="quality" width="100%" height="100%" visible="false"/>
+		</s:BorderContainer>
+		
+		
+		<!--s:HGroup  width="100%">
+			<s:Button buttonMode="true" label="开始测量"/>
+			<s:Button buttonMode="true" label="停止测量"/>
+		</s:HGroup>
+		
+		<s:Group width="100%" height="33%" color="#ff00ff">
+			<s:Label text="quality1"/>
+		</s:Group>
+		
+		<s:Group width="100%" height="33%">
+			<s:Label text="quality2"/>
+		</s:Group>
+		
+		<s:Group width="100%" height="33%">
+			<s:Label text="quality3"/>
+		</s:Group-->
+		
+	</s:VGroup>
+	
+</s:VGroup>

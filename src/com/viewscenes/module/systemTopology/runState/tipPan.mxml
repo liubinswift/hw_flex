@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx" 
+				   implements=" mx.managers.IFocusManagerComponent"
+				   width="240" height="220" borderStyle="solid" 
+				   backgroundColor="0x009FCC" tabEnabled="true"  focusOut="onout(event)" focusIn="focusIn(event)"
+				   borderWeight="5" borderColor="0xBBBB00">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.frame.nav.NavManager;
+			import com.morcha4.frame.nav.NavParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.morcha4.frame.system.EventBus;
+			import com.viewscenes.global.DataManager;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.morcha4.frame.system.EventBus;
+			[Bindable]public var imgsrc:String; 
+			[Bindable]public var title:String=""; 
+			[Bindable]public var code:String; 
+			[Bindable]public var ip:String; 
+			[Bindable]public var address:String; 
+			[Bindable]private var btns:ArrayCollection=new ArrayCollection([{label:"在线监听",url:"/在线业务/在线监听/在线监听",id:"200101"},{label:"设备控制",url:"/在线业务/设备控制/设备控制",id:"200801"},{label:"实时监测",url:"/在线业务/实时监测/站点状态",id:"200201"},{label:"报警回收",url:"/在线业务/报警回收/指标报警回收",id:"200501"},{label:"参数设置",url:"/在线业务/参数设置/设备初始化参数设置",id:"200701"},{label:"监测数据回收",url:"/在线业务/监测数据回收/指标数据回收",id:"200401"},{label:"任务管理",url:"/日常业务/任务管理/任务查询",id:"100101"},{label:"解除报警",url:"handleAlarm",id:"1"}]);
+			private var setId:uint = 0;
+			/**
+			 * 失去焦点后 弹出的tip自动消失
+			 * */
+			private function onout(e:FocusEvent):void{
+				setId = setTimeout(remove,100);
+			}
+			
+			private function remove():void{
+				PopUpManager.removePopUp(this);
+			}
+			/**
+			 * 点击按钮导航到指定的功能模块
+			 * */
+			private function onClick(e:MouseEvent):void{
+				if(e.currentTarget.getRepeaterItem().url=="handleAlarm"){
+					handleAlarm(code);
+				}else{
+					DataManager.code=code;
+					NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MODULE_NAV,false,false,new NavParam(null,e.currentTarget.getRepeaterItem().url,null)));
+					remove();
+				}
+				
+			}
+			private function focusIn(e:FocusEvent):void{
+				clearTimeout(setId);
+			}
+			
+			private function handleAlarm(code:String):void{
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","HandleAlarm",code,processHandleAlarmBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function processHandleAlarmBack(res:String):void{
+				if(res=="true"){
+					EventBus.dispatchEvent(new AdvancedEvent("handleAlarm",true,false,null));
+					remove();
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<s:VGroup width="100%" height="100%" gap="1" verticalAlign="middle" horizontalAlign="center">
+		<s:Label width="100%" height="20" text="{title}"/>
+		<s:HGroup width="100%">
+			<s:Image id="img" width="60" height="50"  source="{imgsrc}"/>
+			<s:VGroup gap="1" height="100%">
+				<s:Label text="代码:{code}"/>
+				<s:Label text="IP:{ip}"/>
+				<s:Label text="地点:{address}"/>
+			</s:VGroup>
+		</s:HGroup>
+		<mx:Tile width="100%" height="100%" paddingLeft="2" paddingRight="2" horizontalAlign="center">
+			<mx:Repeater id="rp" dataProvider="{btns}" recycleChildren="true">
+				<s:Button buttonMode="true"  color="0x000000" width="100" label="{rp.currentItem.label}" click="onClick(event)" focusIn=""/>
+			</mx:Repeater>
+		</mx:Tile>
+	</s:VGroup>
+	
+</s:BorderContainer>

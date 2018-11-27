@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+				 creationComplete="init();" 
+				 PAGE_SHOW="setCode(event)"
+				 xmlns:system="com.morcha4.frame.system.*" 
+				 xmlns:global="com.viewscenes.global.*" 
+				 xmlns:utils="com.viewscenes.utils.*" 
+				 xmlns:station="com.viewscenes.module.onlineBusiness.realMonitor.station.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.viewscenes.beans.pub.ResHeadendBean;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.comp.MM;
+			import com.viewscenes.utils.StringTool;
+			import com.viewscenes.utils.timecomp.DateUtil;
+			
+			import mx.collections.ArrayCollection;
+			public var time:String=new String();
+			private var stoped:Boolean = true;
+//			private var stopeState:Boolean = false;
+			[Bindable] public var head_id:String   = "";
+			
+			[Bindable] public var shortname:String = "";
+			[Bindable] public var headcode:String = "";
+			[Bindable] public var version:String   = "";
+			[Bindable] public var type_id:String	= "";
+			
+			private var intervalId:uint;
+			private var timeoutID:uint;
+			
+			[Bindable]private var reg:RegExp = /^0.\d*|0.{0,1}|[1-9]\d*.{0,1}\d*$/;
+			public function init():void{
+				if(this.stoped){
+					time = DateUtil.date2str(new Date());
+					this.changeHeadCode(newHead.oStation.selectedItem);
+				}
+				//onAction();
+			}
+			private function setCode(event:Event):void{
+				if(DataManager.code!=""){
+					newHead.oStation.selectedIndex = 1;
+					
+					for(var i:int=0;i<(newHead.oStation.dataProvider as ArrayCollection).length;i++){
+						if(DataManager.code==(newHead.oStation.dataProvider as ArrayCollection)[i].code){
+							newHead.oStation.selectedIndex=i;
+						}
+					}
+				}
+				
+			}
+			private function changeHeadCode(headBean:ResHeadendBean):void{
+				if(headBean!=null){
+					if(headcode==headBean.code){
+						return;
+					}
+					shortname = headBean.shortname;
+					version = headBean.version;
+					type_id = headBean.type_id;
+					headcode = headBean.code;
+					getEquData();//接收机查询
+				}else{
+					DataManager.alertShowErrorMessage("无此站点");
+					//headcode = DataManager.currStation;
+					//_headCode.text = headcode;
+				}
+			}
+			/**
+			 * 接收机查询
+			 */
+			private function getEquData():void{
+				
+				var headCode:String = this.newHead.selectedHeadendCode;
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.online.realtimeMonitor.RealtimeQuality",
+					'getEquList',headCode,getDataBack,DataManager.showErrorMessageBack);
+				RPCManager.sendCmd(request); 
+			}
+			public function getDataBack(list:ArrayCollection):void{//接收机查询返回
+				Card.setData(list);
+			}
+			
+			private function start():void{
+				stoped = false;
+				this.setPageEnable(stoped,true);
+				sendStart();
+				
+				//				srv.send();//测试使用
+			}
+			/**
+			 * 发送设备，准备开始
+			 */
+			private function sendStart():void{
+				var obj:Object = new Object();
+				obj = StringTool.addHead(obj);
+				obj.code = headcode;
+				obj.interval = _interval.text;
+				obj.sampleInterval = _sampleInterval.text;
+				obj.stop = "1";
+				obj.expires = _expires.text;
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.online.realtimeMonitor.RealtimeQuality",
+					'UpEquipmentStatusRealtimeQuery',obj,sendStartBack,sendStartBackError,true,null,DataManager.server_app_id);
+				RPCManager.sendCmd(request); 
+			}
+			private function sendStartBackError(obj:RPCException):void{
+				DataManager.alertShowErrorMessage("开始错误>>>"+obj.message);
+				stoped = true;
+				this.setPageEnable(stoped,false);
+			}
+			/**
+			 * 设备返回，是否成功开始
+			 */
+			private function sendStartBack(obj:Object):void{
+					stoped = false;
+					this.setPageEnable(stoped,false);
+					var rest:String = obj.clientStartTime;
+					time = rest;
+					Card.clearAll();
+					//到了超时时间停止扫描
+					timeoutID = setTimeout(autoStop,parseInt(_expires.text)*60*1000);
+					//每秒获取返回状态
+					intervalId = setInterval(send,1000);
+					
+				
+			}
+			private function send():void{
+				var obj:Object = new Object();
+				obj.code =headcode;
+				obj.last_get_time = time;
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.online.realtimeMonitor.RealtimeQuality",
+					'getEquDataFromCache',obj,getCardDataBack,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id);
+				RPCManager.sendCmd(request);
+			}
+			
+			public function getCardDataBack(obj:Object):void{
+				var lastTime:String = obj.last_get_time;
+//				MM.show(lastTime);
+				if(lastTime!=null&&lastTime!=""){
+					time=lastTime;
+				}
+				Card.setCardState(obj);
+				//				error.text();
+			}
+			
+			public function stop():void{
+				
+				if(stoped == true){
+					return;
+				}else{
+					stoped = true;
+					this.setPageEnable(stoped,true);
+					sendStop();
+					clearInterval(timeoutID);
+					clearInterval(intervalId);
+				}
+			}
+			
+			public function doTest():void{
+				
+//				ExternalInterface.call("function(){window.location.href= 'http://dhost.info/lsc/swfspeed';}");
+				navigateToURL(new URLRequest("http://dhost.info/lsc/swfspeed"),"_blank");   
+			}
+			/**
+			 * 自动停止扫描
+			 */
+			public function autoStop():void{
+				if(stoped == true){
+					return;
+				}else{
+					stoped = true;
+					this.setPageEnable(stoped,false);
+					clearInterval(timeoutID);
+					clearInterval(intervalId);
+				}
+			}
+			private function sendStop():void{
+				var obj:Object = new Object();
+				obj = StringTool.addHead(obj);
+				obj.code = headcode;
+				obj.interval = _interval.text;
+				obj.sampleInterval = _sampleInterval.text;
+				obj.stop = "0";
+				obj.expires = _expires.text;
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.online.realtimeMonitor.RealtimeQuality",
+					'UpEquipmentStatusRealtimeQuery',obj,StopStationBack,sendStopBackError,true,null,DataManager.server_app_id);
+				RPCManager.sendCmd(request); 
+			}
+			
+			private function sendStopBackError(obj:RPCException):void{
+				DataManager.alertShowErrorMessage("停止错误>>>"+obj.message);
+				stoped = true;
+				this.setPageEnable(stoped,false);
+			}
+			
+			private function StopStationBack(obj:Object):void{
+				stoped = true;
+				this.setPageEnable(stoped,false);
+				//				DataManager.alertShowErrorMessage("<<<<停止>>>>");
+			}
+			
+			/**
+			 * 设置开始后页面个参数不可以更改
+			 * isStop 是否停止  true是停止 false不是停止
+			 * isBegin 是否是开始下发接口 true是 false是下发接口返回
+			 */
+			private function setPageEnable(isStop:Boolean,isBegin:Boolean):void
+			{
+				_detial.enabled = isStop;
+				this.newHead.enabled = isStop;
+				if(isBegin){
+					_start.enabled = false;
+					_stop.enabled = false;
+				} else{
+					_start.enabled = isStop;
+					_stop.enabled = !isStop;
+				}
+			}
+			
+			/**
+			 * 页面切换回来调用的方法
+			 */
+//			protected function pageShowFun(event:Event):void
+//			{
+//				newHead.oStation.setDataProviderNew();
+//			}
+			
+		]]>
+	</fx:Script>
+	<s:VGroup width="100%" height="100%" horizontalAlign="center" gap="5" paddingTop="10">
+		<s:HGroup width="100%" height="30"  verticalAlign="middle">
+			<s:HGroup id="_detial" width="100%"  verticalAlign="middle" paddingLeft="16" paddingRight="30">
+				<global:HeadendAndStateList id="newHead" headDataAll="true"  selectChange="changeHeadCode(newHead.oStation.selectedItem)"/>	
+				<s:Label text="上报间隔："/>
+				<s:TextInput id="_interval" text="5" maxChars="6" restrict="0-9\"/>
+				<s:Label text="秒	采样间隔："/>
+				<s:TextInput id="_sampleInterval" text="1" maxChars="6" restrict="0-9\"/>
+				<s:Label text="秒	过期时间："/>
+				<utils:RegExpTextInput regex="{reg}" width="100" id="_expires" text="2"  maxChars="6"/>
+				<s:Label text="分钟"/>
+				
+			</s:HGroup>
+			<s:HGroup  width="100%"  verticalAlign="middle" paddingRight="16">
+				<s:Button buttonMode="true" label="开始" id="_start" click="start();"/>
+				<s:Button buttonMode="true" label="停止" enabled="false" id="_stop" click="stop();"/>
+				<s:Button buttonMode="true" label="测网速" id="test" click="doTest();"/>
+			</s:HGroup>
+		</s:HGroup>			
+		<s:VGroup width="100%" height="2" verticalAlign="middle" gap="0">
+			<s:Line width="100%" yFrom="0" yTo="0"  alpha="0.3">
+				<s:stroke>
+					<s:SolidColorStroke caps="square" color="0xffffff" weight="1"/>
+				</s:stroke>
+			</s:Line>
+			<s:Line width="100%" yFrom="0" yTo="0" alpha="0.3">
+				<s:stroke>
+					<s:SolidColorStroke caps="square" color="0x000000" weight="1"/>
+				</s:stroke>
+			</s:Line>
+		</s:VGroup>
+		<s:Group width="100%" height="100%">
+			<station:Cards id="Card"  width="100%" height="100%"/>
+		</s:Group>
+		
+	</s:VGroup>
+</system:BasePage>

@@ -1,0 +1,563 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" xmlns:menu="com.viewscenes.global.menu.*"
+		 creationComplete="init()" xmlns:advancedComboBox="com.morcha4.ui.advancedComboBox.*" xmlns:global="com.viewscenes.global.*" xmlns:contaners="com.morcha4.ui.contaners.*" xmlns:layout="com.morcha4.ui.contaners.layout.*" xmlns:comp="com.viewscenes.global.comp.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 >
+		<s:Resize target="{menu2}" widthTo="0" widthFrom="{this.width}" effectEnd="leftResize_effectEndHandler(event)" id="leftResize"/-->
+		<s:Animate target="{this}" id="topMove">
+			<s:MotionPath property="topHeight">
+				<s:Keyframe value="106"/>
+				<s:Keyframe value="0"/>
+			</s:MotionPath>
+			<s:MotionPath property="topMainPage">
+				<s:Keyframe value="100"/>
+				<s:Keyframe value="27"/>
+			</s:MotionPath>
+			<s:MotionPath property="topBanner">
+				<s:Keyframe value="0"/>
+				<s:Keyframe value="-70"/>
+			</s:MotionPath>
+		</s:Animate>
+		<s:Animate target="{this}" id="topFooterMove">
+			<s:MotionPath property="bottomHeight">
+				<s:Keyframe value="-47"/>
+				<s:Keyframe value="0"/>
+			</s:MotionPath>
+		</s:Animate>
+		<s:Animate target="{this}" id="toFullMove">
+			<s:MotionPath property="topHeight">
+				<s:Keyframe value="-44"/>
+				<s:Keyframe value="106"/>
+			</s:MotionPath>
+			<s:MotionPath property="bottomHeight">
+				<s:Keyframe value="-57"/>
+				<s:Keyframe value="-47"/>
+			</s:MotionPath>
+			<s:MotionPath property="topMainPage">
+				<s:Keyframe value="0"/>
+				<s:Keyframe value="100"/>
+			</s:MotionPath>
+			<s:MotionPath property="topBanner">
+				<s:Keyframe value="-87"/>
+				<s:Keyframe value="0"/>
+			</s:MotionPath>
+		</s:Animate>
+		<s:Parallel target="{this}" id="styleEff" duration="400">
+			<s:AnimateFilter>
+				<s:bitmapFilter>
+					<s:BlurFilter blurX="300" blurY="200"/>
+				</s:bitmapFilter>
+			</s:AnimateFilter>
+			<s:Fade alphaTo=".1" alphaFrom="1"/>
+		</s:Parallel>
+		
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.PageFrame;
+			import com.morcha4.frame.PageTransformManager;
+			import com.morcha4.frame.menu.BaseMenu;
+			import com.morcha4.frame.nav.NavManager;
+			import com.morcha4.frame.nav.NavParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.morcha4.frame.system.EventBus;
+			import com.morcha4.frame.theme.StyleManager;
+			import com.morcha4.util.XMLUtil;
+			import com.viewscenes.global.comp.MM;
+			
+			import flash.utils.setInterval;
+			import flash.utils.setTimeout;
+			
+			import mx.collections.ArrayCollection;
+			import mx.core.DragSource;
+			import mx.events.DragEvent;
+			import mx.events.EffectEvent;
+			import mx.managers.DragManager;
+
+			
+			[Bindable]public var topHeight:int=106;
+			[Bindable]public var topMainPage:int=100;
+			[Bindable]public var topBanner:int=0;
+			private const middleLeft:int=187;
+			[Bindable]public var bottomHeight:int=-47;
+			[Bindable]private var userName:String="";
+			private var sysint:SystemInit = null;
+			private var intervalId:uint = 0;
+			
+			/**
+			 * 存放每一页面路径的集合
+			 */
+			private var pageNameArr:ArrayCollection = new ArrayCollection();
+			
+			private function init():void{
+				EventBus.addEventListener(EventDeclare.SYSTEM_INIT_COMPLETED,onInitComplete);
+				
+				EventBus.addEventListener(EventDeclare.LOGIN_USERNAME,function(e:AdvancedEvent):void{userName = e.data.toString()});
+				
+				//				onInitComplete(null);
+				EventBus.addEventListener(EventDeclare.BIG_SCREEN,function(e:AdvancedEvent):void{setFull1(true)});
+				EventBus.addEventListener(EventDeclare.FULL_SCREEN,function(e:AdvancedEvent):void{setFull(e.data)});
+				PageTransformManager.getInstance().addEventListener(PageTransformManager.BEGIN_LOADING_PAGE,changepage);
+			}
+			private function onInitComplete(e:Event):void{
+				this.visible = true;//test
+				PageFrame.getInstance().useEffect=false;//是否使用页面切换效果
+				PageFrame.getInstance().pageFrameInstance=mainVS;
+				NavManager.getInstance().menu=DataManager.menu;
+				NavManager.getInstance().processMenu=this.processMenu;
+//				NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MODULE_NAV,false,false,new NavParam(null,null,
+//					XMLUtil.getFNodeByAttribute(DataManager.menu,"select","true","node",false))));
+				if(DataManager.user.roleId=="323")
+				{	
+					menu3.includeInLayout=false;
+					menu3.visible=false
+					main1.includeInLayout=false;
+					main1.visible=false;
+					controlBtn.visible=false;
+					controlBtn.includeInLayout=false;
+					showDown1.visible=false;
+					showDown1.includeInLayout=false;
+					showDown2.visible=false;
+					showDown2.includeInLayout=false;
+					fullBtn.visible=false;
+					fullBtn.includeInLayout=false;
+					menu2.visible=false;
+					menu2.includeInLayout=false;
+					main2.includeInLayout=true;
+					main2.visible=true;
+					bgImage.source="com/viewscenes/images/default/global2/banner/main_bg.png";
+					mainPage.top=84;
+					mainPage.bottom=0;
+					mainPage.left=0;
+					mainPage.right=0;
+					NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MODULE_NAV,false,false,new NavParam(null,"/运行状态图", null)));
+
+				}else
+				{
+					main1.includeInLayout=true;
+					main1.visible=true;
+					controlBtn.visible=true;
+					controlBtn.includeInLayout=true;
+					showDown1.visible=true;
+					showDown1.includeInLayout=true;
+					showDown2.visible=false;
+					showDown2.includeInLayout=false;
+					fullBtn.visible=false;
+					fullBtn.includeInLayout=false;
+					main2.includeInLayout=false;
+					main2.visible=false;
+					NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MODULE_NAV,false,false,new NavParam(null,"/主页", null)));
+
+				}
+							//运行状态图
+//				NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MODULE_NAV,false,false,new NavParam(null,"/系统拓扑/运行状态图/运行状态图", null)));
+				
+				if(intervalId == 0){
+					intervalId = setInterval(refreshData,60000);
+				}
+				
+			}
+			
+			/**
+			 * 
+			 */
+			private function refreshData():void{
+				if(sysint == null){
+					sysint = new SystemInit();
+				}
+				sysint.getConfigData();
+				sysint.queryHeadList();
+			}
+			public function processMenu(xml:XML):void{
+				m1.dataProvider=xml.node;
+				m1new.dataProvider=xml.node
+				
+				changeMenu2State(true);
+				menu2.dataProvider=XMLUtil.getNodeByAttribute(xml.node,"select","true",true,true).node;
+				if(menu2.dataProvider.length()>0){
+					if(XMLUtil.getNodeByAttribute(menu2.dataProvider,"select","true",true,true).node == null){
+						menu3.dataProvider = new XMLList();
+					} else {
+						menu3.dataProvider=XMLUtil.getNodeByAttribute(menu2.dataProvider,"select","true",true,true).node;
+					}
+				}else{
+					menu3.dataProvider=null;
+				}
+				changeMenu2State((menu2.dataProvider != null && menu2.dataProvider.length()>0));
+				//				sp.includeInLayout=m3.dataProvider&&m3.dataProvider.length()!=0;
+				NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MENU_COMPLETE,false,false));
+				BaseMenu.enableChanged=false;
+			}
+			private function changeMenu2State(hide:Boolean):void{
+				if(menu2.dataProvider != null && menu2.dataProvider.length()>0){
+					menu2.visible = hide;
+					menu2.includeInLayout = hide;
+					mainPage.visible = !hide;
+					mainPage.includeInLayout = !hide;
+					menu3.visible = !hide;
+					menu3.includeInLayout = !hide;
+					EventBus.dispatchEvent(new AdvancedEvent(EventDeclare.SHOW_MENU_2));
+					if(menu3.dataProvider==null ||menu3.dataProvider.length()==0){
+						menu3.visible = false;
+						menu3.includeInLayout = false ;
+					}
+				} else{
+					menu2.visible = false;
+					menu2.includeInLayout = false;
+					mainPage.visible = true;
+					mainPage.includeInLayout = true;
+					menu3.visible = false;
+					menu3.includeInLayout = false;
+				}
+				controlBtn.visible = menu3.visible;
+				//				callLater(leftResize_effectEndHandler,[null]);
+			}
+			protected function leftResize_effectEndHandler(event:EffectEvent):void
+			{
+				// TODO Auto-generated method stub
+				menu2.percentHeight=100;
+				if(menu2.width==0){
+					//					leftArrow.source=getStyle('menu2ArrowSrc2');
+				}else{
+					//					leftArrow.source=getStyle('menu2ArrowSrc');
+				}
+				
+			}
+			private function setFull1(isFull:Boolean):void{
+				if(isFull){
+					topHeight=0;
+				}else{
+					topHeight=106;
+				}
+				changeMenu2State(!(menu2.dataProvider&&menu2.dataProvider.length()!=0));
+			}
+			private function setFull(isFull:Boolean):void{
+//				if(isFull){
+//					topHeight=-44;
+//					bottomHeight=-57;
+//					topMainPage = 0;
+//					topBanner = -90;
+//				}else{
+//					topHeight=106;
+//					bottomHeight=-47;
+//					topMainPage = 100;
+//					topBanner = 0;
+//				}
+				toFullMove.play(null,topBanner==0);
+				fullBtn.visible=isFull;
+			}
+			private var currStyle:String="DefaultStyle.swf";
+			private function changeStyle(url:String):void{
+				if(url==currStyle){
+					return;
+				}
+				currStyle=url;
+				styleEff.play();
+				setTimeout(function(){
+					com.morcha4.frame.theme.StyleManager.loadSkin(url,null,function(e){},function(e){});
+				},400
+				);
+			}
+			private function onStyle():void{
+				changeMenu2State(!(menu2.dataProvider&&menu2.dataProvider.length()!=0));
+				styleEff.play(null,true)
+			}
+			/**
+			 * 改变标题图片
+			 */
+			private function channgeBanner():void{
+				topMove.play(null,topHeight==0);
+				if(topBanner == 0){
+					bannerBG.source = getStyle('logoSrcBG3');
+				} else{
+					bannerBG.source = getStyle('logoSrcBG');
+				}
+			}
+			/**
+			 * 改变底部图片
+			 */
+			private function channgeFooter():void{
+				topFooterMove.play(null,bottomHeight==0);
+				if(bottomHeight == 0){
+					footerBG.source = getStyle('footerDownSrcBG');
+				} else{
+					footerBG.source = getStyle('footerUpSrcBG');
+				}
+			}
+			
+			/**
+			 * 切换到具体页面
+			 */
+			private function changepage(e:Event):void{
+//				DataManager.showErrorMessage("bbb"+NavManager.getInstance().currentPath+"=="+pageNameArr.getItemIndex(NavManager.getInstance().currentPath));
+				var pageindex:int = pageNameArr.getItemIndex(NavManager.getInstance().currentPath);
+				if(pageindex == -1 && NavManager.getInstance().currentPath.indexOf("主页")==-1){
+//					pageNameArr.removeItemAt(pageindex);
+					pageNameArr.addItem(NavManager.getInstance().currentPath);
+				}
+				loadPage(NavManager.getInstance().currentPath);
+				changeMenu2State(false);
+				
+			}
+			/**
+			 * 后退页面
+			 */
+			private function mainBackFun():void{
+				var pageindex:int = pageNameArr.getItemIndex(NavManager.getInstance().currentPath);
+				if(pageindex == 0){
+					MM.show("已经是最早访问页面");
+					return;
+				}
+				
+				var path:String = pageNameArr.getItemAt(pageindex-1) as String;
+				NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MODULE_NAV,false,false,new NavParam(null,path, null)));
+//				var path:String = NavManager.getInstance().currentPath;
+//				NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MODULE_PRE,false,false,new NavParam(null,path, null)));
+			}
+			/**
+			 * 前进页面
+			 */
+			private function mainGoFun():void{
+				var pageindex:int = pageNameArr.getItemIndex(NavManager.getInstance().currentPath);
+				if(pageindex == (pageNameArr.length-1)){
+					MM.show("已经是最近访问页面");
+					return;
+				}
+				
+				var path:String = pageNameArr.getItemAt(pageindex+1) as String;
+				NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MODULE_NAV,false,false,new NavParam(null,path, null)));
+//				var path:String = NavManager.getInstance().currentPath;
+//				NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MODULE_NEXT,false,false,new NavParam(null,path, null)));
+			}
+			/**
+			 * 刷新当前页面
+			 */
+			private function mainRefreshFun():void{
+				var path:String = NavManager.getInstance().currentPath;
+				NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MODULE_REFRESH,false,false,new NavParam(null,path, null)));
+			}
+			
+			/**
+			 * 拖动
+			 */
+			private function m_onStartDrag(event:MouseEvent):void{
+				var dragInitiator:Label = Label(event.currentTarget);
+				var ds:DragSource = new DragSource();
+				
+				ds.addData( {"x" : event.localX, "y" : event.localY},dragInitiator.id);
+				DragManager.doDrag(dragInitiator,ds,event); // 开始拖动这个物体  btnDrag
+			}
+			
+			/**
+			 * 全屏页面
+			 */
+			private function mainFullFun():void{
+				
+				setFull(true);
+			}
+			/**
+			 * 关闭页面
+			 */
+			private function mainCloseFun():void{
+				var path:String = NavManager.getInstance().currentPath;
+				var newPath:String = path.substring(0,path.lastIndexOf("/"));
+				NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MODULE_NAV,false,false,new NavParam(null,newPath, null)));
+			}
+			
+			/**
+			 * 最小化页面
+			 */
+			private function mainMiniFun():void{
+				var path:String = NavManager.getInstance().currentPath;
+				var newPath:String = path.substring(0,path.lastIndexOf("/"));
+				var name:String = path.substring(path.lastIndexOf("/")+1,path.length);
+				NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MODULE_NAV,false,false,new NavParam(null,newPath, null)));
+				
+				addLabelToMiniComp(name,path,true);
+			}
+			private function loadPage(path:String):void{
+				var newPath:String = path.substring(0,path.lastIndexOf("/"));
+				var name:String = path.substring(path.lastIndexOf("/")+1,path.length);
+				NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MODULE_NAV,false,false,new NavParam(null,newPath, null)));
+				if(name=="主页")
+					return;
+				addLabelToMiniComp(name,path,false);
+			}
+			/**
+			 * 添加最小化按钮到
+			 */
+			private function addLabelToMiniComp(name:String,path:String,flag:Boolean):void{
+				var lab:Label = new Label();
+				lab.setStyle("backgroundColor","0x00ff00");
+				lab.setStyle("backgroundAlpha","0.5");
+				lab.setStyle("textAlign","center");
+				lab.setStyle("verticalAlign","middle");
+				lab.setStyle("paddingLeft","5");
+				lab.setStyle("paddingTop","5");
+				lab.setStyle("paddingRight","5");
+				lab.setStyle("paddingBottom","5");
+				lab.height = 30;
+				lab.text = name;
+				lab.addEventListener(MouseEvent.CLICK,removeMini);
+				lab.addEventListener(DragEvent.DRAG_COMPLETE,removeMiniDrag);
+				lab.addEventListener(MouseEvent.MOUSE_DOWN,m_onStartDrag);
+				lab.id = path;
+				lab.buttonMode = true;
+				//				if(flag &&(bottomHeight != 0)){
+				//					channgeFooter();
+				//				}
+				for(var i:int=0;i<miniComp.numElements-1;i++){
+					if((miniComp.getElementAt(i) as Label).id == path){
+						return;
+					}
+				}
+				miniComp.addElementAt(lab,miniComp.numElements-1);
+				
+			}
+			/**
+			 * 从最小化组件中移除
+			 */
+			private function removeMini(event:MouseEvent):void{
+				var removeId:String = event.currentTarget.id;
+				for(var i:int=0;i<miniComp.numElements;i++){
+					if((miniComp.getElementAt(i) as Label).id == removeId){
+						NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MODULE_NAV,false,false,new NavParam(null,removeId, null)));
+						miniComp.removeElementAt(i);
+					}
+				}
+				
+				if(miniComp.numElements == 0){
+					if(bottomHeight == 0){
+						channgeFooter();
+					}
+				}
+			}
+			
+			private function removeMiniDrag(event:DragEvent):void{
+//				var line1 : Object =  e.dragSource.dataForFormat("_thresholdLine");//1
+				var removeId:String = event.currentTarget.id;
+				for(var i:int=0;i<miniComp.numElements-1;i++){
+					if((miniComp.getElementAt(i) as Label).id == removeId){
+						NavManager.getInstance().dispatchEvent(new AdvancedEvent(NavManager.MODULE_NAV,false,false,new NavParam(null,removeId, null)));
+						miniComp.removeElementAt(i);
+					}
+				}
+				
+				if(miniComp.numElements == 0){
+					if(bottomHeight == 0){
+						channgeFooter();
+					}
+				}
+			}
+			private function cleanBut():void{
+				if(miniComp.numElements >1){
+					var nn:int = miniComp.numElements-2;
+					for(var i:int=nn;i>=0;i--){
+							miniComp.removeElementAt(i);
+					}
+				}
+				if(bottomHeight == 0){
+					channgeFooter();
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="over" stateGroups="overStates" />
+	</s:states>
+	<!--s:Rect width="100%" height="100%">
+	<s:fill><s:SolidColor color="{getStyle('backgroundColor')}"/></s:fill>
+	</s:Rect-->
+	
+	<s:BitmapImage id="bgImage" width="100%" height="100%" fillMode="scale" source="{getStyle('bodyBackgroundSrc')}"/>
+	<s:Group id="main1" width="100%" height="100%" >
+	
+	<s:HGroup width="100%" gap="0" top="{topBanner}">
+		<s:BitmapImage width="100%"  fillMode="repeat" scaleMode="stretch" source="{getStyle('logoSrcBG2')}"/>
+		<s:BitmapImage fillMode="clip" source="{getStyle('logoSrcBG')}" id="bannerBG"/>
+		<s:BitmapImage width="100%"  fillMode="repeat" scaleMode="stretch" source="{getStyle('logoSrcBG2')}"/>
+	</s:HGroup>
+	
+	<s:SWFLoader source="{getStyle('logoSrc')}"  width="100%" horizontalAlign="center"  top="{topBanner}"/>
+	<s:HGroup   width="100%" height="12"  top="{topBanner+71}" horizontalAlign="center">
+		<s:Label width="180" click="channgeBanner();" toolTip="点击显示/隐藏上方区域"/>
+	</s:HGroup>
+	<s:Group width="100%" height="{topHeight-7}" id="topPan">
+		<menu:Menu1 right="0" width="437" id="m1" bottom="20"/>
+		<!--s:Label text="{'当前位置：'+NavManager.getInstance().currPath}" left="10" bottom="10" fontSize="14" fontWeight="bold" /-->
+	</s:Group>
+	
+	<s:HGroup   top="{topHeight-84}" left="100" verticalAlign="middle" fontSize="13" fontWeight="bold">
+		<contaners:BGAbleContainer backgroundImage="{getStyle('welcomeBackgroundSrc')}" width="200" height="28">
+			<contaners:layout>
+				<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+			</contaners:layout>
+			
+			<s:BitmapImage source="com/viewscenes/images/default/global1/admin.png"/>
+			<s:Label text="欢迎您" width="50" color="0x909395"/>
+			<s:Label text="{userName}" color="0xd7c43a" minWidth="30"/> 
+			<s:Image source="{getStyle('closeUserSrc')}" buttonMode="true" 
+					 click="{navigateToURL(new URLRequest('javascript:window.opener=null;window.close()'),'_self')}"/>	
+		</contaners:BGAbleContainer>
+		<s:Spacer width="30"/>
+		<s:Label text="未处理报警：	" color="0x58aad0"/>
+		<s:Label text="{DataManager.alarmNum}" color="0xc12510"/>
+		<s:Label text="条"  color="0x58aad0"/>
+	</s:HGroup>	
+	</s:Group>
+	<s:Group id="main2" width="100%" height="100%" includeInLayout="false" visible="false">
+		<s:HGroup width="100%" gap="0" top="{topBanner}">
+			<s:BitmapImage fillMode="scale" width="100%" source="com/viewscenes/images/default/global2/banner/banner_bg.jpg" />
+		</s:HGroup>	
+		<s:Group width="100%"   >
+			<menu:Menu1 right="60" width="437" id="m1new" bottom="20"/>
+			<s:Image right="0" source="com/viewscenes/images/default/global2/banner/quit.jpg" buttonMode="true" 
+					 click="{navigateToURL(new URLRequest('javascript:window.opener=null;window.close()'),'_self')}"/>	
+		</s:Group>
+		<s:Image top="10" x="80" source="com/viewscenes/images/default/global2/banner/logo.png" />
+		<contaners:BGAbleContainer x="{this.width/2-300}" top="45" backgroundImage="com/viewscenes/images/default/global2/banner/display.png"  >
+			<contaners:layout>
+				<s:HorizontalLayout horizontalAlign="center" verticalAlign="bottom"/>
+			</contaners:layout>
+			<s:Label text="欢迎"  color="0x909395"/>
+			<s:Label text="{userName}" color="0xd7c43a" minWidth="30"/> 
+			<s:Label text="登录系统" color="0x909395" /> 
+		</contaners:BGAbleContainer>
+	</s:Group>
+	<menu:Menu2 height="95%" id="menu2" width="100%" left="30" right="30" top="{topHeight+14}" bottom="{bottomHeight}" />
+	
+	<menu:Menu3 id="menu3" width="100%" top="{topMainPage-32}" left="15"/>
+	
+	<s:HGroup top="{topMainPage-28}" right="10" gap="5" visible="true" id="controlBtn">
+		<s:Button buttonMode="true" styleName="mainBack" click="mainBackFun();" toolTip="后退"/>
+		<s:Button buttonMode="true" styleName="mainGo" click="mainGoFun();" toolTip="前进"/>
+		<s:Button buttonMode="true" styleName="mainMini" click="mainMiniFun();" toolTip="最小化"/>
+		<s:Button buttonMode="true" styleName="mainRefresh" click="mainRefreshFun();" toolTip="刷新"/>
+		<s:Button buttonMode="true" styleName="mainFull" click="mainFullFun();" toolTip="全屏"/>
+	</s:HGroup>
+	<contaners:BGAbleContainer id="mainPage" top="{topMainPage}" bottom="{bottomHeight+59}"
+							   backgroundImage="{getStyle('ModuleBGSource')}" backgroundImageMode="scale" width="100%" left="10" right="10">
+		<contaners:layout>
+			<s:HorizontalLayout paddingLeft="5" paddingTop="5" paddingBottom="5" paddingRight="5"/>
+		</contaners:layout>
+		<s:Group width="100%" height="100%" id="mainVS" />
+	</contaners:BGAbleContainer>
+	
+	<s:Group id="showDown1" width="100%" bottom="{bottomHeight}" height="67">
+		<s:BitmapImage width="100%" fillMode="scale" source="{getStyle('footerDownSrcBG')}" id="footerBG"/>
+		<layout:HRollContainer  clipAndEnableScrolling="true" width="{width}">
+			<s:HGroup id="miniComp" name="con" paddingLeft="20" clipAndEnableScrolling="true" paddingRight="20" verticalAlign="middle" height="47" top="20"
+						  fontSize="14" fontWeight="bold" minWidth="200">
+				<s:Image source="{getStyle('cleanImg')}" buttonMode="true"  click="cleanBut()" id="img22"/>
+			</s:HGroup>
+		</layout:HRollContainer>
+	</s:Group>
+	
+	<s:HGroup  id="showDown2" width="100%" height="12"  bottom="{bottomHeight+47}" horizontalAlign="center">
+		<s:Label width="180" click="channgeFooter();" toolTip="点击显示/隐藏下方区域" />
+	</s:HGroup>
+	<s:Image source="{getStyle('returnImg')}" click="setFull(false)" visible="false" right="0" top="0" width="42" height="42" id="fullBtn" rollOver="fullBtn.alpha=1" rollOut="fullBtn.alpha=0.2" alpha="0.2"/>
+</s:Group>

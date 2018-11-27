@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="Flex" version="4">
+  <component name="FlexBuildConfigurationManager" active="oversea_flex">
+    <configurations>
+      <configuration name="oversea_flex" main-class="oversea_flex" output-file="oversea_flex.swf" output-folder="D:/workspaces/hw3/trunk/hw/monweb" use-html-wrapper="true" wrapper-template-path="$MODULE_DIR$/html-template" runtime-loaded-modules="com.viewscenes.module.systemManager.netCheck.NetCheck&#9;com/viewscenes/module/systemManager/netCheck/NetCheck.swf&#9;true&#10;com.viewscenes.module.test.TestExample&#9;com/viewscenes/module/test/TestExample.swf&#9;true&#10;com.viewscenes.module.systemManager.dicManager.Season.SeasonTab&#9;com/viewscenes/module/systemManager/dicManager/Season/SeasonTab.swf&#9;true&#10;com.viewscenes.module.dailyBusiness.runplanQuery.gjtldRunplan&#9;com/viewscenes/module/dailyBusiness/runplanQuery/gjtldRunplan.swf&#9;true&#10;com.viewscenes.module.systemManager.netCheck.CKYDataCheck&#9;com/viewscenes/module/systemManager/netCheck/CKYDataCheck.swf&#9;true&#10;com.viewscenes.module.systemManager.indexPan.IndexPan&#9;com/viewscenes/module/systemManager/indexPan/IndexPan.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.parameterSet.qualityAlarmSet&#9;com/viewscenes/module/onlineBusiness/parameterSet/qualityAlarmSet.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.dataCallback.record.RecFileRetrieveIndex&#9;com/viewscenes/module/onlineBusiness/dataCallback/record/RecFileRetrieveIndex.swf&#9;true&#10;com.viewscenes.module.dailyBusiness.alarmHandler.AlarmHandler&#9;com/viewscenes/module/dailyBusiness/alarmHandler/AlarmHandler.swf&#9;true&#10;com.viewscenes.module.systemManager.netCheck.YYSBNetCheck&#9;com/viewscenes/module/systemManager/netCheck/YYSBNetCheck.swf&#9;true&#10;com.viewscenes.module.dailyBusiness.task.AddTask&#9;com/viewscenes/module/dailyBusiness/task/AddTask.swf&#9;true&#10;com.viewscenes.module.systemManager.dicManager.LanguageTab&#9;com/viewscenes/module/systemManager/dicManager/LanguageTab.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.ClientQuery.ClientQuery&#9;com/viewscenes/module/onlineBusiness/ClientQuery/ClientQuery.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.deviceControl.DeviceControl&#9;com/viewscenes/module/onlineBusiness/deviceControl/DeviceControl.swf&#9;true&#10;com.viewscenes.module.systemManager.dicManager.StateTab&#9;com/viewscenes/module/systemManager/dicManager/StateTab.swf&#9;true&#10;com.viewscenes.module.dailyBusiness.QueryData.Record_Query&#9;com/viewscenes/module/dailyBusiness/QueryData/Record_Query.swf&#9;true&#10;com.viewscenes.module.dailyBusiness.task.DelTask&#9;com/viewscenes/module/dailyBusiness/task/DelTask.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.dataCallback.equLogCallback&#9;com/viewscenes/module/onlineBusiness/dataCallback/equLogCallback.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.dataCallback.frequencyOffsetDataCallback&#9;com/viewscenes/module/onlineBusiness/dataCallback/frequencyOffsetDataCallback.swf&#9;true&#10;com.viewscenes.module.dailyBusiness.QueryData.Index_Query&#9;com/viewscenes/module/dailyBusiness/QueryData/Index_Query.swf&#9;true&#10;com.viewscenes.module.systemManager.SiteManager.HeadendTab&#9;com/viewscenes/module/systemManager/SiteManager/HeadendTab.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.realMonitor.spectrum.SpectrumScan&#9;com/viewscenes/module/onlineBusiness/realMonitor/spectrum/SpectrumScan.swf&#9;true&#10;com.viewscenes.module.test.TestExample2&#9;com/viewscenes/module/test/TestExample2.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.realMonitor.station.StationState&#9;com/viewscenes/module/onlineBusiness/realMonitor/station/StationState.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.parameterSet.equipmentAlarmSet&#9;com/viewscenes/module/onlineBusiness/parameterSet/equipmentAlarmSet.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.dataCallback.qualityAlarmCallback&#9;com/viewscenes/module/onlineBusiness/dataCallback/qualityAlarmCallback.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.dataCallback.equAlarmCallback&#9;com/viewscenes/module/onlineBusiness/dataCallback/equAlarmCallback.swf&#9;true&#10;com.viewscenes.module.dailyBusiness.task.TaskQuery&#9;com/viewscenes/module/dailyBusiness/task/TaskQuery.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.realMonitor.quality.QualityScan&#9;com/viewscenes/module/onlineBusiness/realMonitor/quality/QualityScan.swf&#9;true&#10;com.viewscenes.module.dailyBusiness.runplanQuery.wgtRunplan&#9;com/viewscenes/module/dailyBusiness/runplanQuery/wgtRunplan.swf&#9;true&#10;com.viewscenes.module.dailyBusiness.deviceLogQuery.DeviceLogQuery&#9;com/viewscenes/module/dailyBusiness/deviceLogQuery/DeviceLogQuery.swf&#9;true&#10;com.viewscenes.module.systemManager.userLogManager.UserOperateLogQuery&#9;com/viewscenes/module/systemManager/userLogManager/UserOperateLogQuery.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.recplay.MonitorRecPlayIndex&#9;com/viewscenes/module/onlineBusiness/recplay/MonitorRecPlayIndex.swf&#9;true&#10;com.viewscenes.module.dailyBusiness.dataAnalyse.spectrum.SpectrumScan&#9;com/viewscenes/module/dailyBusiness/dataAnalyse/spectrum/SpectrumScan.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.parameterSet.equipmentInitSet&#9;com/viewscenes/module/onlineBusiness/parameterSet/equipmentInitSet.swf&#9;true&#10;com.viewscenes.module.systemManager.dataManager.ExportDataManager&#9;com/viewscenes/module/systemManager/dataManager/ExportDataManager.swf&#9;true&#10;com.viewscenes.module.systemTopology.map_navigate.MapWindow&#9;com/viewscenes/module/systemTopology/map_navigate/MapWindow.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.dataCallback.qualityDataCallback&#9;com/viewscenes/module/onlineBusiness/dataCallback/qualityDataCallback.swf&#9;true&#10;com.viewscenes.module.dailyBusiness.alarmHandler.AlarmHandler&#9;com/viewscenes/module/dailyBusiness/alarmHandler/AlarmHandler.swf&#9;true&#10;com.viewscenes.module.dailyBusiness.QueryData.Spectrum_Query&#9;com/viewscenes/module/dailyBusiness/QueryData/Spectrum_Query.swf&#9;true&#10;com.viewscenes.module.systemManager.user.UserModule&#9;com/viewscenes/module/systemManager/user/UserModule.swf&#9;true&#10;com.viewscenes.module.dailyBusiness.QueryData.Freq_Query&#9;com/viewscenes/module/dailyBusiness/QueryData/Freq_Query.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.onlineListen.OnlineListenIndex&#9;com/viewscenes/module/onlineBusiness/onlineListen/OnlineListenIndex.swf&#9;true&#10;com.viewscenes.module.systemTopology.index.IndexPage&#9;com/viewscenes/module/systemTopology/index/IndexPage.swf&#9;true&#10;com.viewscenes.module.systemManager.recordRules.RecordRules&#9;com/viewscenes/module/systemManager/recordRules/RecordRules.swf&#9;true&#10;com.viewscenes.module.dailyBusiness.runplanQuery.gjtRunplan&#9;com/viewscenes/module/dailyBusiness/runplanQuery/gjtRunplan.swf&#9;true&#10;com.viewscenes.module.systemTopology.runState.runStateManager&#9;com/viewscenes/module/systemTopology/runState/runStateManager.swf&#9;true&#10;com.viewscenes.module.dailyBusiness.dataAnalyse.quality.QualityScan&#9;com/viewscenes/module/dailyBusiness/dataAnalyse/quality/QualityScan.swf&#9;true&#10;com.viewscenes.module.onlineBusiness.dataCallback.spectrumDataCallback&#9;com/viewscenes/module/onlineBusiness/dataCallback/spectrumDataCallback.swf&#9;true&#10;com.viewscenes.module.systemTopology.runState.runState&#9;com/viewscenes/module/systemTopology/runState/runState.swf&#9;true&#10;com.viewscenes.module.leader.OnlineListenModule&#9;com/viewscenes/module/leader/OnlineListenModule.swf&#9;true&#10;com.viewscenes.module.leader.RealMonitor&#9;com/viewscenes/module/leader/RealMonitor.swf&#9;true&#10;com.viewscenes.module.leader.RecordQueryModule&#9;com/viewscenes/module/leader/RecordQueryModule.swf&#9;true&#10;com.viewscenes.module.systemTopology.map_navigate.MapNavigate&#9;com/viewscenes/module/systemTopology/map_navigate/MapNavigate.swf&#9;true" css-to-compile="$MODULE_DIR$/src/DefaultStyle.css">
+        <dependencies target-player="11.1">
+          <entries>
+            <entry library-id="9161820c-d0bb-43c4-815a-ebdd86758fe6">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="b7865857-b65e-4e77-a492-fecefe31fe30">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="233b9d0f-fac4-4e3e-853d-9051e454a342">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="45c4c3e4-abb8-4c9a-9667-7a02ccacaffa">
+              <dependency linkage="Merged" />
+            </entry>
+          </entries>
+          <sdk name="4.6.0" />
+        </dependencies>
+        <compiler-options>
+          <map>
+            <entry key="compiler.locale" value="en_US" />
+          </map>
+        </compiler-options>
+        <packaging-air-desktop />
+        <packaging-android />
+        <packaging-ios />
+      </configuration>
+      <configuration name="testmodule" main-class="testmodule" output-file="testmodule.swf" output-folder="D:/workspaces/hw3/trunk/hw/monweb" use-html-wrapper="true" wrapper-template-path="$MODULE_DIR$/html-template" css-to-compile="$MODULE_DIR$/src/DefaultStyle.css">
+        <dependencies target-player="11.1">
+          <entries>
+            <entry library-id="b8fe13f8-454f-4f22-970f-95a8ca9520dd">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="e4f5534c-9e99-4c4a-a81f-7d1a9c6b9314">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="e613a87e-473c-4b00-baaf-d36c34db4833">
+              <dependency linkage="Merged" />
+            </entry>
+            <entry library-id="3ce25951-204f-4a16-8069-bb9152738700">
+              <dependency linkage="Merged" />
+            </entry>
+          </entries>
+          <sdk name="4.6.0" />
+        </dependencies>
+        <compiler-options>
+          <map>
+            <entry key="compiler.locale" value="en_US" />
+          </map>
+        </compiler-options>
+        <packaging-air-desktop />
+        <packaging-android />
+        <packaging-ios />
+      </configuration>
+    </configurations>
+    <compiler-options />
+  </component>
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+    </content>
+    <orderEntry type="jdk" jdkName="4.6.0" jdkType="Flex SDK Type (new)" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="9161820c-d0bb-43c4-815a-ebdd86758fe6" />
+        <CLASSES>
+          <root url="file://$MODULE_DIR$/libs" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+        <jarDirectory url="file://$MODULE_DIR$/libs" recursive="false" />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="b7865857-b65e-4e77-a492-fecefe31fe30" />
+        <CLASSES>
+          <root url="file://C:/Program Files/Adobe/Adobe Flash Builder 4.7 (64 Bit)/eclipse/plugins/com.adobe.flexbuilder.flexunit_4.7.0.349722/flexunitframework/libs/version4libs/Common" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+        <jarDirectory url="file://C:/Program Files/Adobe/Adobe Flash Builder 4.7 (64 Bit)/eclipse/plugins/com.adobe.flexbuilder.flexunit_4.7.0.349722/flexunitframework/libs/version4libs/Common" recursive="false" />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="233b9d0f-fac4-4e3e-853d-9051e454a342" />
+        <CLASSES>
+          <root url="file://C:/Program Files/Adobe/Adobe Flash Builder 4.7 (64 Bit)/eclipse/plugins/com.adobe.flexbuilder.flexunit_4.7.0.349722/flexunitframework/libs/version4libs/FlexProject" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+        <jarDirectory url="file://C:/Program Files/Adobe/Adobe Flash Builder 4.7 (64 Bit)/eclipse/plugins/com.adobe.flexbuilder.flexunit_4.7.0.349722/flexunitframework/libs/version4libs/FlexProject" recursive="false" />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="45c4c3e4-abb8-4c9a-9667-7a02ccacaffa" />
+        <CLASSES>
+          <root url="file://C:/Program Files/Adobe/Adobe Flash Builder 4.7 (64 Bit)/eclipse/plugins/com.adobe.flexbuilder.flexunit_4.7.0.349722/flexunitframework/libs/version4libs/FlexProject_Extended" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+        <jarDirectory url="file://C:/Program Files/Adobe/Adobe Flash Builder 4.7 (64 Bit)/eclipse/plugins/com.adobe.flexbuilder.flexunit_4.7.0.349722/flexunitframework/libs/version4libs/FlexProject_Extended" recursive="false" />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="b8fe13f8-454f-4f22-970f-95a8ca9520dd" />
+        <CLASSES>
+          <root url="file://$MODULE_DIR$/libs" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+        <jarDirectory url="file://$MODULE_DIR$/libs" recursive="false" />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="e4f5534c-9e99-4c4a-a81f-7d1a9c6b9314" />
+        <CLASSES>
+          <root url="file://C:/Program Files/Adobe/Adobe Flash Builder 4.7 (64 Bit)/eclipse/plugins/com.adobe.flexbuilder.flexunit_4.7.0.349722/flexunitframework/libs/version4libs/Common" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+        <jarDirectory url="file://C:/Program Files/Adobe/Adobe Flash Builder 4.7 (64 Bit)/eclipse/plugins/com.adobe.flexbuilder.flexunit_4.7.0.349722/flexunitframework/libs/version4libs/Common" recursive="false" />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="e613a87e-473c-4b00-baaf-d36c34db4833" />
+        <CLASSES>
+          <root url="file://C:/Program Files/Adobe/Adobe Flash Builder 4.7 (64 Bit)/eclipse/plugins/com.adobe.flexbuilder.flexunit_4.7.0.349722/flexunitframework/libs/version4libs/FlexProject" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+        <jarDirectory url="file://C:/Program Files/Adobe/Adobe Flash Builder 4.7 (64 Bit)/eclipse/plugins/com.adobe.flexbuilder.flexunit_4.7.0.349722/flexunitframework/libs/version4libs/FlexProject" recursive="false" />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library type="flex">
+        <properties id="3ce25951-204f-4a16-8069-bb9152738700" />
+        <CLASSES>
+          <root url="file://C:/Program Files/Adobe/Adobe Flash Builder 4.7 (64 Bit)/eclipse/plugins/com.adobe.flexbuilder.flexunit_4.7.0.349722/flexunitframework/libs/version4libs/FlexProject_Extended" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+        <jarDirectory url="file://C:/Program Files/Adobe/Adobe Flash Builder 4.7 (64 Bit)/eclipse/plugins/com.adobe.flexbuilder.flexunit_4.7.0.349722/flexunitframework/libs/version4libs/FlexProject_Extended" recursive="false" />
+      </library>
+    </orderEntry>
+  </component>
+</module>

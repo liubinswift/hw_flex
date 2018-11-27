@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+		  creationComplete="init();" xmlns:utils="com.viewscenes.utils.*" xmlns:layout="com.morcha4.ui.contaners.layout.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<!--
+	
+	打分页面
+	
+	-->
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.util.RendererUtil;
+			import com.viewscenes.beans.ASRResBean;
+			import com.viewscenes.beans.RadioMarkZstViewBean;
+			import com.viewscenes.beans.pub.ResHeadendBean;
+			import com.viewscenes.beans.runplan.GJTLDRunplanBean;
+			import com.viewscenes.beans.runplan.GJTRunplanBean;
+			import com.viewscenes.beans.runplan.WGTRunplanBean;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.comp.MM;
+			import com.viewscenes.utils.StringTool;
+			import com.viewscenes.utils.timecomp.DateUtil;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			
+			//父对象
+			public var myParent:OnlineListenIndex = null;
+			
+			//打分列表
+			[Bindable]
+			private var markArray:ArrayCollection = new ArrayCollection;
+			
+			//同邻频
+			[Bindable]
+			private var tlp:ArrayCollection = new ArrayCollection([{label:"无",data:"0"},{label:"同频",data:"1"},{label:"邻频",data:"2"}]);
+			
+			//选中的要删除的打分数据
+			[Bindable]
+			private var radioMarkzstViewBean:RadioMarkZstViewBean = null;
+			
+			//语音识别的结果
+			[Bindable]
+			private var asrResBean:ASRResBean = null;
+			
+			private function init():void{
+				//				getMarkList();
+			}
+			
+			/**
+			 * 
+			 * 打分列表
+			 * */
+			private function getMarkList():void{
+				var obj:Object = new Object;
+				//				obj.headCode = 
+				obj.markType = "1";
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.onlineListen.MarkService","getMarkList",obj,getMarkListBack,DataManager.showErrorMessageBack));
+			}
+			
+			
+			private function getMarkListBack(arr:ArrayCollection):void{
+				markArray.removeAll();
+				markArray = arr;
+			}
+			
+			
+			private function delConfirm(obj:Object):void{
+				radioMarkzstViewBean = obj.data as RadioMarkZstViewBean;
+//				Alert.okLabel = "确定";
+//				Alert.cancelLabel = "取消";
+//				Alert.show("确定删除打分数据？",null,Alert.OK|Alert.CANCEL,null,delMark);
+				MM.show("确定删除打分数据？","","",delMark,true,null,null,-1,this.top);
+			}
+			
+			/**
+			 * 
+			 * 删除打分
+			 * */
+			private function delMark():void{
+//				if(evt.detail==Alert.OK){  
+					RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.onlineListen.MarkService","delMark",radioMarkzstViewBean,delMarkBack,DataManager.showErrorMessageBack));
+					radioMarkzstViewBean = null;
+//				}
+			}
+			
+			private function delMarkBack(str:String):void{
+				MM.show(str,"","",null,false,null,null,-1,this.top);
+				getMarkList();
+			}
+			
+			
+			/**
+			 * 
+			 * 检查打分
+			 * */
+			private function checkMark():Boolean{
+				
+				if (mark_s.text == "" || mark_s.text == "0"){
+					MM.show("分值S不能为空或0","","",null,false,null,null,-1,this.top);
+					return false;
+				}else if (mark_i.text == "" || mark_i.text == "0"){
+					MM.show("分值I不能为空或0","","",null,false,null,null,-1,this.top);
+					return false;
+				}else if (mark_o.text == "" || mark_o.text == "0"){
+					MM.show("分值O不能为空或0","","",null,false,null,null,-1,this.top);
+					return false;
+				}
+				
+				return true;
+			}
+			
+			
+			
+			
+			/**
+			 * 
+			 * 打分
+			 * */
+			private function setMark():void{
+				var markBean:RadioMarkZstViewBean = new RadioMarkZstViewBean;
+				
+				
+				if (checkMark() == true){
+					
+					var headendBean:ResHeadendBean = this.myParent.mediaplayer.getPlayHeadend();
+					//用运行图进行播放的节目
+					if (this.myParent.mediaplayer.getPlayType() == 0){
+						
+						if (headendBean == null){
+							MM.show("当前没有选择正在播放节目的站点","","",null,false,null,null,-1,this.top);
+							return;
+						}
+						
+						var runplanObj:Object = this.myParent.mediaplayer.getPlayRunplanObj();
+						
+						if (runplanObj == null){
+							MM.show("当前没有选择正在播放节目的运行图","","",null,false,null,null,-1,this.top);
+							return;
+						}
+						
+						if (runplanObj.type == "1"){
+							var gtjBean:GJTRunplanBean = runplanObj.data as GJTRunplanBean;
+							
+							markBean.runplan_id = gtjBean.runplan_id;
+							markBean.station_id = gtjBean.station_id;
+							markBean.station_name = gtjBean.station_name;
+							//							markBean.language_name = gtjBean.language;
+							markBean.frequency = gtjBean.freq;
+							
+						}else if (runplanObj.type == "2"){
+							var gjtldBean:GJTLDRunplanBean = runplanObj.data as GJTLDRunplanBean;
+							
+							markBean.runplan_id = gjtldBean.runplan_id;
+							//							markBean.language_name = gjtldBean.language;
+							markBean.frequency = gjtldBean.freq;
+							
+						}else if (runplanObj.type == "3"){
+							var wgtBean:WGTRunplanBean = runplanObj.data as WGTRunplanBean;
+							
+							markBean.runplan_id = wgtBean.runplan_id;
+							markBean.station_id = wgtBean.station_id;
+							markBean.station_name = gtjBean.station_name;
+							//							markBean.language_name = wgtBean.language;
+							markBean.frequency = wgtBean.freq;
+						}
+						
+						//手动输入频率播放节目	
+					}else{
+						
+						var freq:String = this.myParent.mediaplayer.getPlayFreq();
+						if (freq == ""){
+							MM.show("当前没有正在播放节目的频率","","",null,false,null,null,-1,this.top);
+							return;
+						}
+						markBean.frequency = freq;
+					}
+					
+					markBean.mark_user = DataManager.user.userName;
+					markBean.head_code = headendBean.code;
+					
+					markBean.equ_code = this.myParent.mediaplayer.getPlayEquCode();
+					
+					
+					markBean.counti = mark_i.text;
+					markBean.counto = mark_o.text;
+					markBean.counts = mark_s.text;
+					markBean.description = getDesc();
+					markBean.mark_type = "1";//实时
+					markBean.remark = remark.text;
+					
+					var sDate:String = DateUtil.date2str(new Date);
+					var dDate:Date = DateUtil.addHours(new Date(),1);
+					
+					var unit:String = sDate.substr(11,2)+":00:00-"+ DateUtil.date2str(dDate).substr(11,2)+":00:00";
+					
+					markBean.unit = unit;
+					markBean.headname = headendBean.shortname;
+					
+					if (asrResBean != null){
+						//					markBean.mark_id = 
+						//					markBean.mark_datetime = 
+						//					markBean.edit_user = 
+						//						var name:String = asrResBean.file;
+						//						name = name.substr(name.lastIndexOf("/")+1,name.length);
+						//						markBean.mark_file_url = asrResBean.file;
+						//						markBean.file_name = name;
+						//					markBean.file_length = 
+						markBean.record_start_time = asrResBean.startTime;
+						markBean.record_end_time = asrResBean.endTime;
+						//					markBean.play_time = 
+						//					markBean.task_id = 
+						//					markBean.task_name = 
+						//					markBean.level_value = 
+						//					markBean.fm_value = 
+						//					markBean.am_value = 
+						//					markBean.offeset_value =
+						
+						
+						
+						markBean.asr_type = asrResBean.type;
+						markBean.result_type = asrResBean.timePeriodType;
+						markBean.status = asrResBean.status;
+						markBean.wavelen = asrResBean.wavelen;
+						markBean.musicratio = asrResBean.musicratio;
+						markBean.noiseratio = asrResBean.musicratio;
+						markBean.speechlen = asrResBean.speechlen;
+						markBean.totalcm = asrResBean.totalcm;
+						markBean.audibilityscore = asrResBean.audibilityScore;
+						markBean.audibilityconfidence = asrResBean.audibilityConfidence;
+						markBean.channelname = asrResBean.channelName;
+						markBean.channelnameconfidence = asrResBean.channelNameConfidence;
+						markBean.programname = asrResBean.programName;
+						markBean.programnameconfidence = asrResBean.programNameConfidence;
+						markBean.languagename1 = asrResBean.languageName1;
+						markBean.languagename2 = asrResBean.languageName2;
+						markBean.languagename3 = asrResBean.languageName3;
+						markBean.languagename4 = asrResBean.languageName4;
+						markBean.languagename5 = asrResBean.languageName5;
+						markBean.languageconfidence1 = asrResBean.languageConfidence1;
+						markBean.languageconfidence2 = asrResBean.languageConfidence2;
+						markBean.languageconfidence3 = asrResBean.languageConfidence3;
+						markBean.languageconfidence4 = asrResBean.languageConfidence4;
+						markBean.languageconfidence5 = asrResBean.languageConfidence5;
+					}
+					
+					RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.onlineListen.MarkService","setMark",markBean,setMarkBack,DataManager.showErrorMessageBack));
+				}
+				
+			}
+			
+			private function setMarkBack(str:String):void{
+				asrResBean = null;
+				MM.show(str,"","",null,false,null,null,-1,this.top);
+				getMarkList();
+			}
+			
+			
+			
+			
+			private function mark_keyup(event:KeyboardEvent):void{
+				if (event.currentTarget.id == "mark_s" && mark_s.text != "")
+					mark_i.setFocus();
+				else if (event.currentTarget.id == "mark_i" && mark_i.text != "")
+					mark_o.setFocus();
+				else if (event.currentTarget.id == "mark_o" && mark_o.text != "")
+					cJ.setFocus();
+				
+			}
+			
+			private function descChange(event:Event):void{
+				
+				//				descReset();
+				//				event.currentTarget.selected = true;
+			}
+			
+			private function descReset():void{
+				//				cJ.selected = false;
+				//				cT.selected = false;
+				//				cH.selected = false;
+				//				cBC.selected = false;
+				//				cC.selected = false;
+				//				cHC.selected = false;
+				//				cQ.selected = false;
+			}
+			
+			private function getDesc():String{
+				var desc:String = "";
+				if (cJ.selected) desc += "J,";
+				if (cT.selected) desc += "T,";
+				if (cH.selected)  desc += "H,";
+				if (cBC.selected) desc += "B.C,";
+				//				if (cC.selected) desc += "C,";
+				if (cHC.selected) desc += "HC,";
+				if (cQ.selected) desc += "Q";
+				
+				if (desc.substr(desc.length-1,desc.length)==",")
+					desc = desc.substr(0,desc.length-1);
+				return desc;
+			}
+			
+			
+			/**
+			 * 为外部提供设置语音识别结果接口
+			 * */
+			public function setASRResult(asrResBean:ASRResBean):void{
+				this.asrResBean = asrResBean;
+			}
+			
+			private function markTypeLabel(item:Object,gc:GridColumn):String{
+				if (item.mark_type=="1")
+					return "实时";
+				else
+					return "录音";
+			}
+			
+		]]>
+	</fx:Script>
+	
+	
+	<s:VGroup id="runplan" width="100%" height="100%">
+		
+		<s:VGroup id="selector" width="100%" height="100%">
+			<s:BorderContainer width="100%"  height="28" backgroundColor="0xffffff" verticalCenter="middle" >
+				<s:layout>
+					<s:HorizontalLayout verticalAlign="middle"/>
+				</s:layout>
+				<!--s:HGroup  width="100%"  height="28" verticalAlign="middle"-->	
+				<s:Label text="S" color="0x000000"/>
+				<utils:RegExpTextInput id="mark_s" text="{asrResBean.audibilityScore.split(',')[0]}" width="40" keyUp="mark_keyup(event)" maxChars="1" tabIndex="1" regex="/^[0-5]\d*$/" />
+				<!--s:Label text="/" color="0x000000"/-->
+				<s:Label text="I" color="0x000000"/>
+				<utils:RegExpTextInput id="mark_i" text="{asrResBean.audibilityScore.split(',')[1]}" width="40" keyUp="mark_keyup(event)" maxChars="1" tabIndex="2" regex="/^[0-5]\d*$/" />
+				<!--s:Label text="/" color="0x000000"/-->
+				<s:Label text="O" color="0x000000"/>
+				<utils:RegExpTextInput id="mark_o" text="{asrResBean.audibilityScore.split(',')[2]}" width="40" keyUp="mark_keyup(event)" maxChars="1" tabIndex="3" regex="/^[0-5]\d*$/" />
+				
+				
+				<s:Label text="干扰类型" color="0x000000"/>
+				<s:CheckBox id="cJ" label="J" change="descChange(event)" color="0x000000"/>
+				<s:CheckBox id="cT" label="T" change="descChange(event)" color="0x000000"/>
+				<s:CheckBox id="cH" label="H" change="descChange(event)" color="0x000000"/>
+				<s:CheckBox id="cBC" label="B.C" change="descChange(event)" color="0x000000"/>
+				<!--s:CheckBox id="cC" label="C" change="descChange(event)" color="0x000000"/-->
+				<s:CheckBox id="cHC" label="HC" change="descChange(event)" color="0x000000"/>
+				<s:CheckBox id="cQ" label="Q" change="descChange(event)" color="0x000000"/>
+				
+				
+				<s:Spacer width="5"/>
+				
+				<s:Label text="同领频:" color="0x000000"/>
+				<s:DropDownList dataProvider="{tlp}"  width="70" selectedIndex="0"/>
+				
+				<s:Spacer width="10"/>
+				
+				<s:Label text="备注:" color="0x000000"/><s:TextInput id="remark"  width="120"/>
+				
+				<s:Button buttonMode="true" label="打分" click="setMark();"/>
+				<!--/s:HGroup-->	
+			</s:BorderContainer>
+			
+			<s:DataGrid width="100%" height="100%" textAlign="center" dataProvider="{markArray}">
+				<s:columns>
+					<s:ArrayCollection>
+						<s:GridColumn dataField="mark_datetime"  headerText="打分时间" />
+						<s:GridColumn dataField="head_code"  headerText="CODE" />
+						<s:GridColumn dataField="equ_code"  headerText="接收机" />
+						<s:GridColumn dataField="frequency"  headerText="频率" />
+						<s:GridColumn dataField="counts"  headerText="S" />
+						<s:GridColumn dataField="counti"  headerText="I" />
+						<s:GridColumn dataField="counto"  headerText="O" />
+						<!--s:GridColumn dataField="description"  headerText="分数" /-->
+						<s:GridColumn dataField="description"  headerText="干扰类型" />
+						<s:GridColumn dataField="mark_type"  headerText="打分类型" labelFunction="markTypeLabel"/>
+						<s:GridColumn dataField="unit"  headerText="单元" />
+						<s:GridColumn dataField="languageName1"  headerText="语言" />
+						<s:GridColumn headerText="删除"
+									  itemRenderer="{RendererUtil.getButtonRenderer('删除',delConfirm)}"/>
+					</s:ArrayCollection>
+				</s:columns>
+			</s:DataGrid>
+			
+		</s:VGroup>
+	</s:VGroup>
+	
+</s:VGroup>

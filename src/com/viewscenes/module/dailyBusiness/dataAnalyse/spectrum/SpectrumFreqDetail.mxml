@@ -1,0 +1,512 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" xmlns:player="com.viewscenes.utils.player.*" xmlns:advancedComboBox="com.morcha4.ui.advancedComboBox.*" xmlns:utils="com.viewscenes.utils.*" xmlns:flipBar="com.viewscenes.utils.flipBar.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<player:Player id="player" width="100%" height="80"/>
+	<s:HGroup width="100%" paddingLeft="5" horizontalAlign="left" verticalAlign="middle">
+		<s:Label text="站点" id="oheadend"/>
+	</s:HGroup>
+	<s:VGroup width="100%" id="yaokong" verticalAlign="middle" paddingLeft="5">
+		<s:HGroup width="100%" verticalAlign="middle">
+			<s:Label text="台名"/>
+			<!--advancedComboBox:DropDownListSet id="station" dataProvider="{DataManager.stationBeanAll}" selectedIndex="0"  width="90" labelField="name"/-->
+			<s:TextInput id="station" >	</s:TextInput>
+			<s:Label text="  归属国家"/>
+			<s:TextInput id="country" >	</s:TextInput>
+			<!--advancedComboBox:DropDownListSet id="country" dataProvider="{countryArr}" selectedIndex="0" labelField="contry"/-->
+		</s:HGroup>
+		<s:HGroup width="100%" verticalAlign="middle">
+			<s:Label text="语言"  fontWeight="bold"/>
+			<advancedComboBox:DropDownListSet id="asrLanguage" selectedIndex="0" dataProvider="{lanaguageArr}" labelField="language_name"  change="asrLanChange(event)"/>
+			<s:Label text="语言置信度"  fontWeight="bold"/>
+			<advancedComboBox:DropDownListSet id="asrLanguageConfidence"  selectedIndex="0"  change="asrLanChange(event)"/>
+			<s:Button buttonMode="true" label="语音识别" click="sendCmdASRClient();"/>
+		</s:HGroup>
+		
+	</s:VGroup>
+	<s:HGroup width="100%" verticalAlign="middle" gap="0">
+		<s:Label text="可听度："   fontWeight="bold"/>
+		<!--s:TextInput id="asrAudibilityScore" width="65" text="{asrResBean.audibilityScore}" /-->
+		<s:Label text="S"/>
+		<utils:RegExpTextInput id="mark_s" width="40" keyUp="mark_keyup(event)" maxChars="1" tabIndex="1" regex="/^[0-5]\d*$/" />
+		<s:Label text="/ I"/>
+		<utils:RegExpTextInput id="mark_i" width="40" keyUp="mark_keyup(event)" maxChars="1" tabIndex="2" regex="/^[0-5]\d*$/" />
+		<s:Label text="/ O"/>
+		<utils:RegExpTextInput id="mark_o" width="40" keyUp="mark_keyup(event)" maxChars="1" tabIndex="3" regex="/^[0-5]\d*$/" />
+	</s:HGroup>
+	<s:HGroup width="100%" id="caiji" verticalAlign="middle">
+		<s:Label text="有无信号"/>
+		<advancedComboBox:DropDownListSet  dataProvider="{isPlayArr}" selectedIndex="0" id="is_play"/>
+	</s:HGroup>
+	<s:HGroup width="100%" paddingLeft="5" horizontalAlign="left" verticalAlign="middle">
+		<s:ToggleButton  id="recBtn" click="realRecord()" width="70" height="21" styleName="record" color="0x000000"/>
+		<s:Button buttonMode="true" label="播放录音文件" id="playRecord" enabled="{lastRecordUrl != ''}" click="playRecord_clickHandler(event)"/>
+		<s:Button buttonMode="true" label="保存" click="saveData();"/>
+		<s:Button buttonMode="true" label="关闭" click="closePage();"/>
+	</s:HGroup>
+	<s:VGroup>
+		<s:Group width="100%" height="100%">
+			<s:DataGrid id="datagrid" width="100%"    textAlign="center" height="100%" dataProvider="{querydata}"  showDataTips="true">
+				<s:columns>  
+					<s:ArrayCollection>
+						<s:GridColumn headerText="频率" dataField="freq"  />
+						<s:GridColumn headerText="播音时段" dataField="play_time"  />
+						<s:GridColumn headerText="分数" dataField="mark" />
+					</s:ArrayCollection>
+				</s:columns>
+			</s:DataGrid>
+			<s:Label text="正在查询，请稍候..."   fontSize="12" textAlign="center" color="0x000000" id="clew_label" y="{datagrid.columnHeaderGroup.height+10}" width="100%" visible="false" includeInLayout="false" />				
+			
+		</s:Group>
+		
+		<flipBar:PageBar width="100%" height="20" id="pagebar" rowConutOfPage="25" totalPageQuery="4" />
+		
+		
+	</s:VGroup>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.viewscenes.beans.ASRResBean;
+			import com.viewscenes.beans.RadioStreamResultBean;
+			import com.viewscenes.beans.RealtimeUrlCmdBean;
+			import com.viewscenes.beans.pub.ResHeadendBean;
+			import com.viewscenes.beans.spectrum.SpectrumStatBean;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.utils.StringTool;
+			import com.viewscenes.utils.timecomp.DateUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			
+			/**
+			 * 时段
+			 */
+			public var currPlaytime:String = "";
+			/**
+			 * 当前正在播放的频率
+			 */
+			public var currFreq:String = "";
+			/**
+			 * 当前正在播放的站点CODE
+			 */
+			public var currHeadend:ResHeadendBean = new ResHeadendBean();
+			/**
+			 * 当前正在播放的URL
+			 */
+			public var currUrl:String = "";
+			/**
+			 * 最后一次录音文件地址
+			 */
+			public var lastRecordUrl:String = "";
+			/**
+			 * 是否为实时播放
+			 */
+			public var isRealPlay:Boolean = true;
+			private var urlCmdBean:RealtimeUrlCmdBean = new RealtimeUrlCmdBean();
+			//语音识别回来的结果
+			private var asrResBean:ASRResBean = null;
+			[Bindable] var spectrumStatBean:SpectrumStatBean = new SpectrumStatBean();
+			//语言
+			[Bindable]
+			public var lanaguageArr:ArrayCollection = new ArrayCollection();
+//			//发射台
+//			[Bindable]
+//			public var stationArr:ArrayCollection = new ArrayCollection();
+			//国家
+			[Bindable]
+			public var countryArr:ArrayCollection = new ArrayCollection();
+			
+			[Bindable] var isPlayArr:ArrayCollection = new ArrayCollection([{label:'无播音',data:'0'},{label:'有播音',data:'1'}]);
+			
+			[Bindable]
+			public var querydata:ArrayCollection = new ArrayCollection();
+			
+			private function init():void{
+				
+			}
+			
+			/**
+			 * 
+			 * 为外部提供的只播放节目的方法
+			 */ 
+			public function playAndMarkReal(url:String,freq:String,headend:ResHeadendBean):void{
+				isRealPlay = true;
+				currUrl = url;
+				currFreq = freq;
+				currHeadend = headend;
+				player.setText("正在实时播放频率"+freq);
+				player.playUrl(url);
+				
+				oheadend.text = "站点："+headend.code+"["+headend.shortname+"]["+headend.state_name+"]"
+					+(headend.type_id=="101"?"    类型：采集点":"    类型：遥控站")+"    频率："+freq;
+				if(headend.type_id=="101"){
+					caiji.visible = caiji.includeInLayout = true;
+					yaokong.visible = yaokong.includeInLayout = false;
+				} else if(headend.type_id=="102"){
+					caiji.visible = caiji.includeInLayout = false;
+					yaokong.visible = yaokong.includeInLayout = true;
+				}
+				currPlaytime = DateUtil.getCurrPlayTime();
+			}
+			
+			/**
+			 * 查询查询频谱信息表
+			 */
+			private function querySpectrumStat():void{
+				var bean:SpectrumStatBean = new SpectrumStatBean();
+				bean.head_code = this.currHeadend.code;
+				if(currHeadend.type_id == "102"){
+					if((this.currHeadend.code.lastIndexOf("A")==(this.currHeadend.code.length-1) ||
+						this.currHeadend.code.lastIndexOf("B")==(this.currHeadend.code.length-1))){
+						
+						bean.head_code = this.currHeadend.code.substr(0,this.currHeadend.code.length-1);
+					}
+				}
+				bean.freq = this.currFreq;
+				bean.playtime = this.currPlaytime;
+				bean.input_datetime = DateUtil.date2str(new Date());
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.online.realtimeMonitor.RealtimeQuality",
+					"getSpectrumRealtimeQuery",bean,querySpectrumStatBack,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id);
+				RPCManager.sendCmd(request);
+			}
+			
+			private function querySpectrumStatBack(list:ArrayCollection):void{
+				if(list.length>0){
+					spectrumStatBean = list.getItemAt(0) as SpectrumStatBean;
+//					station.selectedItemValue = ['station_id',spectrumStatBean.station_id];
+//					country.selectedItemValue = ['contry',spectrumStatBean.country];
+					station.text=spectrumStatBean.station_name;
+					country.text=spectrumStatBean.country;
+					asrLanguage.selectedItemValue = ['language_id',spectrumStatBean.language_id];
+					is_play.selectedItemValue = ['data',spectrumStatBean.is_play];
+
+					if(spectrumStatBean.mark != ""){
+						mark_s.text = spectrumStatBean.mark.split(',')[0];
+						mark_i.text = spectrumStatBean.mark.split(',')[1];
+						mark_o.text = spectrumStatBean.mark.split(',')[2];
+					}
+					
+				}
+				querySpectrumInfo();
+			}
+			/**
+			 * 
+			 *下发录音指令 
+			 */
+			private function realRecord():void{
+				
+				recBtn.selected == true?startRecord():stopRecord();
+				
+			}
+			
+			
+			/**
+			 * 开始录音
+			 */ 
+			private function startRecord():void{
+				var obj:Object = new Object;
+				
+				if (this.currUrl == null || this.currUrl == ""){
+					DataManager.showErrorMessage("当前没有可录音的节目");
+					recBtn.selected = false;
+					return ;
+				}
+				
+				var equCode:String = "";
+				if (currUrl.indexOf("9998")>0){
+					equCode = "R1";
+				}else if (currUrl.indexOf("9997")>0){
+					equCode = "R2";
+				}
+				
+				this.urlCmdBean.equCode = equCode;
+				this.urlCmdBean.freq = currFreq;
+				this.urlCmdBean.code = currHeadend.code;
+				obj.urlCmdBean = this.urlCmdBean;
+				obj.url = this.currUrl;
+				obj.cmd = "start";
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.onlineListen.OnlineService","realRecord",obj,realRecordBack,DataManager.showErrorMessageBack));
+			}
+			
+			/**
+			 * 停止录音
+			 * 只需要改变按钮为停止状态即可，
+			 * 真正的停止操作在播放器进行停止时已完成
+			 */ 
+			private function stopRecord():void{
+				
+				var obj:Object = new Object;
+				recBtn.selected = false;
+				if (this.currUrl == null || this.currUrl == ""){
+					
+					return ;
+				}
+				
+				obj.urlCmdBean = this.urlCmdBean;
+				obj.url = this.currUrl;
+				obj.cmd = "stop";
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.onlineListen.OnlineService","realRecord",obj,stopRecordBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function realRecordBack(msg:String):void{
+				lastRecordUrl = "";
+				recBtn.selected == !recBtn.selected;
+				if (msg != "")	
+					DataManager.showErrorMessage(msg);
+			}
+			private function stopRecordBack(msg:String):void{
+				
+				recBtn.selected == !recBtn.selected;
+				if(msg.indexOf("录音文件地址:")>-1){
+					lastRecordUrl = msg.split("录音文件地址:")[1];
+				}
+				if (msg != "")	
+					DataManager.showErrorMessage(msg);
+			}
+			
+			/**
+			 * 播放最后一次录音文件
+			 */
+			protected function playRecord_clickHandler(event:MouseEvent):void
+			{
+				if(player.pb.status != "stop"){
+					player.stop();
+				}
+				isRealPlay = false;
+				player.setText("正在播放录音文件"+lastRecordUrl);
+				player.playUrl(lastRecordUrl);
+			}
+			
+			/**
+			 * 关闭本页
+			 */
+			private function closePage():void{
+				if(player.pb.status != "stop"){
+					player.stop();
+				}
+				this.visible = this.includeInLayout = false;
+			}
+			
+			/**
+			 * 语音识别，语言改变方法
+			 */ 
+			private function asrLanChange(event:Event):void{
+				asrLanguageConfidence.selectedIndex = event.currentTarget.selectedIndex;
+			}
+			
+			
+			private function setAsrResValues(asrResBean:ASRResBean):void{
+				this.asrResBean = asrResBean;
+				
+				
+				mark_s.text = asrResBean.audibilityScore.split(',')[0];
+				mark_i.text = asrResBean.audibilityScore.split(',')[1];
+				mark_o.text = asrResBean.audibilityScore.split(',')[2];
+				
+//				asrTotalCM.text = asrResBean.totalcm;
+//				asrStatus.text = asrResBean.status;
+//				asrMusicRatio.text = asrResBean.musicratio;
+//				asrNoiseRatio.text = asrResBean.noiseratio;
+//				asrSpeechLen.text = asrResBean.speechlen;
+//				asrAudibilityScore.text = asrResBean.audibilityScore;
+//				asrAudibilityConfidence.text = asrResBean.audibilityConfidence;
+//				asrChannelName.text = asrResBean.channelName;
+//				asrChannelNameConfidence.text = asrResBean.channelNameConfidence;
+//				asrProgramName.text = asrResBean.programName;
+//				asrProgramNameConfidence.text = asrResBean.programNameConfidence;
+				
+				var lanArr:ArrayCollection = new ArrayCollection();
+				var lanCArr:ArrayCollection = new ArrayCollection();
+				lanArr.addItem({language_name:asrResBean.languageName1,language_id:asrResBean.languageName1});
+				lanArr.addItem({language_name:asrResBean.languageName2,language_id:asrResBean.languageName2});
+				lanArr.addItem({language_name:asrResBean.languageName3,language_id:asrResBean.languageName3});
+				lanArr.addItem({language_name:asrResBean.languageName4,language_id:asrResBean.languageName4});
+				lanArr.addItem({language_name:asrResBean.languageName5,language_id:asrResBean.languageName5});
+				
+				lanCArr.addItem({label:asrResBean.languageConfidence1,data:asrResBean.languageConfidence1});
+				lanCArr.addItem({label:asrResBean.languageConfidence2,data:asrResBean.languageConfidence2});
+				lanCArr.addItem({label:asrResBean.languageConfidence3,data:asrResBean.languageConfidence3});
+				lanCArr.addItem({label:asrResBean.languageConfidence4,data:asrResBean.languageConfidence4});
+				lanCArr.addItem({label:asrResBean.languageConfidence5,data:asrResBean.languageConfidence5});
+//				asrLanguage.dataProvider = lanArr;
+				lanaguageArr = lanArr;
+				asrLanguageConfidence.dataProvider = lanCArr;
+
+				spectrumStatBean.mark = asrResBean.audibilityScore;
+				spectrumStatBean.is_play = (asrResBean.status=='停播'?'0':'1');
+				is_play.selectedItemValue = ['data',spectrumStatBean.is_play];
+			}
+			
+			private function mark_keyup(event:KeyboardEvent):void{
+				if (event.currentTarget.id == "mark_s" && mark_s.text != "")
+					mark_i.setFocus();
+				else if (event.currentTarget.id == "mark_i" && mark_i.text != "")
+					mark_o.setFocus();
+//				else if (event.currentTarget.id == "mark_o" && mark_o.text != "")
+//					cJ.setFocus();
+			}
+			
+			
+			private function sendCmdASRClient():void{
+				var obj:Object = new Object;
+				obj.url = this.currUrl;
+				obj.headend = this.currHeadend;
+				obj.freq = this.currFreq;
+				
+				obj.collectChannel = "";
+				obj.language = "";
+				
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.onlineListen.OnlineService","sendCmdASRClient",obj,sendCmdASRClientBack,DataManager.showErrorMessageBack));
+			}
+			
+			
+			private function sendCmdASRClientBack(asrResBean:ASRResBean):void{
+				
+				
+				if (asrResBean.taskStatus == "204"){
+					DataManager.showErrorMessage("语音识别系统返回的错误消息:\n"+asrResBean.errorMessage);
+					return;
+				}
+				this.setAsrResValues(asrResBean);
+				
+				currPlaytime = DateUtil.getCurrPlayTime();
+				//				this.asrResBean = asrResBean;
+				
+				//				var audibilityscore:String = asrResBean.audibilityScore;
+				//				//可听度分值
+				//				asrAudibilityScore.text = audibilityscore;
+				//				if (audibilityscore.split(',').length>2){
+				//					mark_s.text = audibilityscore.split(',')[0];
+				//					mark_i.text = audibilityscore.split(',')[1];
+				//					mark_o.text = audibilityscore.split(',')[2];
+				//				}
+				//语言
+				//				var lanArr:ArrayCollection  = new ArrayCollection;
+				//语言置信度
+				//				var lanConfArr:ArrayCollection  = new ArrayCollection;
+				//				lanArr.addItem({label:asrResBean.languageName1,data:asrResBean.languageName1});
+				//				lanArr.addItem({label:asrResBean.languageName2,data:asrResBean.languageName2});
+				//				lanArr.addItem({label:asrResBean.languageName3,data:asrResBean.languageName3});
+				//				lanArr.addItem({label:asrResBean.languageName4,data:asrResBean.languageName4});
+				//				lanArr.addItem({label:asrResBean.languageName5,data:asrResBean.languageName5});
+				//				
+				//				lanConfArr.addItem({label:asrResBean.languageConfidence1,data:asrResBean.languageConfidence1});
+				//				lanConfArr.addItem({label:asrResBean.languageConfidence2,data:asrResBean.languageConfidence2});
+				//				lanConfArr.addItem({label:asrResBean.languageConfidence3,data:asrResBean.languageConfidence3});
+				//				lanConfArr.addItem({label:asrResBean.languageConfidence4,data:asrResBean.languageConfidence3});
+				//				lanConfArr.addItem({label:asrResBean.languageConfidence5,data:asrResBean.languageConfidence5});
+				//				
+				//				asrLanguage.dataProvider =lanArr;
+				//				asrLanguageConfidence.dataProvider = lanConfArr;
+			}
+			
+			/**
+			 * 保存（新增、修改）
+			 */
+			private function saveData():void{
+			
+				var method:String = "addSpectrumStat";
+				if(spectrumStatBean.id != ""){
+					method = "updateSpectrumStat";
+				} else{
+					spectrumStatBean.head_name = spectrumStatBean.head_name
+					spectrumStatBean.head_code = currHeadend.code;
+					spectrumStatBean.headtype = currHeadend.type_id;
+				}
+				
+				if(currHeadend.type_id == "102"){
+					if((spectrumStatBean.head_name.lastIndexOf("A")==(spectrumStatBean.head_name.length-1) ||
+						spectrumStatBean.head_name.lastIndexOf("B")==(spectrumStatBean.head_name.length-1))){
+						
+						spectrumStatBean.head_name = spectrumStatBean.head_name.substr(0,spectrumStatBean.head_name.length-1);
+						spectrumStatBean.head_code = spectrumStatBean.head_code.substr(0,spectrumStatBean.head_code.length-1);
+					}
+					//if(country.selectedItem == null){
+						if(country.text.length==0){
+						DataManager.showErrorMessage("请选择国家！");
+						return;
+					}
+					//if(station.selectedItem == null || station.selectedItem.name == ""){
+					if(station.text.length==0){
+					
+						DataManager.showErrorMessage("请选择台名！");
+						return;
+					}
+					if(asrLanguage.selectedItem == null){
+						DataManager.showErrorMessage("请选择语言！");
+						return;
+					}
+					try{
+					//spectrumStatBean.country = country.selectedItem.contry;
+					//spectrumStatBean.station_id = station.selectedItem.station_id;
+					//spectrumStatBean.station_name = station.selectedItem.name;
+						spectrumStatBean.country=country.text;
+						spectrumStatBean.station_name=station.text;
+						spectrumStatBean.language_id = asrLanguage.selectedItem.language_id;
+						spectrumStatBean.language_name = asrLanguage.selectedItem.language_name;
+					} catch(e:Error){
+						Alert.show(e.name);
+					}
+				}
+				
+				spectrumStatBean.is_play = is_play.selectedItem.data;
+				if(mark_s.text == "" || mark_i.text=="" || mark_o.text==""){
+					DataManager.showErrorMessage("请输入分值！");
+					return;
+				}
+				spectrumStatBean.mark = mark_s.text+","+mark_i.text+","+mark_o.text;
+				spectrumStatBean.playtime = currPlaytime;
+				spectrumStatBean.input_datetime = DateUtil.date2str(new Date());
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.realtimeMonitor.RealSpectrum",method,spectrumStatBean,saveDataBack,DataManager.showErrorMessageBack));
+			}
+			
+			
+			private function saveDataBack(resStr:String):void{
+				DataManager.showErrorMessage("保存成功");
+				closePage();
+			}
+			
+			/**
+			 * 查询频谱信息  本频和相邻频道（短波相差5kHz、中波相差9kHz或10kHz、调频相差100kHz）24小时内的收测情况
+			 */
+			private function querySpectrumInfo():void{
+				clew_label.text="正在查询，请稍候...";
+				clew_label.visible = clew_label.includeInLayout = true;
+				var obj:Object = new Object();
+				obj.head_code = this.currHeadend.code;
+				if(currHeadend.type_id == "102"){
+					if((this.currHeadend.code.lastIndexOf("A")==(this.currHeadend.code.length-1) ||
+						this.currHeadend.code.lastIndexOf("B")==(this.currHeadend.code.length-1))){
+						
+						obj.head_code = this.currHeadend.code.substr(0,this.currHeadend.code.length-1);
+					}
+				}
+				obj.play_time = this.currPlaytime;
+				obj.freq = this.currFreq;
+				obj.band = StringTool.getBandFromFreq(this.currFreq);
+				querydata.removeAll();
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.realtimeMonitor.RealSpectrum","querySpectrumInfo",obj,querySpectrumInfoBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function querySpectrumInfoBack(arr:ArrayCollection):void{
+				if(arr.length==0){
+					clew_label.text="无查询数据";
+					clew_label.visible = clew_label.includeInLayout = true;
+				} else{
+					clew_label.visible = clew_label.includeInLayout = false;
+					querydata = arr;
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	
+</s:VGroup>

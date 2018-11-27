@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%" xmlns:flipBar="com.viewscenes.utils.flipBar.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.util.RendererUtil;
+			import com.viewscenes.beans.FileQueryResult;
+			import com.viewscenes.beans.FileRetrieveResult;
+			import com.viewscenes.beans.StreamHistoryQueryResult;
+			import com.viewscenes.beans.pub.ResHeadendBean;
+			import com.viewscenes.beans.runplan.RunplanBean;
+			import com.viewscenes.beans.task.Task;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.module.onlineBusiness.recplay.RadioMark;
+			
+			import mx.controls.Alert;
+			
+			public var radioMark:RadioMark;
+			
+			//未获取的录音文件列表
+			[Bindable]
+			private var recFileList:ArrayCollection = new ArrayCollection;
+			
+			//选中的要获取的录音文件列表
+			[Bindable]
+			private var selectedRecFileList:ArrayCollection = new ArrayCollection;
+			
+			//获取回来的录音文件列表
+			[Bindable]
+			private var retrieveFileList:ArrayCollection = new ArrayCollection;
+			
+			//当前正在操作的录音文件
+			[Bindable]
+			private var fileRetriveveResult:FileRetrieveResult = null;
+			
+			//当前正在操作的录音文件
+			[Bindable]
+			private var headendBean:ResHeadendBean = null;
+			
+			/**
+			 * 播放和打分
+			 */ 
+			private function playAndMark(obj:Object):void{
+				
+				fileRetriveveResult = obj.data as FileRetrieveResult;
+				
+				radioMark.play(fileRetriveveResult.url);
+				
+				//				headendBean = DataManager.getHeadendByCode(fileRetriveveResult.headCode);
+				
+				
+				//				var streamHistoryQueryResult:StreamHistoryQueryResult = new StreamHistoryQueryResult;
+				//				
+				//				streamHistoryQueryResult.amModulation = fileRetriveveResult.amModulation;
+				//				streamHistoryQueryResult.band = fileRetriveveResult.band; 
+				//				streamHistoryQueryResult.endDateTime = fileRetriveveResult.endDatetime;
+				//				streamHistoryQueryResult.equCode = fileRetriveveResult.equCode;
+				//				streamHistoryQueryResult.fileName = fileRetriveveResult.fileUrl;
+				//				streamHistoryQueryResult.fmModulation = fileRetriveveResult.fmModulation;
+				//				streamHistoryQueryResult.freq = fileRetriveveResult.freq;
+				//				streamHistoryQueryResult.level = fileRetriveveResult.level;
+				//				streamHistoryQueryResult.offset = fileRetriveveResult.offset;
+				//				streamHistoryQueryResult.startDateTime = fileRetriveveResult.startDatetime;
+				//				streamHistoryQueryResult.url = fileRetriveveResult.fileUrl;
+				//					
+				//				radioMark.playAndMarkRec(streamHistoryQueryResult,headendBean,fileRetriveveResult.task,fileRetriveveResult.runplanBean);
+			}
+			
+			
+			/**
+			 * 全选
+			 */ 
+			private function selectAll(obj:Object):void{
+				var fileQueryResult:FileQueryResult = obj.data as FileQueryResult;
+				if (obj.data.isSelected == "true"){
+					selectedRecFileList.addItem(fileQueryResult);
+				}else{
+					if (selectedRecFileList.contains(fileQueryResult)){
+						var index:int = selectedRecFileList.getItemIndex(fileQueryResult);
+						selectedRecFileList.removeItemAt(index);
+					}
+				}
+			}
+			
+			
+			private function bandLabelFunc(item:Object,gc:GridColumn):String{
+				if (item.band == '0')
+					return "短波"
+				else if (item.band == '1')
+					return "中波";
+				else
+					return "调频";
+			}
+			
+			
+			/**
+			 *为外部提供的返回获取文件的方法 
+			 */
+			public function msgFileRetrieveCmdBack(arr:ArrayCollection):void{
+				retrieveFileList.removeAll();
+				if (arr.length ==0)
+					showTips(true,"无查询结果!");
+				else
+					showTips(false);
+				retrieveFileList = arr;
+				
+				recGrid.visible = false;
+				recGrid.includeInLayout = false;
+				
+				retrieveGrid.visible = true;
+				retrieveGrid.includeInLayout = true;
+			}
+			
+			/**
+			 *为外部提供的设置查询结果的方法 
+			 */
+			public function msgFileQueryCmdBack(arr:ArrayCollection):void{
+				//清空列表
+				recFileList.removeAll();
+				//清空所有选择中的
+				selectedRecFileList.removeAll();
+				if (arr.length==0)
+					showTips(true,"无查询结果");
+				else
+					showTips(false);
+				recFileList = arr;
+				
+				recGrid.visible = true;
+				recGrid.includeInLayout = true;
+				
+				retrieveGrid.visible = false;
+				retrieveGrid.includeInLayout = false;
+			}
+			
+			/**
+			 * 对外部提供已选中的要获取的录音文件的列表
+			 */ 
+			public function getSelectedRecFileList():ArrayCollection{
+				return selectedRecFileList;
+			}
+			
+			/**
+			 * 查询时提示信息
+			 */ 
+			public function showTips(b:Boolean,msg:String=""):void{
+				recFileList.removeAll();
+				retrieveFileList.removeAll();
+				if (b == true){
+					if (recGrid.visible){
+						clew_label.y = recGrid.y+32;
+						clew_label.text = msg;//"正在查询,请稍候...";
+					}else{
+						clew_label.y = retrieveGrid.y+32;
+						clew_label.text = msg;//"正在获取,请稍候...";
+					}
+					clew_label.visible = true;
+					clew_label.includeInLayout = true;
+					
+				}else{
+					clew_label.visible = false
+					clew_label.includeInLayout = false;
+					clew_label.text = "";
+				}
+			}
+			
+			
+		]]>
+	</fx:Script>
+	
+	<s:VGroup width="100%" height="100%" paddingLeft="5" paddingRight="5">
+		<mx:Canvas width="100%" height="100%">
+			<s:DataGrid id="recGrid"  width="100%" textAlign="center" height="100%" dataProvider="{recFileList}" >
+				<s:columns>
+					<s:ArrayCollection>
+						<s:GridColumn headerText="选择" width="45" itemRenderer="{RendererUtil.getCheckBoxRenderer(selectAll)}"/>
+						<s:GridColumn dataField="fileURL"  headerText="文件名称" />
+						<s:GridColumn dataField="size"  headerText="文件大小(KB)" />
+						<s:GridColumn dataField="startDateTime"  headerText="开始时间" />
+						<s:GridColumn dataField="endDateTime"  headerText="结束时间" />
+						<s:GridColumn dataField="band"  headerText="波段" labelFunction="bandLabelFunc"/>
+						<s:GridColumn dataField="freq"  headerText="频点(KHz)" />
+					</s:ArrayCollection>
+				</s:columns>
+			</s:DataGrid>
+			
+			<s:DataGrid id="retrieveGrid"  width="100%" textAlign="center" height="100%" dataProvider="{retrieveFileList}" visible="false" includeInLayout="false">
+				<s:columns>
+					<s:ArrayCollection>
+						<s:GridColumn dataField="startDatetime"  headerText="开始时间" />
+						<s:GridColumn dataField="endDatetime"  headerText="结束时间" />
+						<s:GridColumn dataField="freq"  headerText="频点(KHz)" />
+						<s:GridColumn dataField="band"  headerText="波段" labelFunction="bandLabelFunc"/>
+						<s:GridColumn dataField="level" headerText="电平" />
+						<s:GridColumn dataField="amModulation"  headerText="调幅度" />
+						<s:GridColumn dataField="fmModulation"  headerText="调制度" />
+						<s:GridColumn dataField="offset"  headerText="频偏" />
+						<!--s:GridColumn dataField=""  headerText="分数" />
+						<s:GridColumn dataField="band"  headerText="发射台" />
+						<s:GridColumn dataField="band"  headerText="节目名称" /-->
+						<s:GridColumn headerText="播放" itemRenderer="{RendererUtil.getButtonRenderer('播放',playAndMark)}"/>
+					</s:ArrayCollection>
+				</s:columns>
+			</s:DataGrid>
+			<mx:Label  id="clew_label" y="{retrieveGrid.columnHeaderGroup.height+10}" width="100%" textAlign="center" color="0x000000" visible="false" includeInLayout="false" />
+		</mx:Canvas>
+		<!--分页组件所在地-->
+		<flipBar:PageBar  id="pagebar" rowConutOfPage="20" totalPageQuery="10" height="20"/>
+	</s:VGroup>	
+</s:VGroup>

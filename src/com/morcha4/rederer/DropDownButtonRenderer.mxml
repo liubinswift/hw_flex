@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:GridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					xmlns:s="library://ns.adobe.com/flex/spark" 
+					xmlns:mx="library://ns.adobe.com/flex/mx" clipAndEnableScrolling="true">
+	<fx:Script>
+		<![CDATA[
+			[Bindable]public var l:String="";
+			[Bindable]public var callBack:Function;
+			[Bindable]public var callBackDrop:Function;
+			[Bindable]public var labelField:String;
+			override public function set data(value:Object):void{
+				super.data=value
+				if(value&&labelField){
+					l=value[labelField];
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<s:Button buttonMode="true" label="{l}" id="btn" styleName="renderer" skinClass="com.morcha4.rederer.DropButtonSkin" horizontalCenter="0" verticalCenter="0" color="#000000" click="if(event.localX>btn.width-13){callBackDrop(this);}else{callBack(this);}"/>
+</s:GridItemRenderer>

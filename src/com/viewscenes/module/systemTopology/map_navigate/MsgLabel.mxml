@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="27" 
+		  xmlns:contaners="com.morcha4.ui.contaners.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			[Bindable]
+			private var _status:String;	//报警状态
+			
+			[Bindable]
+			private var _content:String;//信息
+			
+			[Bindable]
+			private var _f:Function;	//处理函数
+			
+			[Bindable]
+			private var _data:Object;	//数据对象
+			
+			[Bindable]
+			private var _handle:Boolean;	//是否处理
+			
+			public function set content(content:String):void{
+				_content = content;
+			}
+			
+			public function set status(status:String):void{
+				_status = status;
+			}
+			
+			public function set f(f:Function):void{
+				_f = f;
+			}
+			
+			public function set data(data:Object):void{
+				_data = data;
+			}
+			
+			
+			public function set handle(handle:Boolean):void{
+				_handle = handle;
+				
+				if (handle == true)
+					img.source = "com/viewscenes/images/module/onlineListen/realMonitor/levelbg.png";
+				else
+					img.source = "com/viewscenes/images/default/global/+.png";
+			}
+		]]>
+	</fx:Script>
+	
+	<contaners:BGAbleContainer width="100%" height="100%" styleName="dataBGImg" id="_attenuationBox">
+		<contaners:layout>
+			<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+		</contaners:layout>
+		<s:Spacer width="10"/>
+		<s:Image id="img" source="com/viewscenes/images/module/onlineListen/realMonitor/levelbg.png" left="20"/>
+		<s:Label text="{_content}" fontWeight="bold" width="100%"  textAlign="center"/>
+		
+		<s:Button buttonMode="true" id="btn" label="查看" click="{_f(_data)}"/>
+	</contaners:BGAbleContainer>
+	
+</s:HGroup>

@@ -1,0 +1,576 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	             xmlns:s="library://ns.adobe.com/flex/spark" 
+	             xmlns:system="com.morcha4.frame.system.*" 
+				 xmlns:mx="library://ns.adobe.com/flex/mx" 
+				 width="100%" height="100%" fontSize="12" creationComplete="initApp();"
+				 xmlns:timecomp="com.viewscenes.utils.timecomp.*" xmlns:DataGrid="mor.DataGrid.*"
+				 xmlns:util="com.viewscenes.utils.*"
+				 xmlns:flipBar="com.viewscenes.utils.flipBar.*"
+				 PAGE_SHOW="basepage1_PAGE_SHOWHandler(event)"
+				 xmlns:global="com.viewscenes.global.*">
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.morcha4.frame.system.EventBus;
+			import com.morcha4.util.RendererUtil;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.utils.timecomp.DateUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+
+			[Bindable]private var alarmArray:ArrayCollection = new ArrayCollection([{label:"指标报警",value:""},{label:"设备报警",value:""}]);
+			[Bindable]private var AlarmStatementArray:ArrayCollection = new ArrayCollection([{label:"全部",value:""},{label:"未解除",value:"0"},{label:"已解除",value:"1"}]);
+			[Bindable]private var HandleStatementArray:ArrayCollection = new ArrayCollection([{label:"全部",value:""},{label:"未处理",value:"0"},{label:"已处理",value:"1"}]);
+			
+			[Bindable]private var selectedCounts:int = 0;  //选择总数
+
+			[Bindable]
+			var qtypevalue:ArrayCollection=new ArrayCollection();
+			[Bindable]
+			var etypevalue:ArrayCollection=new ArrayCollection();
+			[Bindable]private var listQuality:ArrayCollection = new ArrayCollection();
+			[Bindable]private var listEqu:ArrayCollection = new ArrayCollection();
+			var qa_starttime:String="";
+			var qa_endtime:String="";	
+			var ea_starttime:String="";
+			var ea_endtime:String="";
+			public function initApp():void{
+				EventBus.addEventListener("systemtopology",query);//监听系统拓扑发的今日报警事件
+				var tempq:Array = new Array({label:"全部",mode:""},{label:"电平报警",mode:"1"},{label:"调制度报警",mode:"2"},{label:"调幅度报警",mode:"3"});
+				qtypevalue = new ArrayCollection(tempq);
+				var tempq:Array = new Array({label:"全部",mode:""},{label:"供电异常报警",mode:"1"},{label:"接收机异常报警",mode:"2"},{label:"调制度卡报警",mode:"3"},{label:"调幅度卡报警",mode:"4"},{label:"语音压缩卡报警",mode:"5"},{label:"频偏卡报警",mode:"6"},{label:"电池电压低系统关机",mode:"7"},{label:"电视接收机异常",mode:"11"},{label:"视频压缩卡异常",mode:"12"});
+				etypevalue = new ArrayCollection(tempq);
+				var date:String = DateUtil.date2str(new Date(),"date");
+				StartTime_day.text = date+" 00:00:00";
+			}
+			/**
+			 * 查询当天报警
+			 * */
+			private function query(e:AdvancedEvent):void{
+				var obj:Object = new Object();
+				if(e.data.type=="quality"){
+					obj.type="quality";
+					this.Type.selectedIndex=0;
+					data_viewstack.selectedIndex=0;
+				}else {
+					this.Type.selectedIndex=1;
+					data_viewstack.selectedIndex=1;
+					obj.type="equ";
+				}
+				pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.daily.alarmHandler.AlertManage","queryAlarm",obj,ProcessIndex_Alarm,onfault));
+			}
+			private function TypeChange():void  //指标设备报警选择
+			{
+				if(this.Type.selectedItem.label.toString()=="指标报警")
+				{
+					con_clewlabel(clew_label,false);
+					data_viewstack.selectedIndex=0;
+					qtypelist.dataProvider=qtypevalue;
+					if(this.qa_starttime!=""||this.qa_endtime!=""){
+						this.StartTime_day.text = this.qa_starttime;
+						this.EndTime_day.text = this.qa_endtime;
+					}
+					
+				}
+				else if(this.Type.selectedItem.label.toString()=="设备报警")
+				{
+					con_clewlabel(clew_label,false);
+					data_viewstack.selectedIndex=1; 
+					qtypelist.dataProvider=etypevalue;
+					if(this.ea_starttime!=""||this.ea_endtime!=""){
+						this.StartTime_day.text = this.ea_starttime;
+						this.EndTime_day.text = this.ea_endtime;
+					}
+					
+				}
+				
+			}
+			
+			function labFun(item:Object):String{
+				if(item is String) return item.toString()
+				return item.name+"("+item.code+")";
+			}
+
+			private function close(){
+				this.parent.removeChild(this);
+			}
+			
+			private function searchdata():void//主要作用在于初始化
+			{
+				var starttime:String=StartTime_day.text;
+				var endtime:String=EndTime_day.text;
+				
+				if(starttime>endtime)
+				{
+					Alert.show("开始时间不能大于结束时间，请重新输入！");
+					var date:Date=new Date();
+					var date1:Date=new Date();
+					date.setHours(00,00,00);
+					StartTime_day.setDate(date);
+					EndTime_day.setDate(date1);
+					return;
+				}
+				
+				con_clewlabel(clew_label,true,'正在查询，请稍候...');
+				Index_Alarm();
+			}
+			
+			//指标报警
+			private function Index_Alarm():void
+			{
+			
+				this.oQuerybutton.enabled=false;
+				var obj:Object = new Object;
+		
+				var qtype:String=""; 
+				var etype:String="";
+				var alerttab:String="";
+				if(this.Type.selectedItem.label.toString()=="指标报警")
+				{ 
+					qtype=qtypelist.selectedItem.mode;
+					alerttab="quality";
+				}
+				else  
+				{
+					etype=qtypelist.selectedItem.mode;
+					alerttab="equ";
+				}
+				
+			    obj.state=this.ostate.selectedStateCode;
+				obj.headendcode =this.ostate.oStation.getHeadCode;
+				obj.codeAB=this.ostate.oStation.getHeadABCode;
+				obj.receive =this.ostate.oStation.getEquTypeValue;
+				obj.isresumed =this.AlarmStatement.selectedItem.value;
+				obj.ishandled =this.HandleStatement.selectedItem.value;
+				obj.starttime =StartTime_day.text;
+				obj.enddate =EndTime_day.text;
+				obj.qtype =qtype;
+				obj.etype =etype;
+				obj.alerttab =alerttab;
+				
+				pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.daily.alarmHandler.AlertManage","getAlert_ManageList",obj,ProcessIndex_Alarm,onfault));
+
+			}
+			private function ProcessIndex_Alarm(list:ArrayCollection):void{ 
+				this.oQuerybutton.enabled=true;
+				if(this.Type.selectedItem.label.toString()=="指标报警")
+				{
+					for(var i:int=0;i<list.length;i++){
+						var obj:Object = list.getItemAt(i);
+						if(obj.errorindb == "1"){
+							obj.errorindbLable = "异态";
+						} else{
+							obj.errorindbLable = "";
+						}
+						list.setItemAt(obj,i);
+					}
+					con_clewlabel(clew_label,false);
+					this.listQuality=list;
+					
+					listQuality.refresh();
+					if(listQuality.length==0){
+						
+						con_clewlabel(clew_label,true,"无查询数据！");
+					}
+
+				}else if(this.Type.selectedItem.label.toString()=="设备报警"){
+					con_clewlabel(clew_label,false);
+					this.listEqu=list;
+					
+					listEqu.refresh();
+					if(listEqu.length==0){
+						
+						con_clewlabel(clew_label,true,"无查询数据！");
+					}
+				
+				
+				}
+								
+			}
+			
+			public function con_clewlabel(_component:Label,_visible:Boolean,_label:String="")
+			{
+				_component.visible=_visible;
+				_component.includeInLayout=_visible;
+				_component.text=_label;
+			}
+			
+			private function onfault(e:RPCException):void
+			{
+				
+				Alert.show(e.message);
+			}
+			
+
+			//选择点中后执行的方法
+			private function changeSelect(obj:Object):void{
+				if(obj.data.isSelected=="true"){
+					this.selectedCounts=selectedCounts+1;  
+				}else{
+					this.selectedCounts=selectedCounts-1; 
+				}
+			}
+			
+			private function timeFuc(item:Object,gc:GridColumn):String
+			{
+				var happend_time:String="";
+				if(item.is_resume=="1")
+					happend_time="自"+item.alarm_datetime+"至"+item.resume_datetime;
+				else
+					happend_time="自"+item.alarm_datetime+"未解除";
+
+					return happend_time;
+			}
+			
+			private function handleFuc(item:Object,gc:GridColumn):String
+			{
+				var handle_state:String="";
+				if(item.is_handle=="1")
+				{
+					if(item.handle_datetime!="")
+						handle_state="已处理于"+item.handle_datetime;
+					else
+						handle_state="已处理";
+				}
+				else 
+					handle_state="未处理";
+				
+				return handle_state;
+			}
+			
+			private function typeFuc(item:Object,gc:GridColumn):String
+			{
+				var typelable:String="";
+				
+				if(this.Type.selectedItem.label.toString()=="指标报警")
+				{
+					if(item.type=="1")
+						typelable="电平报警";
+					else if(item.type=="2")
+						typelable="调制度报警";
+					else if(item.type=="3")
+						typelable="调幅度报警";
+				}else if(this.Type.selectedItem.label.toString()=="设备报警")
+				{
+					if(item.type=="1")
+						typelable="供电异常报警[UPS]";
+					else if(item.type=="2")
+						typelable="接收机异常报警";
+					else if(item.type=="3")
+						typelable="调制度卡异常报警";
+					else if(item.type=="4")
+						typelable="调幅度卡报警";
+					else if(item.type=="5")
+						typelable="语音压缩卡异常报警";
+					else if(item.type=="6")
+						typelable="频偏卡报警";
+					else if(item.type=="7")
+						typelable="电池电压低系统关机";
+				}
+				return typelable;
+			}
+			
+			
+			/**
+			 * 删除
+			 **/
+			private var dellist:String = "";//删除详细数据id (多个id以逗号分隔)
+			private function comfirmDelete():void{
+				
+				dellist ="";
+				var del_number:Number = 0;
+				if(this.Type.selectedItem.label.toString()=="指标报警")
+				{
+					for(var i:int=IndexDataGrid.dataProvider.length-1;i>=0;i--)
+					{
+						if(IndexDataGrid.dataProvider[i].isSelected=="true")
+						{
+							var alarm_id:String = IndexDataGrid.dataProvider[i].alarm_id;
+							
+							if(del_number==0)
+							{
+								
+								dellist = "'"+alarm_id+"'";
+								
+								
+							} else{
+								dellist += ","+"'"+alarm_id+"'";
+							}
+							del_number++;
+						}
+					}
+				}else if(this.Type.selectedItem.label.toString()=="设备报警")
+				{
+					for(var i:int=DeviceDataGrid.dataProvider.length-1;i>=0;i--)
+					{
+						if(DeviceDataGrid.dataProvider[i].isSelected=="true")
+						{
+							var alarm_id:String = DeviceDataGrid.dataProvider[i].alarm_id;
+							
+							if(del_number==0)
+							{
+								
+								dellist = "'"+alarm_id+"'";
+								
+								
+							} else{
+								dellist += ","+"'"+alarm_id+"'";
+							}
+							del_number++;
+						}
+					}
+				
+				
+				}
+				if(dellist!=""){
+					
+					Alert.show("您确定删除吗?","删除确认",Alert.YES | Alert.NO,this,clickDeleteChoose);
+					
+				}
+				else{
+					Alert.show("请选择要删除的信息","警告");
+					return;
+				}
+			}
+			
+			//选择删除任务
+			private function clickDeleteChoose(event:CloseEvent):void{
+				this.oDelbutton.enabled=false;
+				if(event.detail == Alert.NO)
+					return;
+				deleteDetailData(dellist);
+				
+			}
+			
+			
+			/**
+			 * 删除查询的详细数据
+			 **/
+			public function deleteDetailData(dellist:String):void{
+				
+				var obj:Object = new Object();//在后台删除
+				if(this.Type.selectedItem.label.toString()=="指标报警")
+				{
+					for(var i:int=IndexDataGrid.dataProvider.length-1;i>=0;i--) //在前台删除
+					{
+						if(IndexDataGrid.dataProvider[i].isSelected=="true")
+						{
+							IndexDataGrid.dataProvider.removeItemAt(i);
+							this.selectedCounts=selectedCounts-1;
+						}
+					}
+				   obj.alerttab="quality";
+				}else if(this.Type.selectedItem.label.toString()=="设备报警")
+				{
+					for(var ii:int=DeviceDataGrid.dataProvider.length-1;ii>=0;ii--) //在前台删除
+					{
+						if(DeviceDataGrid.dataProvider[ii].isSelected=="true")
+						{
+							DeviceDataGrid.dataProvider.removeItemAt(ii);
+							this.selectedCounts=selectedCounts-1;
+						}
+					}
+					obj.alerttab="equ";
+				
+				}
+				
+				
+				obj.dellist=dellist;
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.daily.alarmHandler.AlertManage","delAlert_ManageList",
+					obj,_deleteQuality,onfault))
+				
+			}
+			
+			private function _deleteQuality(obj:Object):void{ 
+				this.oDelbutton.enabled=true;
+				searchdata();
+				Alert.show("删除成功");
+				
+			}
+			
+			private function detailQuality(obj:Object):void{
+				openSeeQualityForm(obj.data);
+				
+			}
+			
+			private function openSeeQualityForm(obj:Object):void{
+				
+				var popo:SeeQualityForm = SeeQualityForm(PopUpManager.createPopUp(this,SeeQualityForm,true));
+				
+				popo.setQuality(obj);
+				PopUpManager.centerPopUp(popo);
+				popo.addEventListener("Quality_list_refresh",refreshList);
+			}
+			protected function refreshList(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				searchdata();
+			}
+			
+			private function detailEqu(obj:Object):void{
+				openSeeEquForm(obj.data);
+				
+			}
+			
+			private function openSeeEquForm(obj:Object):void{
+				
+				var popo:SeeEquForm = SeeEquForm(PopUpManager.createPopUp(this,SeeEquForm,true));
+				
+				popo.SeeEqu(obj);
+				PopUpManager.centerPopUp(popo);
+				popo.addEventListener("Equ_list_refresh",refreshList);
+			}
+			
+			protected function basepage1_PAGE_SHOWHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				EndTime_day.setDate(new Date());
+				this.ostate.oStation.setDataProviderNew();
+			}
+			
+			private function auditorAlarm(obj:Object):void
+			{
+               if(obj.data.errorindb == "1"){
+					var popo:AuditQualityForm = AuditQualityForm(PopUpManager.createPopUp(this,AuditQualityForm,true));
+					
+					popo.setObj(obj.data);
+					PopUpManager.centerPopUp(popo);
+					popo.addEventListener("Quality_list_refresh",refreshList);
+			   }
+//				var obj:Object = new Object;
+//				obj.alerttab="quality";
+//				obj.operation="auditor";
+//				obj.auditor=DataManager.user.userName;
+//			
+//				obj.alarm_id=obj12.data.alarm_id;
+//		
+//				obj.head_code=obj12.data.head_code;
+//	
+//				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.daily.alarmHandler.AlertManage","updAlert_DetailList",obj,Processupd_Alarm,onfault));
+//				
+			}
+			
+			private function Processupd_Alarm(arr:ArrayCollection):void
+			{
+				if (arr.length>0){
+					Alert.show(RPCException(arr[0]).message);
+				}else{
+					
+					Alert.show("异态成功!");
+					searchdata();
+				}
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Group  left="9" right="9" width="100%" height="100%">
+		<s:VGroup  width="100%" height="100%" horizontalAlign="left"  verticalAlign="middle" >
+			<s:VGroup height="80"   id="grid" width="100%"   verticalAlign="middle">
+				
+				<s:HGroup height="38" width="100%"  verticalAlign="middle">
+					<s:Spacer width="16"/>
+					<s:Label text="类    别："/>
+					<s:Spacer width="12"/>
+						
+					<s:ComboBox id="Type"  dataProvider="{alarmArray}" change="TypeChange()" requireSelection="true" height="25" width="110"/>
+					<s:Spacer width="25"/>
+					
+					<global:HeadendAllAndStateList id="ostate"   width="630" headDataAll="true" />
+					<s:Spacer width="30"/>
+					<s:Label text="异常状态：  " id="AlarmStatementLabel" visible="true"/>
+					
+					<s:ComboBox id="AlarmStatement"  dataProvider="{AlarmStatementArray}" requireSelection="true" height="25" width="110"/>
+					
+					<s:Spacer width="70"/>	
+					<s:Button buttonMode="true" label="返回" click="close()" id="oCloseButton" visible="false" includeInLayout="false"/>
+				</s:HGroup>
+				
+			
+				<s:HGroup height="38" width="100%"  verticalAlign="middle">
+					<s:Spacer width="16"/>
+					
+					<s:Label text="处理状态："/>
+					<s:Spacer width="12"/>
+					
+					<s:ComboBox id="HandleStatement"  dataProvider="{HandleStatementArray}" requireSelection="true" height="25" width="110"/>
+					
+					<s:Spacer width="25"/>
+					<s:Label text="报警类型：  "/>
+					<s:ComboBox id="qtypelist" includeInLayout="true" dataProvider="{qtypevalue}" requireSelection="true" labelField="label"  height="25" width="110">
+					</s:ComboBox>
+					<s:Spacer width="25"/>
+					<s:Label text="日期范围：  自"/>
+					<timecomp:TimeNew id="StartTime_day"/>
+					<s:Label text="至      "/>
+					<timecomp:TimeNew id="EndTime_day"/>
+					<s:Spacer width="25"/>
+					<s:Button buttonMode="true" label="查询"  id="oQuerybutton" click="searchdata()"  styleName="ButtonBlack"/>
+					<s:Spacer width="25"/>
+					<s:Button buttonMode="true" label="删除所选项"  id="oDelbutton" click="comfirmDelete()" styleName="ButtonBlack"/>
+				</s:HGroup>
+			</s:VGroup>
+			<s:Group width="100%" height="100%" top="12" bottom="60">
+				<mx:ViewStack id="data_viewstack" width="100%" height="100%" >
+					<s:NavigatorContent>
+					    <s:Group width="100%"  height="100%">
+							<s:DataGrid id="IndexDataGrid" width="100%" height="100%" dataProvider="{listQuality}" textAlign="center" >
+								<s:columns>
+									<s:ArrayCollection>
+										<s:GridColumn headerText="选择" width="60" itemRenderer="{RendererUtil.getCheckBoxRenderer(changeSelect)}"/>
+										<s:GridColumn headerText="报警站点" width="200" dataField="shortname" />
+										<s:GridColumn headerText="报警类别" labelFunction="typeFuc" />
+										<s:GridColumn headerText="频率(KHz)" width="80" dataField="frequency" />
+										
+										<s:GridColumn headerText="发生时段" width="320"  labelFunction="timeFuc"/>
+										<s:GridColumn headerText="处理状态" width="250"  labelFunction="handleFuc" />
+										
+										<s:GridColumn  minWidth="50" headerText="详情" itemRenderer="{RendererUtil.getButtonRenderer('详情',detailQuality)}"/>
+										<s:GridColumn  minWidth="50" headerText="异态" itemRenderer="{RendererUtil.getButtonRenderer('异态',auditorAlarm,'errorindbLable')}"/>
+										<s:GridColumn headerText="审核人" width="80" dataField="auditor" />
+									</s:ArrayCollection>
+								</s:columns>
+							</s:DataGrid>
+						</s:Group>
+					</s:NavigatorContent>
+					<s:NavigatorContent>
+						<s:Group width="100%"  height="100%">
+							<s:DataGrid id="DeviceDataGrid"  height="100%"  width="100%" dataProvider="{listEqu}" textAlign="center" >
+							
+								<s:columns>
+									<s:ArrayCollection>
+										<s:GridColumn headerText="选择" width="60"  itemRenderer="{RendererUtil.getCheckBoxRenderer(changeSelect)}" />
+										<s:GridColumn headerText="报警站点" width="200" dataField="shortname" />
+										<s:GridColumn headerText="报警类别" labelFunction="typeFuc"/>
+										<s:GridColumn headerText="发生时段" width="320" labelFunction="timeFuc"/>
+										<s:GridColumn headerText="处理状态" width="250" labelFunction="handleFuc" />
+										<s:GridColumn headerText="原因" dataField="reason" />
+										
+										<s:GridColumn  minWidth="50" headerText="详情" itemRenderer="{RendererUtil.getButtonRenderer('详情',detailEqu)}"/>
+										
+	                                </s:ArrayCollection>
+								</s:columns>
+							</s:DataGrid>
+						</s:Group>
+					</s:NavigatorContent>
+				</mx:ViewStack>	
+				<s:Label text="正在查询，请稍候..." color="0x000000" id="clew_label" y="40" width="100%" textAlign="center"  visible="false" includeInLayout="false" />				
+			 </s:Group>
+			<flipBar:PageBar  id="pagebar" rowConutOfPage="25" totalPageQuery="10" height="30"/>
+			
+		</s:VGroup>
+		
+	</s:Group>
+</system:BasePage>

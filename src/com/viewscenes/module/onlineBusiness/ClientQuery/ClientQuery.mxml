@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:mx="library://ns.adobe.com/flex/mx" 
+				 PAGE_SHOW="setCode(event)"
+				 xmlns:system="com.morcha4.frame.system.*" 
+				 width="100%" height="100%" 
+				 xmlns:global="com.viewscenes.global.*"
+				 >
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.util.RendererUtil;
+			import com.viewscenes.global.DataManager;
+			
+			[Bindable]
+			var pagearray:ArrayCollection=new ArrayCollection();
+			private function queryData():void{
+				    pagearray.removeAll();
+					clew_label.text="正在查询，请稍候...";
+					clew_label.visible=true;
+					clew_label.includeInLayout=true;
+					var obj:Object = new Object();
+					
+					obj.stationCode =this.station.selectedHeadendCode;
+					obj.stationName=this.station.selectedHeadendName;
+					obj.userid=DataManager.user.userId;
+					var request:RORequestParam = new RORequestParam("com.viewscenes.web.online.ClientQuery.ClentQuery","ClientInfoQuery",obj,get_infoBackData,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id);
+					RPCManager.sendCmd(request); 
+	
+			}
+			private function setCode(event:Event):void{
+				if(DataManager.code!=""){
+					station.oStation.selectedIndex = 1;
+					
+					for(var i:int=0;i<(station.oStation.dataProvider as ArrayCollection).length;i++){
+						if(DataManager.code==(station.oStation.dataProvider as ArrayCollection)[i].code){
+							station.oStation.selectedIndex=i;
+						}
+					}
+				}
+				
+			}
+			private function get_infoBackData(list:ArrayCollection):void{
+				
+				if(list.length!=0)
+				{
+			
+					pagearray = list;//InfoData*/
+					clew_label.visible=false;
+					clew_label.includeInLayout=false;
+				}
+				else
+				{
+
+						//Alert.show("当前无客户端连接信息!");
+						clew_label.text="当前无客户端连接信息!";
+						clew_label.visible=true;
+						clew_label.includeInLayout=true;
+						return;
+				}
+				
+			}
+			
+			public function StopLink(obj:Object):void{
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.online.ClientQuery.ClentQuery","StreamRealtimeClientStop",obj.data,StreamRealtimeClientStopDone,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id);
+				RPCManager.sendCmd(request); 
+			}
+	
+			private function StreamRealtimeClientStopDone(retStr:String):void{
+				DataManager.showErrorMessage("中断成功!");
+				this.queryData();
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:VGroup     horizontalAlign="center" width="100%" height="100%"  >
+		
+		<s:HGroup paddingLeft="15"  paddingTop="15"   width="100%"  >
+			<global:HeadendAndStateList id="station"  />
+			<s:Spacer width="6"/>	
+
+			
+			<s:Spacer width="15"/>	
+			<s:Button buttonMode="true"    label="查 询" id="queryBtn" fontSize="12" click="this.queryData()" />
+			
+			<s:Spacer width="25"/>	
+			<s:Label text="正在查询，请稍候..." id="clew_label" y="{datagrid.columnHeaderGroup.height+10}"  color="#ff0000" textAlign="center" visible="false" includeInLayout="false" />	
+			
+			
+		</s:HGroup>
+		
+		<s:VGroup width="100%" height="100%"  >
+			
+				<s:DataGrid   textAlign="center" width="100%" height="100%"  id="datagrid" dataProvider="{pagearray}" >
+					<s:columns>  
+						<s:ArrayCollection>
+						<s:GridColumn dataField="headname" headerText="站点"/>
+						<s:GridColumn  dataField="equCode"  headerText="接收机code"/>
+						<s:GridColumn dataField="url"  headerText="URL"/>
+						<s:GridColumn dataField="freq"  headerText="频率(KHZ)"/>
+						<s:GridColumn dataField="bps"  headerText="码率"/>
+						<s:GridColumn dataField="ip"  headerText="连接ip"/>
+						<s:GridColumn headerText="中断" itemRenderer="{RendererUtil.getButtonRenderer('中断',StopLink,null)}"/>
+						</s:ArrayCollection>
+					</s:columns>
+				</s:DataGrid>
+				</s:VGroup>
+
+		
+	</s:VGroup>
+</system:BasePage>

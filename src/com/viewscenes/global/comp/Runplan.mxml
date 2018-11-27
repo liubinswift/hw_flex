@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:flipBar="com.viewscenes.utils.flipBar.*"
+			   xmlns:contaners="com.morcha4.ui.contaners.*" 
+			   x="{(Capabilities.screenResolutionX - width) / 2}" 
+			   y="{(Capabilities.screenResolutionY - height) / 2 - 50}" alpha="1" creationComplete="init(event)"
+			   width="860" height="500"  close="myCloseHandler()" xmlns:timecomp="com.viewscenes.utils.timecomp.*">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.morcha4.frame.system.EventBus;
+			import com.morcha4.util.RendererUtil;
+			import com.viewscenes.beans.runplan.RunplanBean;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.EventDeclare;
+			import com.viewscenes.utils.timecomp.DateUtil;
+			
+			import mx.collections.ArrayList;
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			import mx.managers.ISystemManager;
+			import mx.managers.PopUpManager;
+
+
+			[Bindable]
+			private var RunplanArr:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var selectedCounts:int =0;
+			private var _closeHandler:Function = null;
+			private var list:ArrayList=new ArrayList();
+			[Bindable]
+			private var runplanType:String="";
+			[Bindable]
+			private var flag:String="";//false:返回多条信息;true:返回一条信息
+			private var headendCode:String = "";//站点code 不区分AB
+			[Bindable]
+			private var playTimeBoxSelect:Boolean= false;
+			
+			private var doQuery:Boolean = false;
+			/**
+			 * runplanType 运行图类型 1、国际台运行图 2、海外落地运行图 3、外国台运行图 ""为全部
+			 * paramObj 其他查询条件的对象  flag：false、返回多条信息;true、返回一条信息   headendCode：站点code 不区分AB  doQuery 打开后立刻查询一次   user_play_time 使用播音时间查询
+			 */
+			public function show(runplanType:String,paramObj:Object,parent:Sprite = null ):void{
+				this.runplanType=runplanType;
+				if( paramObj.flag != null ){
+					this.flag = paramObj.flag;
+				}
+				if( paramObj.headendCode != null ){
+					this.headendCode = paramObj.headendCode;
+				}
+				if( paramObj.user_play_time != null){
+					playTimeBoxSelect = true;
+				}
+				if (!parent)
+				{
+					var sm:ISystemManager = ISystemManager(FlexGlobals.topLevelApplication.systemManager);
+					var mp:Object = sm.getImplementation("mx.managers::IMarshalSystemManager");
+					if (mp && mp.useSWFBridge())
+						parent = Sprite(sm.getSandboxRoot());
+					else
+						parent = Sprite(FlexGlobals.topLevelApplication);
+				}
+				PopUpManager.addPopUp(this, parent, false);
+				if( paramObj.doQuery != null ){
+					doQuery = true;
+				}
+			}
+			/**
+			 * 关闭弹出窗口，同时将选择的运行图信息发出
+			 * */
+			private function myCloseHandler():void{
+				runplanType="";
+				PopUpManager.removePopUp(this);
+				if(_closeHandler){
+					_closeHandler();
+				}
+			}
+			/**
+			 * 查询运行图信息
+			 * */
+			private function queryRunplan():void{
+				RunplanArr.removeAll();
+				clew_label.visible=true;
+				clew_label.includeInLayout=true;
+				clew_label.text="正在查询，请稍候！";
+				var bean:RunplanBean = new RunplanBean();
+				bean.freq = freq.text;
+				bean.runplan_type_id=runplanType;
+				bean.shortname = headendCode;//暂时用这个字段传递code，关联查询mon_area和xg_mon_area
+				if(playTimeBox.selected){
+					bean.start_time = beginTime.text;
+					bean.end_time = endtime.text;
+				}
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.common.Common","getAllRunplan",bean,getRunplanListBack,DataManager.showErrorMessageBack);
+				pagebar.m_sendCmd(request);
+			}
+			
+			private function getRunplanListBack(arr:ArrayCollection):void{
+				if(arr.length==0){
+					clew_label.text="无相关查询数据";
+				}else{
+					clew_label.visible=false;
+					clew_label.includeInLayout=false;
+					RunplanArr = arr;
+				}
+			}
+			/**
+			 * 将选择的运行信息放到bean里面
+			 * */
+			private function setRunplanInfo():void{
+				
+				for(var i:int=0;i<RunplanArr.length;i++){
+					var obj:Object = new Object();
+					obj = RunplanArr.getItemAt(i) as Object;
+					if(obj.isSelected=="true"){
+						var bean:RunplanBean=new RunplanBean();
+						bean.station_name=obj.station_name;
+						bean.station_id=obj.station_id;
+						bean.freq=obj.freq;
+						bean.direction = obj.direction;
+						bean.language_name = obj.language_name;
+						bean.start_time = obj.start_time;
+						bean.end_time = obj.end_time;
+						bean.power = obj.power;
+						bean.transmiter_no = obj.transmiter_no;
+						bean.antenna = obj.antenna;
+						bean.antennatype = obj.antennatype;
+						bean.runplan_type_id = obj.runpian_type_id;
+						bean.runplanType = obj.runplanType;
+						bean.valid_start_time = obj.valid_start_time;
+						bean.valid_end_time = obj.valid_end_time;
+						bean.mon_area = obj.mon_area;
+						bean.xg_mon_area = obj.xg_mon_area;
+						list.addItem(bean);
+					}
+				}
+				
+			}
+			/**
+			 * 
+			 * */
+			private function confirm():void{
+				setRunplanInfo();
+			
+				EventBus.dispatchEvent(new AdvancedEvent(EventDeclare.RUNPLAN,false,false,list));
+				PopUpManager.removePopUp(this);
+				if(_closeHandler){
+					_closeHandler();
+				}
+			}
+			
+			/**
+			 * 选择点中后执行的方法
+			 */
+			private function changeSelect(obj:Object):void{
+				if(obj.data.isSelected=="true"){
+					this.selectedCounts=selectedCounts+1;  
+				}else{
+					this.selectedCounts=selectedCounts-1; 
+				}
+			}
+			
+			protected function init(event:FlexEvent):void
+			{
+				var date:Date =  new Date();
+				var dateStr:String = DateUtil.date2str(date,"time");
+				beginTime.text = dateStr.split(":")[0] + ":00";
+				date = new Date(date.time+1000*60*60);
+				dateStr = DateUtil.date2str(date,"time");
+				endtime.text = dateStr.split(":")[0] + ":00";
+				if(doQuery){
+					this.queryRunplan();
+				}
+			}
+			
+			protected function checkbox1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if(playTimeBox.selected){
+					beginTime.enabled = true;
+					endtime.enabled = true;
+				} else{
+					beginTime.enabled = false;
+					endtime.enabled = false;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<contaners:BGAbleContainer width="100%" height="100%" alpha="1" >
+		<contaners:layout>
+			<s:VerticalLayout horizontalAlign="center" verticalAlign="middle" />
+		</contaners:layout>
+		<s:HGroup width="100%" height="25" verticalAlign="middle" horizontalAlign="center">
+			
+			<s:Label text="频率"/>
+			<s:TextInput id="freq" width="70"/>
+			<s:CheckBox label="播音时间" click="checkbox1_clickHandler(event)" id="playTimeBox" selected="{playTimeBoxSelect}"/>
+			<s:Label text="开始时间"/>
+			<timecomp:TimeNew id="beginTime" dateDisplay="timenew" text="00:00"/>
+			<s:Label text="结束时间"/>
+			<timecomp:TimeNew id="endtime"  dateDisplay="timenew" text="00:00"/>
+			<s:Button buttonMode="true" label="查询" click="queryRunplan()"/>
+			<s:Button buttonMode="true" label="确定" click="confirm()" toolTip="点击确定按钮获取选择的运行图信息"/>
+		</s:HGroup>
+		<mx:Canvas  width="100%" height="100%">
+			<s:DataGrid width="100%" height="100%" id="grid" textAlign="center" dataProvider="{RunplanArr}">
+				<s:columns>
+					<s:ArrayCollection>
+						<s:GridColumn headerText="选择" width="60" editable="false" itemRenderer="{RendererUtil.getCheckBoxRenderer(changeSelect)}" />
+						<s:GridColumn dataField="freq"  headerText="频率(KHZ)" />
+						<s:GridColumn dataField="station_name"  headerText="发射台" />
+						<s:GridColumn dataField="transmiter_no"  headerText="机号" />
+						<s:GridColumn dataField="language_name"  headerText="语言"/>
+						<s:GridColumn dataField="start_time"  headerText="开始时间" />
+						<s:GridColumn dataField="end_time"  headerText="结束时间" />
+						<s:GridColumn dataField="valid_start_time"  headerText="启用期"  width="130"/>
+						<s:GridColumn dataField="valid_end_time"  headerText="停用期"  width="130"/>
+						<s:GridColumn dataField="runplantype"  headerText="类型"   width="130"/>
+					</s:ArrayCollection>
+				</s:columns>
+			</s:DataGrid>
+			<s:Label text="正在查询，请稍候..." id="clew_label" y="{grid.columnHeaderGroup.height+10}" color="0x000000" fontSize="15" width="100%" textAlign="center"  visible="false" includeInLayout="false" />
+		</mx:Canvas>	
+		<flipBar:PageBar width="100%" id="pagebar" rowConutOfPage="40" totalPageQuery="5" height="20" color="0x000000"/>
+	</contaners:BGAbleContainer>
+	
+</s:TitleWindow>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			
+			[Bindable]
+//			public var myParent:OnlineListenIndex = null;
+			
+			[Bindable]
+			private var ituArr:ArrayCollection = new ArrayCollection;
+		]]>
+	</fx:Script>
+	
+	<s:DataGrid id="ituGrid" textAlign="center"  width="100%" height="100%" dataProvider="{ituArr}">
+		<s:columns>
+			<s:ArrayCollection>
+				<s:GridColumn dataField="station_name"  headerText="台名" />
+				<s:GridColumn dataField="freq"  headerText="频率(KHZ)" />
+				<s:GridColumn dataField="sentcity"  headerText="发射城市" />
+				<s:GridColumn dataField="start_time"  headerText="开始时间" />
+				<s:GridColumn dataField="end_time"  headerText="结束时间" />
+				<s:GridColumn dataField="language"  headerText="语言" />
+			</s:ArrayCollection>
+		</s:columns>
+	</s:DataGrid>
+</s:VGroup>

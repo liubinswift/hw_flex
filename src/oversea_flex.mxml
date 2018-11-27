@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:login="com.viewscenes.global.login.*"
+			   preloader="com.viewscenes.global.login.Preloader"
+			   creationComplete="application1_creationCompleteHandler(event)" 
+			   backgroundColor="0x000000"
+			   minWidth="955" minHeight="600" 
+			   
+			   xmlns:global="com.viewscenes.global.*" xmlns:alert="com.viewscenes.global.comp.alert.*" >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.frame.theme.StyleManager;
+			import com.viewscenes.global.DataManager;
+
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.events.StyleEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			//			private var config:XML=<config max="2">
+			//										<serverProxy id="dataServer" type="RO">
+			//											<endPoint url="http://192.168.2.37:8080/monitor/messagebroker/amf" timeout="20" waitTime="1000"/>
+			//										</serverProxy>
+			//									</config>
+			private var config:XML;
+			protected function application1_creationCompleteHandler(event:FlexEvent):void
+			{
+				this.getStyle1();
+				this.configLoad();
+				
+				
+//				var popo:MapAlert = MapAlert(PopUpManager.createPopUp(this,MapAlert,true));
+//				
+//				PopUpManager.centerPopUp(popo);
+//				var map:MapAlert = new MapAlert();
+//				map.show();
+			}
+			
+			/**
+			 * 设置默认css样式
+			 */
+			private function getStyle1():void{
+//				EventBus.dispatchEvent(new AdvancedEvent(EventDeclare.SYSTEM_INIT_STATE,false,false,{flag:0,message:"获取皮肤"}));
+				com.morcha4.frame.theme.StyleManager.loadSkin("DefaultStyle.swf",null,onStyleComplete,onStyleError);
+			}
+			private function onStyleComplete(e:StyleEvent):void{
+//				EventBus.dispatchEvent(new AdvancedEvent(EventDeclare.SYSTEM_INIT_STATE,false,false,{flag:1,message:"皮肤加载完毕"}));
+				//			setTimeout(function(){com.morcha4.frame.theme.StyleManager.removeSkin("com/viewscenes/theme/DefaultStyle.swf");},5000);
+				//			setTimeout(function(){com.morcha4.frame.theme.StyleManager.loadSkin("com/viewscenes/theme/DefaultStyle.swf",null,onStyleComplete,onStyleError);},10000);
+			}
+			private function onStyleError(e:StyleEvent):void{
+//				EventBus.dispatchEvent(new AdvancedEvent(EventDeclare.SYSTEM_INIT_STATE,false,false,{flag:0,message:"皮肤加载失败"}));
+			}
+			
+			private function configLoad():void
+			{
+				var configService:HTTPService = new HTTPService();
+				configService.url = "config/sysConfig.xml"; 
+				configService.resultFormat = "e4x";
+				configService.addEventListener(ResultEvent.RESULT, configResult);
+				configService.addEventListener(FaultEvent.FAULT, configFault);	
+				configService.send();
+			}
+			
+			private function configFault(event:mx.rpc.events.FaultEvent):void
+			{
+				var sInfo:String = "读取config/sysConfig.xml异常: \n\n";
+				//				sInfo += "异常位置: " + "" + "\n\n";
+				sInfo += "异常对象: " + event.target + "\n\n";
+				sInfo += "异常类型: " + event.type + "\n\n";
+				sInfo += "异常Code: " + event.fault.faultCode + "\n\n";
+				sInfo += "异常信息: " + event.fault.faultString;
+				Alert.show(sInfo);
+			}
+			
+			private function configResult(event:ResultEvent):void
+			{
+				try
+				{	
+					config = event.result.serverConfig.config[0];
+					//					//获取默认的登录用户名密码
+					//					DataManager.loginUserName=event.result.user[0].@name;
+					//					DataManager.loginUserPassword=event.result.user[0].@password;
+					
+					RPCManager.initServers(config);
+					for each(var xml:XML in config.serverProxy){
+						if(xml.@id == "dataServer_app"){
+							for each(var xml:XML in xml.endPoint){
+								DataManager.dataServerAppAddress = xml.@url;
+								break;
+							}
+						}
+					}
+					
+//					MessagePrompt.show("aaa");
+					var num:int = DataManager.dataServerAppAddress.indexOf("/messagebroker/amf");
+					DataManager.dataServerAppAddress = DataManager.dataServerAppAddress.substring(0,num);
+					//					login.doLogin();
+					
+					var xmlm:XML = event.result.menu[0];
+					DataManager.menu = xmlm;
+					//Alert.show(xmlm);
+				}catch(error:Error){
+					Alert.show(error.message);		
+				}
+			}
+			//test
+			public function visableMain():void{
+				main.visible=true;
+			}
+			
+		]]>
+	</fx:Script>
+	<global:MainPan id="main" visible="false" />
+	<login:LoginPan/>
+	<!--s:VGroup width="100%" height="100%" x="0" y="0">
+		<s:TitleWindow styleName="map" id="pan" width="1280" height="800">
+		</s:TitleWindow>
+	</s:VGroup>
+	<alert:MessagePrompt left="100" right="100" height="30" bottom="-30" direction="false"/-->
+</s:Application>

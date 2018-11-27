@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:mx="library://ns.adobe.com/flex/mx" 
+				 xmlns:system="com.morcha4.frame.system.*" 
+				 width="100%" height="100%" xmlns:recplay="com.viewscenes.module.onlineBusiness.recplay.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:VGroup width="100%" height="100%" >
+		<s:HGroup width="100%" height="80">
+			<recplay:Header id="header" recPlayList="{recPlayList}"  width="70%" height="80" paddingTop="10" paddingLeft="15" />
+			<recplay:RadioMark id="radioMark" showASR="false" showMark="false" showQuality="false" showWeekMark="false" width="30%" height="100%" paddingTop="10" paddingRight="5"/>
+		</s:HGroup>
+		
+		<recplay:MonitorRecPlayList id="recPlayList" radioMark="{radioMark}" width="100%" height="100%" />
+	</s:VGroup>
+</system:BasePage>

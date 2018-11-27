@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+		  creationComplete="init();" xmlns:global="com.viewscenes.global.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.viewscenes.beans.runplan.GJTLDRunplanBean;
+			import com.viewscenes.beans.runplan.GJTRunplanBean;
+			import com.viewscenes.beans.runplan.WGTRunplanBean;
+			import com.viewscenes.global.DataManager;
+			
+			[Bindable]
+			public var myParent:OnlineListenIndex = null;
+			
+			[Bindable]
+			private var ituArr:ArrayCollection = new ArrayCollection;
+			
+			private function init():void{
+			
+				getRunplanList();
+				
+			}
+			/**
+			 * 
+			 * 运行图列表
+			 * */
+			private function getRunplanList():void{
+				
+				var obj:Object = new  Object;
+
+					 ituArr.removeAll();
+					 var wgtRunplan:GJTLDRunplanBean = new GJTLDRunplanBean;
+					 wgtRunplan.startRow = 0;
+					 wgtRunplan.endRow = 10000;
+					obj.bean = wgtRunplan;
+		
+					obj.runplanType = "4";
+					obj.bean = wgtRunplan;
+				clew_label.visible = true;
+				clew_label.includeInLayout = true;
+				clew_label.text = "正在查询,请稍候...";
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.onlineListen.OnlineService","getRunplanList",obj,getRunplanListBack,DataManager.showErrorMessageBack));
+			}
+			
+			private function getRunplanListBack(obj:Object):void{
+				clew_label.visible = false
+				clew_label.includeInLayout = false;
+				clew_label.text = "";
+				
+				var arr:ArrayCollection = obj.resultList as ArrayCollection; 
+		            ituArr.removeAll();
+					ituArr = arr;
+				
+			}
+		]]>
+	</fx:Script>
+	
+	<s:DataGrid id="ituGrid" textAlign="center"  width="100%" height="100%" dataProvider="{ituArr}">
+		<s:columns>
+			<s:ArrayCollection>
+				<s:GridColumn dataField="redisseminators"  headerText="转播机构" />
+				<s:GridColumn dataField="freq"  headerText="频率(KHZ)" />
+				<s:GridColumn dataField="sentcity"  headerText="发射城市" />
+				<s:GridColumn dataField="start_time"  headerText="开始时间" />
+				<s:GridColumn dataField="end_time"  headerText="结束时间" />
+				<s:GridColumn dataField="language"  headerText="语言" />
+			</s:ArrayCollection>
+		</s:columns>
+	</s:DataGrid>
+	<mx:Label  id="clew_label" y="{ituGrid.columnHeaderGroup.height+10}" width="100%" textAlign="center" color="0x000000" visible="false" includeInLayout="false" />
+	
+</s:VGroup>

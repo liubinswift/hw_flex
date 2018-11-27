@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:GridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					xmlns:s="library://ns.adobe.com/flex/spark" 
+					xmlns:mx="library://ns.adobe.com/flex/mx" clipAndEnableScrolling="true"
+					width="100%" height="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			[Bindable]public var l:String="";
+			[Bindable]public var callBack:Function;
+			[Bindable]public var labelField:String;
+			override public function set data(value:Object):void{
+				super.data=value
+				if(value&&labelField){
+					l=value[labelField];
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<s:Label text="{l}" buttonMode="true" horizontalCenter="0" verticalCenter="0" mouseChildren="false" color="#9b8029" click="callBack(this)"/>
+</s:GridItemRenderer>

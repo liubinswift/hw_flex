@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx"  minHeight="0" minWidth="0"
+				   creationComplete="init();" borderVisible="false">
+	<s:layout>
+		<s:HorizontalLayout gap="-2" verticalAlign="middle" horizontalAlign="center"/>
+	</s:layout>
+	<s:TextInput id="oYear" restrict="0-9"  maxChars="4" width="32" text="{_year}"
+				 focusIn="onfocusIn(oYear)" focusOut="onfocusOut()" change="inputField_changeYears()"
+				 focusAlpha="0" textAlign="right" borderVisible="false" click="oWeek.setFocus();oYear.setFocus()"/>
+	<mx:Text text="年  第" textAlign="center" />
+	<s:TextInput id="oWeek" restrict="0-9"  maxChars="2" width="19" text="{_week}"  click="oYear.setFocus();oWeek.setFocus()"
+				 focusIn="onfocusIn(oWeek)" focusOut="onfocusOut()" change="inputField_changeWeeks()"  focusAlpha="0"
+				 textAlign="right" borderVisible="false"/>
+	<mx:Text text="周" textAlign="center" />
+	<s:HGroup id="weekChooseBox" gap="0" paddingLeft="0" paddingRight="0">
+		<s:Spacer width="12"/>
+		<mx:ComboBox id="comBo" change="beginDayNum=parseInt(comBo.selectedItem.datas)" rowCount="7">
+			<fx:Object label="星期一" datas="1"/>
+			<fx:Object label="星期二" datas="2"/>
+			<fx:Object label="星期三" datas="3"/>
+			<fx:Object label="星期四" datas="4"/>
+			<fx:Object label="星期五" datas="5"/>
+			<fx:Object label="星期六" datas="6"/>
+			<fx:Object label="星期日" datas="7"/>
+		</mx:ComboBox>
+	</s:HGroup>
+	<s:Label text="   开始时间："/>
+	<s:TextInput id="starttime" editable="false" width="71"/>
+	<s:HGroup id="endtimeBox" gap="0" paddingLeft="0" paddingRight="0" verticalAlign="middle">
+		<mx:Label text="   结束时间："/>
+		<mx:TextInput id="endtime" editable="false" width="71"/>	
+	</s:HGroup>
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace timecomp "components.com.viewscenes.util.timecomp.*";
+		timecomp|TimeMonth{
+			borderColor:#cccccc;
+			borderStyle:solid;
+			backgroundColor:0xFFFFFF;
+		}
+	</fx:Style>
+	<fx:Script>
+		<![CDATA[
+			/*
+			*	componentType=""  设置控件类型 week:周控件(默认) 提供一周的开始结束时间 weekDay:提供一周的某一天时间 根据选择的星期
+			*   beginDayNum=""	  设置周的开始时间 1、周一。。。7、周日
+			*	setDate()		  传入日期类型设置界面显示的时间
+			*/
+			//import mx.controls.Alert;
+			private var inputField:spark.components.TextInput;
+			[Bindable]
+			public var _year:String="1900";
+			[Bindable]
+			public var _week:String="01";
+			public var beginDay:int=1;
+			private var maxWeek:int=52;
+			private var maxWeekCon:int = 52;//最大周，定值
+			private var compType:String = "week";//设置控件类型
+			
+			private function init():void{
+				setCompType();
+				initDate();
+			}
+			private function initDate():void{
+				var nowDate:Date = new Date();
+				setDate(nowDate);
+			}
+			
+			/**
+			 * 设置周的开始时间 1、周一。。。7、周日
+			 */
+			public function set beginDayNum(num:int):void{
+				beginDay = num;
+				if(oYear!=null&&oWeek!=null){
+					week2dayByStr(oYear.text,oWeek.text);
+				}
+			}
+			/**
+			 * 设置控件类型
+			 * week:周控件 提供一周的开始结束时间
+			 * weekDay:提供一周的某一天时间 根据选择的星期
+			 */
+			public function set componentType(type:String):void{
+				this.compType = type;
+			}
+			private function setCompType():void{
+				var boo:Boolean = true;
+				if(compType=="week"){
+					boo=true;
+				} else if(compType=="weekDay"){
+					boo = false;
+					comBo.selectedIndex = beginDay-1;
+					beginDayNum=parseInt(comBo.selectedItem.datas);
+				}
+				weekChooseBox.visible=!boo;
+				weekChooseBox.includeInLayout=!boo;
+				endtimeBox.visible = boo;
+				endtimeBox.includeInLayout = boo;
+			}
+			/**
+			 * 传入日期类型设置界面显示的时间
+			 */
+			public function setDate(date:Date):void{
+				
+				var nowDate:Date = new Date();
+				//Alert.show("周"+nowDate.getDay());
+				week2dayByDate(date);
+				
+			}
+			/**
+			 * 计算周的起始日期
+			 * date时间对象
+			 **/
+			private function week2dayByDate(currdate:Date):void{
+				var year:Number = currdate.getFullYear();
+				var month:Number = currdate.getMonth();
+				var day:Number = currdate.getDate();
+				var currentdate:Date = str2Date(year,month,day);
+				//		var dateFrist:Date = str2Date(year+"","0","1");
+				//		var dayCount:Number = (dateEnd.getTime()-dateFrist.getTime())/(24*60*60*1000)+1;//dateEnd到dateFrist一共有多少天
+				//		var weekFrist:int = dateFrist.getDay();//1月1号的星期
+				//		if(weekFrist==0)  weekFrist=7;//星期日是7
+				//		var weekNumber:Number = int((dayCount-(7-weekFrist+1))/7)+1;//dateEnd是第几周
+				//		if((dayCount-(7-weekFrist+1))%7>0){
+				//			weekNumber++; 
+				//		}
+				//		_year = year.toString();
+				//		_week = weekNumber.toString();
+				//		//Alert.show("weekFrist:"+weekFrist+"\r"+"dayCount:"+dayCount+"\r"+"weekNumber:"+weekNumber+"\r"+"dateEnd:"+dateEnd.toLocaleString()+"\r");
+				//		week2dayByStr(year.toString(),weekNumber.toString());
+				var obj:Object = getWeek2dayByStr(year.toString(),"1");
+				var fristDate:Date = str2DateOneParam(obj.starttime);
+				var countDay:int = new Date(currentdate.getTime()-fristDate.getTime()).getTime()/(24*60*60*1000);
+				var weekNum:int = 1; 
+				if(countDay%7==0){ 
+					weekNum = countDay/7;
+				} else{
+					weekNum = countDay/7;
+				}
+				if(weekNum>maxWeek){
+					weekNum = maxWeek;
+				} else if(weekNum==0){
+					year--;
+					weekNum = maxWeek;
+				}
+				_year = year.toString();
+				_week = weekNum.toString();
+				maxWeek = weekNum;
+				week2dayByStr(year.toString(),weekNum.toString());
+			}
+			/**
+			 * 对页面开始结束时间赋值
+			 **/
+			private function week2dayByStr(_years:String="",_weeks:String=""):void{
+				_year = _years;
+				_week = _weeks;
+				var obj:Object = getWeek2dayByStr(_years,_weeks);
+				endtime.text= obj.endtime;
+				starttime.text= obj.starttime;
+			}
+			/**
+			 * 计算周的起始日期
+			 * _year年份
+			 * _week第几周
+			 **/
+			private function getWeek2dayByStr(_years:String="",_weeks:String=""):Object{
+				var year:Number = new Number(_years);
+				var week:Number = new Number(_weeks);
+				var dateFrist:Date = str2Date(year,0,1);
+				var weekFrist:int = dateFrist.getDay();//1月1号的星期
+				if(weekFrist==0)  weekFrist=7;//星期日是7
+				dateFrist = new Date(dateFrist.getTime()-(weekFrist-beginDay)*24*60*60*1000);
+				var dd:int = 7-weekFrist+1;//第一周的天数
+				//		var fristDay:int = 0;//_week的第一天
+				//		if(week>1){
+				//			fristDay = (week-1)*7+dd-7;
+				//		}
+				//		var lastDay:int = (week-1)*7+dd-1;//_week的最后一天
+				var fristDay:int = (week-1)*7;//_week的第一天
+				var lastDay:int = week*7-1;//_week的最后一天
+				var resFristDate:Date = new Date(dateFrist.getTime()+fristDay*24*60*60*1000);
+				var resEndDate:Date = new Date(dateFrist.getTime()+lastDay*24*60*60*1000);
+				
+				
+				
+				month=resEndDate.getMonth()+1;
+				var e_month:String=month.toString();
+				if(month<10)  e_month="0"+month.toString();
+				
+				day=resEndDate.getDate();
+				var e_day:String=day.toString();
+				if(day<10)  e_day="0"+day.toString();
+				var obj:Object = new Object();
+				obj.endtime = resEndDate.getFullYear()+"-"+e_month+"-"+e_day;
+				
+				var month:Number=resFristDate.getMonth()+1;
+				var s_month:String=month.toString();
+				if(month<10)  s_month="0"+month.toString();
+				
+				var day:Number=resFristDate.getDate();
+				var s_day:String=day.toString();
+				if(day<10)  s_day="0"+day.toString();
+				obj.starttime =resFristDate.getFullYear()+"-"+s_month+"-"+s_day;
+				return obj;
+			}
+			/**
+			 * 根据天数计算日期
+			 * day：一年中的多少天
+			 **/
+			private function day2Date(day:int):Date{
+				
+				return null;
+			}
+			/**
+			 * 
+			 **/
+			private function str2Date(year:int,month:int,day:int):Date{
+				var nowDate:Date = new Date(year,month,day,0,0,0);
+				
+				return nowDate;
+			}
+			/**
+			 * 字符串转化为日期
+			 * dateStr:yyyy-mm-dd
+			 **/
+			private function str2DateOneParam(dateStr:String):Date{
+				var nowDate:Date = new Date(dateStr.split("-")[0],parseInt(dateStr.split("-")[1])-1,dateStr.split("-")[2],0,0,0);
+				
+				return nowDate;
+			}
+			private function onfocusIn(textInput:spark.components.TextInput):void{
+				inputField = textInput;
+			}
+			/*
+			*焦点从控件移开后，监测各个输入框的内容使其合法
+			*/
+			private function onfocusOut():void{
+				var date:Date=new Date();
+				var _year:Number=date.getFullYear();
+				if(inputField==oYear){
+					checkInput(1900,2300);
+				}
+				else if(inputField==oWeek){
+					if(parseInt(oYear.text)==_year){
+						checkInput(1,maxWeek);
+					} else if(parseInt(oYear.text)<_year){
+						checkInput(1,maxWeekCon);
+					}
+				}
+			}
+			
+			private function checkInput(minNum:Number,maxNum:Number):void{
+				if(inputField.text.length==0){
+					inputField.text = minNum.toString();
+				} else{
+					var num:Number = Number(inputField.text);
+					if(num>maxNum){
+						inputField.text = maxNum.toString();
+					}
+					if(num<minNum){
+						inputField.text = minNum.toString();
+					}
+				}
+				if(maxNum.toString().length==2&&inputField.text.length==1){
+					inputField.text = "0"+inputField.text;
+				}
+			}
+			private function inputField_changeYears():void
+			{
+				if(oYear.text.length==4){
+					oWeek.setFocus();
+					if(parseInt(oYear.text)>parseInt(_year)){
+						oYear.text = _year;
+					}else{
+						week2dayByStr(oYear.text,oWeek.text);
+					}
+				}
+			}
+			
+			private function inputField_changeWeeks():void
+			{
+				if(oWeek.text.length>=1)
+				{
+					if(parseInt(oYear.text)==parseInt(_year)&&parseInt(oWeek.text)>maxWeek){
+						oWeek.text=maxWeek.toString();
+					} else if(parseInt(oYear.text)<parseInt(_year)&&parseInt(oWeek.text)>maxWeekCon){
+						oWeek.text=maxWeekCon.toString();
+					}
+					if(parseInt(oWeek.text)<=0)
+						oWeek.text='01';
+				}
+				if(oWeek.text.length==0)
+					oWeek.text='01';
+				
+				week2dayByStr(oYear.text,oWeek.text);
+			}
+		]]>
+	</fx:Script>
+</s:BorderContainer>

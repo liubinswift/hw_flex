@@ -1,0 +1,711 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:mx="library://ns.adobe.com/flex/mx" 
+				 xmlns:system="com.morcha4.frame.system.*" creationComplete="init()" width="100%" height="100%" 
+				 xmlns:contaners="com.morcha4.ui.contaners.*" 
+				 xmlns:timecomp="com.viewscenes.utils.timecomp.*" 
+				 xmlns:flipBar="com.viewscenes.utils.flipBar.*"
+				 xmlns:ip="com.viewscenes.utils.tools.*"
+				 PAGE_SHOW="setCode(event)"
+				 xmlns:ns="com.viewscenes.module.onlineBusiness.parameterSet.*"
+				 xmlns:global="com.viewscenes.global.*">
+	<system:layout>
+		<s:VerticalLayout gap="0"  />
+	</system:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.viewscenes.global.DataManager;
+			
+			import flexunit.utils.ArrayList;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			
+			import spark.components.BorderContainer;
+			import spark.events.IndexChangeEvent;
+			[Bindable]
+			private var listResume:ArrayCollection =new ArrayCollection([
+				{label:"全部",value:"all"},
+				{label:"采集点",value:"101"},
+				{label:"遥控站 ",value:"102"}]);	
+			private function setCode(event:Event):void{
+				if(DataManager.code!=""){
+					station.selectedIndex = 1;
+					
+					for(var i:int=0;i<(station.dataProvider as ArrayCollection).length;i++){
+						if(DataManager.code==(station.dataProvider as ArrayCollection)[i].code){
+							station.selectedIndex=i;
+						}
+					}
+				}
+				
+			}
+			private var list:ArrayCollection =new ArrayCollection([{data:'yes',lable:'是'},{data:'no',lable:'否'}]);	
+			public var center_arr:Array = new Array;
+			private var R1:String = "";
+			private var R2:String = "";
+			private var R3:String = "";
+			private var R4:String = "";
+			private var R5:String = "";
+			private var R6:String = "";
+			private var R7:String = "";
+			private var R8:String = "";
+			private var R9:String = "";
+			private var R1Name:String = "";
+			private var R1Code:String = "";
+			private var R2Name:String = "";
+			private var R2Code:String = "";
+			private var R3Name:String = "";
+			private var R3Code:String = "";
+			private var R4Name:String = "";
+			private var R4Code:String = "";
+			private var R5Name:String = "";
+			private var R5Code:String = "";
+			private var R6Name:String = "";
+			private var R6Code:String = "";
+			private var R7Name:String = "";
+			private var R7Code:String = "";
+			private var R8Name:String = "";
+			private var R8Code:String = "";
+			private var R9Name:String = "";
+			private var R9Code:String = "";			
+			private function init():void{
+				//				var object1:receiverComponent = new receiverComponent;
+				//				var object2:receiverComponent = new receiverComponent;
+				//				this.oReceiver1.addElement(object1);
+				//				this.oReceiver2.addElement(object2);
+				//				object1.equName.text='R1:TS-J08';
+				//				object1.equCode.text="R1";
+				//				object2.equName.text='R2:TS-J08';
+				//				object2.equCode.text="R2";
+				this.addContainer();
+				this.getEquByCode(this.station.selectedItem.code);
+			}
+			
+			/**
+			 * 根据站点代码获取接收机
+			 * */
+			private function getEquByCode(code:String):void{
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getEquList",code,processGetEquList,DataManager.showErrorMessageBack));
+			}
+			
+			private function processGetEquList(arr:ArrayCollection):void{
+				this.oReceiver1.removeAllElements();
+				this.oReceiver2.removeAllElements();
+				for each(var obj:Object in arr){
+					switch(obj.data){
+						case 'R1':
+							var object1:receiverComponent = new receiverComponent;	
+							if(this.oReceiver1.numElements<4){
+								this.oReceiver1.addElement(object1);
+							}else{
+								this.oReceiver2.addElement(object1);
+							}
+							object1.equCode.text = obj.data;
+							object1.equName.text = obj.label;
+							this.R1Name = object1.equName.text.split(":")[1];
+							this.R1Code = object1.equCode.text;
+							if(this.R1 != ""){
+								object1.oAll.text = this.R1;
+							}
+							break;
+						case 'R2':
+							var object2:receiverComponent = new receiverComponent;	
+							if(this.oReceiver1.numElements<4){
+								this.oReceiver1.addElement(object2);
+							}else{
+								this.oReceiver2.addElement(object2);
+							}
+							object2.equCode.text = obj.data;
+							object2.equName.text = obj.label;
+							this.R2Name = object2.equName.text.split(":")[1];
+							this.R2Code = object2.equCode.text;
+							if(this.R2 != ""){
+								object2.oAll.text = this.R2;
+							}
+							break;
+						case 'R3':
+							var object3:receiverComponent = new receiverComponent;	
+							if(this.oReceiver1.numElements<4){
+								this.oReceiver1.addElement(object3);
+							}else{
+								this.oReceiver2.addElement(object3);
+							}
+							object3.equCode.text = obj.data;
+							object3.equName.text = obj.label;
+							this.R3Name = object3.equName.text.split(":")[1];
+							this.R3Code = object3.equCode.text;
+							if(this.R3 != ""){
+								object3.oAll.text = this.R3;
+							}
+							break;
+						case 'R4':
+							var object4:receiverComponent = new receiverComponent;	
+							if(this.oReceiver1.numElements<4){
+								this.oReceiver1.addElement(object4);
+							}else{
+								this.oReceiver2.addElement(object4);
+							}
+							object4.equCode.text = obj.data;
+							object4.equName.text = obj.label;
+							this.R4Name = object4.equName.text.split(":")[1];
+							this.R4Code = object4.equCode.text;
+							if(this.R4 != ""){
+								object4.oAll.text = this.R4;
+							}
+							break;
+						case 'R5':
+							var object5:receiverComponent = new receiverComponent;	
+							if(this.oReceiver1.numElements<4){
+								this.oReceiver1.addElement(object5);
+							}else{
+								this.oReceiver2.addElement(object5);
+							}
+							object5.equCode.text = obj.data;
+							object5.equName.text = obj.label;
+							this.R5Name = object5.equName.text.split(":")[1];
+							this.R5Code = object5.equCode.text;
+							if(this.R5 != ""){
+								object5.oAll.text = this.R5;
+							}
+							break;
+						case 'R6':
+							var object6:receiverComponent = new receiverComponent;	
+							if(this.oReceiver1.numElements<4){
+								this.oReceiver1.addElement(object6);
+							}else{
+								this.oReceiver2.addElement(object6);
+							}
+							object6.equCode.text = obj.data;
+							object6.equName.text = obj.label;
+							this.R6Name = object6.equName.text.split(":")[1];
+							this.R6Code = object6.equCode.text;
+							if(this.R6 != ""){
+								object6.oAll.text = this.R6;
+							}
+							break;
+						case 'R7':
+							var object7:receiverComponent = new receiverComponent;	
+							if(this.oReceiver1.numElements<4){
+								this.oReceiver1.addElement(object7);
+							}else{
+								this.oReceiver2.addElement(object7);
+							}
+							object7.equCode.text = obj.data;
+							object7.equName.text = obj.label;
+							this.R7Name = object7.equName.text.split(":")[1];
+							this.R7Code = object7.equCode.text;
+							if(this.R7 != ""){
+								object7.oAll.text = this.R7;
+							}
+							break;
+						case 'R8':
+							var object8:receiverComponent = new receiverComponent;	
+							if(this.oReceiver1.numElements<4){
+								this.oReceiver1.addElement(object8);
+							}else{
+								this.oReceiver2.addElement(object8);
+							}
+							object8.equCode.text = obj.data;
+							object8.equName.text = obj.label;
+							this.R8Name = object8.equName.text.split(":")[1];
+							this.R8Code = object8.equCode.text;
+							if(this.R8 != ""){
+								object8.oAll.text = this.R8;
+							}
+							break;
+						case 'R9':
+							var object9:receiverComponent = new receiverComponent;	
+							if(this.oReceiver1.numElements<4){
+								this.oReceiver1.addElement(object9);
+							}else{
+								this.oReceiver2.addElement(object9);
+							}
+							object9.equCode.text = obj.data;
+							object9.equName.text = obj.label;
+							this.R9Name = object9.equName.text.split(":")[1];
+							this.R9Code = object9.equCode.text;
+							if(this.R9 != ""){
+								object9.oAll.text = this.R9;
+							}
+							break;
+					}
+				}
+			}
+			
+			private function childRemoveFun(object:centerParaSet):void{
+				for(var i:int = 0;i<this.center_arr.length;i++){
+					if(object == this.center_arr[i]){
+						this.center_arr.splice(i,1);
+					}
+					
+				}
+				
+			}
+			private function addContainer():void{
+				FTP.text = "114.251.47.196";
+				SrcCode.text = "CBT01";
+				UpURL.text = "http://114.251.47.196/hw/dev";
+				FTPPort.text = "21";
+				FTPUser.text = "user";
+				FTPPassword.text = "user";
+				FTPPath.text = "upload";
+			}
+			
+			private function setParameter():void{
+				var paraObj:Object = new Object();
+				var centerList:ArrayCollection = new ArrayCollection();
+				paraObj.user_id = DataManager.user.userId;
+				paraObj.code=this.station.selectedItem.code;
+				paraObj.head_id=this.station.selectedItem.head_id;
+				paraObj.type_id= this.station.selectedItem.type_id
+				
+				if(this.SrcCode.text == ""){
+					DataManager.showErrorMessage("代码不能为空!");
+					return;
+				}
+				if(this.UpURL.text == ""){
+					DataManager.showErrorMessage("上报地址不能为空!");
+					return;
+				}
+				if(this.FTP.text == ""){
+					DataManager.showErrorMessage("Ftp地址不能为空!");
+					return;
+				}
+				if(this.FTPPort.text == ""){
+					DataManager.showErrorMessage("Ftp端口不能为空!");
+					return;
+				}
+				if(this.FTPUser.text == ""){
+					DataManager.showErrorMessage("Ftp用户不能为空!");
+					return;
+				}
+				if(this.FTPPassword.text == ""){
+					DataManager.showErrorMessage("Ftp密码不能为空!");
+					return;
+				}
+				if(this.FTPPath.text == ""){
+					DataManager.showErrorMessage("Ftp路径不能为空!");
+					return;
+				}
+				if(this.TimeServer.text==""){
+					DataManager.showErrorMessage("时间服务器不能为空!");
+					return;
+				}
+				var obj:Object = new Object();
+				obj.SrcCode = this.SrcCode.text;
+				obj.UpURL = this.UpURL.text;
+				obj.FTP = this.FTP.text;
+				obj.FTPPort = this.FTPPort.text;
+				obj.FTPUser = this.FTPUser.text;
+				obj.FTPPassword = this.FTPPassword.text;
+				obj.FTPPath = this.FTPPath.text;
+				centerList.addItem(obj);
+				
+				paraObj.center=centerList;
+				paraObj.PhoneMain = this.PhoneMain.text;
+				
+				paraObj.LogNameMain = this.LogNameMain.text;
+				paraObj.LogPasswordMain = this.LogPasswordMain.text;
+				paraObj.PhoneSlave = this.PhoneSlave.text;
+				paraObj.LogNameSlave = this.LogNameSlave.text;
+				paraObj.LogPasswordSlave = this.LogPasswordSlave.text;
+				paraObj.nativelogpassword = this.nativelogpassword.text;
+				
+				paraObj.TimeServer = this.TimeServer.text;
+				
+				paraObj.BatteryLevelDownThreshold = this.BatteryLevelDownThreshold.text;
+				paraObj.ShutdownDelayTime = this.ShutdownDelayTime.text;
+				
+				paraObj.CheckUPS = this.CheckUPS.selectedItem.data;
+				
+				paraObj.OffLineTime = this.OffLineTime.text;
+				paraObj.CompressSize = this.CompressSize.text;
+				paraObj.LogExpireDays = this.LogExpireDays.text;
+				paraObj.StationStatusReportInterval = this.StationStatusReportInterval.text;
+				paraObj.R1 = this.R1;
+				paraObj.R2 = this.R2;
+				paraObj.R1Name = this.R1Name;
+				paraObj.R1Code = this.R1Code;
+				paraObj.R2Name = this.R2Name;
+				paraObj.R2Code = this.R2Code;
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.parameterSet.EquInitParameterSet","EquipmentInitParamSetV8",paraObj,processSetParameter,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id));
+			}
+			
+			private function  processSetParameter(res:String):void{
+				DataManager.showErrorMessage(res);
+			}
+			protected function change(s:String):void
+			{
+				// TODO Auto-generated method stub
+				station.setDataProvider("type_id##"+s);
+			}
+			
+			protected function station_changeHandler():void
+			{
+				var head_id:String=this.station.selectedItem.head_id;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.parameterSet.EquInitParameterSet","getParamByHeadID",head_id,processQueryParam,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id));
+			}
+			
+			private function processQueryParam(obj:Object):void{
+				this.clearParma();
+				if(obj.param_id==null){
+					DataManager.showErrorMessage("站点"+this.station.selectedItem.code+"没有进行初始化参数值设置!");
+				}else{
+					if(obj.srccode!= ""){
+						//var object:centerParaSet = new centerParaSet();
+						this.FTP.text = obj.ftp;
+						this.FTPPort.text = obj.ftpport;
+						this.FTPPassword.text = obj.fptpassword;
+						this.FTPPath.text = obj.ftppath;
+						this.FTPUser.text = obj.ftpuser;
+						this.SrcCode.text = obj.srccode;
+						this.UpURL.text =obj.upurl;
+						//this.center_arr.push(object);	
+						//this.centerVG.addElement(object);	
+					}
+					this.PhoneMain.text=obj.phonemain;
+					this.LogNameMain.text=obj.lognamemain;
+					this.LogPasswordMain.text=obj.logpasswordmain;
+					this.PhoneSlave.text=obj.phoneslave;
+					this.LogNameSlave.text=obj.loagnameslave;
+					this.LogPasswordSlave.text=obj.logpasswordslave;
+					this.nativelogpassword.text=obj.nativelogpassword;
+					this.BatteryLevelDownThreshold.text=obj.batteryleveldownthreshold;
+					this.TimeServer.text=obj.timeserver;
+					if(obj.checkups == "yes"){
+						this.CheckUPS.selectedIndex = 0;
+					}else{
+						this.CheckUPS.selectedIndex = 1;
+					}
+					this.OffLineTime.text=obj.offlinetime;
+					this.CompressSize.text=obj.compresssize;
+					this.ShutdownDelayTime.text=obj.shutdowndelaytime;
+					this.LogExpireDays.text = obj.logexpiredays;
+					this.StationStatusReportInterval.text=obj.stationstatusreportinterval;
+					if(obj.R1 != ""){
+						this.R1= obj.R1;					
+					}
+					if(obj.R2 != ""){
+						this.R2= obj.R2;					
+					}
+					if(obj.R3 != ""){
+						this.R3= obj.R3;					
+					}
+					if(obj.R4 != ""){
+						this.R4= obj.R4;					
+					}
+					if(obj.R5 != ""){
+						this.R5= obj.R5;					
+					}
+					if(obj.R6 != ""){
+						this.R6= obj.R6;					
+					}
+					if(obj.R7 != ""){
+						this.R7= obj.R7;					
+					}
+					if(obj.R8 != ""){
+						this.R8= obj.R8;					
+					}
+					if(obj.R9 != ""){
+						this.R9= obj.R9;					
+					}
+				}
+				this.getEquByCode(this.station.selectedItem.code);
+			}
+			
+			private function clearParma():void{
+				//this.centerVG.removeAllElements();	
+				FTP.text = "";
+				SrcCode.text = "";
+				UpURL.text = "";
+				FTPPort.text = "";
+				FTPUser.text = "";
+				FTPPassword.text = "";
+				FTPPath.text = "";
+				this.oReceiver1.removeAllElements();
+				this.oReceiver2.removeAllElements();
+				this.PhoneMain.text="";
+				this.LogNameMain.text="";
+				this.LogPasswordMain.text="";
+				this.PhoneSlave.text="";
+				this.LogNameSlave.text="";
+				this.LogPasswordSlave.text="";
+				this.nativelogpassword.text="";
+				this.BatteryLevelDownThreshold.text="";
+				this.TimeServer.text="";
+				this.OffLineTime.text="";
+				this.CompressSize.text="";
+				this.ShutdownDelayTime.text="";
+				//if(x.@CHECKUPS == "yes"){
+				this.CheckUPS.selectedIndex = 0;
+				//}else{
+				//	this.CheckUPS.selectedIndex = 1;
+				//}
+				this.LogExpireDays.text="";
+				StationStatusReportInterval.text="";
+				R1 = "";
+				R2 = "";
+				R3 = "";
+				R4 = "";
+				R5 = "";
+				R6 = "";
+				R7 = "";
+				R8 = "";
+				R9 = "";
+				R1Name = "";
+				R1Code = "";
+				R2Name = "";
+				R2Code= "";
+				R3Name = "";
+				R3Code= "";
+				R4Name= "";
+				R4Code= "";
+				R5Name= "";
+				R5Code= "";
+				R6Name= "";
+				R6Code= "";
+				R7Name= "";
+				R7Code = "";
+				R8Name= "";
+				R8Code= "";
+				R9Name = "";
+				R9Code = "";			
+			}
+			private function setDefaultParameter():void{
+				//this.oReceiver1.removeAllElements();
+				//this.oReceiver2.removeAllElements();
+				FTP.text = "114.251.47.196";
+				SrcCode.text = "CBT01";
+				UpURL.text = "http://114.251.47.196/hw/dev";
+				FTPPort.text = "21";
+				FTPUser.text = "user";
+				FTPPassword.text = "user";
+				FTPPath.text = "upload";
+				this.PhoneMain.text="1";
+				this.LogNameMain.text="user";
+				this.LogPasswordMain.text="user";
+				this.PhoneSlave.text="1";
+				this.LogNameSlave.text="user";
+				this.LogPasswordSlave.text="user";
+				this.nativelogpassword.text="user";
+				this.BatteryLevelDownThreshold.text="2.1";
+				this.TimeServer.text="114.251.47.196";
+				this.OffLineTime.text="00:30:00";
+				this.CompressSize.text="100";
+				this.ShutdownDelayTime.text="120";
+				this.CheckUPS.selectedIndex = 0;
+				this.LogExpireDays.text="10";
+				this.StationStatusReportInterval.text="10";
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<!--fx:Style>
+	@namespace s "library://ns.adobe.com/flex/spark";
+	s|Panel {
+	/*chrome-color: #000000;*/
+	border-alpha: 0.4;
+	background-alpha: 0.4;
+	background-color: #cbdccb;
+	}
+	</fx:Style-->
+	
+	<s:VGroup  width="100%" height="50"  paddingTop="10">
+		<s:HGroup width="100%" paddingLeft="40"  verticalAlign="middle">
+			<s:Label text="站点类型："/>
+			<s:ComboBox width="100" id="otype" change="change(this.otype.selectedItem.value)" height="30" selectedIndex="0"  dataProvider="{listResume}" />
+			<s:Label text="站点名称:"/>
+			<global:HeadendList id="station" change="station_changeHandler()"  height="30" width="200"/>
+			<s:Spacer width="10"/>
+			<s:Button buttonMode="true" label="设置" id="setButton" click="setParameter()"/>
+			<s:Button buttonMode="true" label="加载默认值" click="setDefaultParameter()"/>
+		</s:HGroup>
+	</s:VGroup>
+	<mx:HRule width="100%" strokeColor="#FFFFFF"/>
+	<s:HGroup paddingTop="5" width="100%">
+		<!--s:VGroup horizontalAlign="center"  height="100%" width="141" verticalAlign="middle">
+		<contaners:BGAbleContainer click="addContainer()" useHandCursor="true" buttonMode="true" backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/addset.png')" width="64"  height="68">
+		
+		</contaners:BGAbleContainer>  
+		</s:VGroup-->
+		<s:Scroller width="100%" minHeight="30"  maxHeight="200" horizontalScrollPolicy="off">
+			<s:VGroup width="100%" paddingLeft="10" verticalAlign="middle" horizontalAlign="center" id="centerVG" height="100%" gap="5" >
+				<s:HGroup horizontalAlign="center" verticalAlign="middle" >
+					<s:Label text="代 码:" color="white"/>	
+					<s:TextInput width="100" id="SrcCode"/>
+					<s:Label text="上报地址:" color="white"/>	
+					<s:TextInput  width="200" id="UpURL"/>
+					<s:Label text="FTP 地 址:" color="white"/>	
+					<ip:IPComponent id="FTP"/>
+					<s:Label text="FTP端口:" color="white"/>
+					<s:TextInput  width="100" id="FTPPort"  />
+					<s:Label text="FTP用户:" color="white"/>
+					<s:TextInput  width="100" id="FTPUser" />
+					<s:Label text="FTP 密 码:" color="white"/>
+					<s:TextInput  width="100" id="FTPPassword" />
+					<s:Label text="FTP路径:" color="white"/>
+					<s:TextInput  width="100" id="FTPPath"  />	
+				</s:HGroup>
+			</s:VGroup>
+		</s:Scroller>
+		
+	</s:HGroup>
+	<mx:HRule width="100%" strokeColor="#FFFFFF"/>
+	<s:HGroup width="100%" horizontalAlign="center" verticalAlign="middle" paddingTop="5" height="400" left="10" right="10">
+		<s:Panel title="站点首选拨号设置" height="360" textAlign="center"  width="250">
+			<s:VGroup width="100%" left="5" right="5" paddingTop="5" gap="0"  height="100%">
+				<contaners:BGAbleContainer height="37" backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/data_bg.png')" width="100%" >
+					<contaners:layout>
+						<s:HorizontalLayout verticalAlign="middle" paddingLeft="5" />
+					</contaners:layout>	
+					<s:Label text="上行电话:" color="white"  />
+					<s:TextInput width="100" id="PhoneMain"  text="1"/>
+				</contaners:BGAbleContainer>
+				<contaners:BGAbleContainer height="37" backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/data_bg.png')" width="100%" >
+					<contaners:layout>
+						<s:HorizontalLayout verticalAlign="middle" paddingLeft="5"/>
+					</contaners:layout>		
+					<s:Label text="拨号用户名:" color="white" />
+					<s:TextInput width="100" id="LogNameMain" text="user"/>
+				</contaners:BGAbleContainer>
+				<contaners:BGAbleContainer backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/data_bg.png')" width="100%" height="37">
+					<contaners:layout>
+						<s:HorizontalLayout verticalAlign="middle"  paddingLeft="5"/>
+					</contaners:layout>		
+					<s:Label text="拨号密码:" color="white" />
+					<s:TextInput width="100" id="LogPasswordMain" text="user"/>
+				</contaners:BGAbleContainer>
+			</s:VGroup>	
+		</s:Panel>
+		<s:Panel title="站点备注拨号设置" height="360" width="250">
+			<s:VGroup width="100%" height="100%" paddingTop="5" gap="0" left="5" right="5">
+				<contaners:BGAbleContainer backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/data_bg.png')" width="100%" height="37">
+					<contaners:layout>
+						<s:HorizontalLayout verticalAlign="middle" paddingLeft="5"/>
+					</contaners:layout>	
+					<s:Label text="上行电话:" color="white"/>
+					<s:TextInput width="100" id="PhoneSlave" text="1"/>
+				</contaners:BGAbleContainer>
+				<contaners:BGAbleContainer backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/data_bg.png')" width="100%" height="37">
+					<contaners:layout>
+						<s:HorizontalLayout verticalAlign="middle" paddingLeft="5"/>
+					</contaners:layout>		
+					<s:Label text="拨号用户名:" color="white"/>
+					<s:TextInput width="100" id="LogNameSlave" text="user"/>
+				</contaners:BGAbleContainer>
+				<contaners:BGAbleContainer backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/data_bg.png')" width="100%" height="37">
+					<contaners:layout>
+						<s:HorizontalLayout verticalAlign="middle" paddingLeft="5"/>
+					</contaners:layout>		
+					<s:Label text="拨号密码:" color="white"/>
+					<s:TextInput width="100" id="LogPasswordSlave" text="user"/>
+				</contaners:BGAbleContainer>
+			</s:VGroup>	
+		</s:Panel>
+		<s:Panel title="站点拨号密码设置" height="360" width="250">
+			<s:VGroup width="100%" height="100%" left="5" paddingTop="5" gap="0" right="5">
+				<contaners:BGAbleContainer backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/data_bg.png')" width="100%" height="37">
+					<contaners:layout>
+						<s:HorizontalLayout verticalAlign="middle" paddingLeft="5"/>
+					</contaners:layout>		
+					<s:Label text="下行拨号密码:" color="white"/>
+					<s:TextInput width="100" id="nativelogpassword" text="user"/>
+				</contaners:BGAbleContainer>
+			</s:VGroup>
+		</s:Panel>
+		<s:Panel title="系统参数" height="360" width="260">
+			<s:VGroup width="100%" height="100%" paddingTop="5" left="5" right="5">
+				<contaners:BGAbleContainer backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/data_bg.png')" width="100%" height="30">
+					<contaners:layout>
+						<s:HorizontalLayout verticalAlign="middle" paddingLeft="5"/>
+					</contaners:layout>		
+					<s:Label text="UPS电池电压下限:" color="white"/>
+					<s:TextInput id="BatteryLevelDownThreshold" width="100" restrict="0-9." text="2.1"/>
+					<s:Label text="V" color="white"/>
+				</contaners:BGAbleContainer>
+				<contaners:BGAbleContainer backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/data_bg.png')" width="100%" height="30">
+					<contaners:layout>
+						<s:HorizontalLayout verticalAlign="middle" paddingLeft="5"/>
+					</contaners:layout>		
+					<s:Label text="时间服务器:" color="white"/>
+					<ip:IPComponent id="TimeServer" width="150" text="10.10.2.100"/>
+				</contaners:BGAbleContainer>
+				<contaners:BGAbleContainer backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/data_bg.png')" width="100%" height="30">
+					<contaners:layout>
+						<s:HorizontalLayout verticalAlign="middle" paddingLeft="5"/>
+					</contaners:layout>		
+					<s:Label text="站点主动拨号自动断线时间:" color="white"/>
+					<timecomp:TimeNew   id="OffLineTime" dateDisplay="time" text="00:10:00" />
+				</contaners:BGAbleContainer>
+				<contaners:BGAbleContainer backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/data_bg.png')" width="100%" height="30">
+					<contaners:layout>
+						<s:HorizontalLayout verticalAlign="middle" paddingLeft="5"/>
+					</contaners:layout>		
+					<s:Label text="消息压缩的上限值:" id="CompressSizeLabel" color="white"/>
+					<s:TextInput width="100" id="CompressSize" text="100"/>
+					<s:Label text="kB" id="kLabel" color="white"/>	
+				</contaners:BGAbleContainer>
+				<contaners:BGAbleContainer backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/data_bg.png')" width="100%" height="30">
+					<contaners:layout>
+						<s:HorizontalLayout verticalAlign="middle" paddingLeft="5"/>
+					</contaners:layout>		
+					<s:Label text="UPS关机延时时间:" color="white"/>
+					<s:TextInput id="ShutdownDelayTime" width="100" restrict="0-9" text="120" />
+					<s:Label text="秒" color="white"/>
+				</contaners:BGAbleContainer>
+				<contaners:BGAbleContainer backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/data_bg.png')" width="100%" height="30">
+					<contaners:layout>
+						<s:HorizontalLayout verticalAlign="middle" paddingLeft="5"/>
+					</contaners:layout>		
+					<s:Label text="检查UPS状态:" color="white"/>
+					<s:ComboBox id="CheckUPS" dataProvider="{list}" selectedIndex="0" labelField="lable"/>
+				</contaners:BGAbleContainer>
+				<contaners:BGAbleContainer backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/data_bg.png')" width="100%" height="30">
+					<contaners:layout>
+						<s:HorizontalLayout verticalAlign="middle" paddingLeft="5"/>
+					</contaners:layout>		
+					<s:Label text="设备日志/报警数据过期时间:" id="LogExpireDaysLabel" color="white"/>
+					<s:TextInput id="LogExpireDays" width="48" restrict="0-9" text="10"/>
+					<s:Label text="天" id="logLabel" color="white"/>
+				</contaners:BGAbleContainer>
+				<contaners:BGAbleContainer backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/data_bg.png')" width="100%" height="30">
+					<contaners:layout>
+						<s:HorizontalLayout verticalAlign="middle" paddingLeft="5"/>
+					</contaners:layout>		
+					<s:Label text="站点状态自动上报间隔:" color="white"/>
+					<s:TextInput id="StationStatusReportInterval" width="48" restrict="0-9" text="10"/>
+					<s:Label text="分" color="white"/>
+				</contaners:BGAbleContainer>
+				
+			</s:VGroup>
+		</s:Panel>
+		<s:Panel title="接收机初始化指令" height="360" width="250">
+			<s:VGroup width="100%" height="100%" paddingTop="5" gap="0" left="5" right="5">
+				<contaners:BGAbleContainer backgroundImageMode="scale" backgroundImage="@Embed(source='com/viewscenes/images/module/parameterSet/data_bg.png')" width="100%" height="100%">
+					<contaners:layout>
+						<s:HorizontalLayout verticalAlign="middle" paddingLeft="5"/>
+					</contaners:layout>	
+					<s:VGroup height="100%" >	
+						<s:VGroup id="oReceiver1" width="50%" >
+							
+						</s:VGroup>
+						<s:VGroup id="oReceiver2" width="50%">
+							
+						</s:VGroup>
+					</s:VGroup>
+				</contaners:BGAbleContainer>
+			</s:VGroup>
+			
+			
+		</s:Panel>
+	</s:HGroup>
+</system:BasePage>

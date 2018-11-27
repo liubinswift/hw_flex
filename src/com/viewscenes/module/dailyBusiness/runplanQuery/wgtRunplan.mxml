@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:mx="library://ns.adobe.com/flex/mx" 
+				 xmlns:system="com.morcha4.frame.system.*" 
+				 xmlns:flipBar="com.viewscenes.utils.flipBar.*"
+				 xmlns:global="com.viewscenes.global.*"
+				 xmlns:timecomp="com.viewscenes.utils.timecomp.*"
+				 width="100%" height="100%">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.viewscenes.beans.runplan.WGTRunplanBean;
+			import com.viewscenes.global.DataManager;
+			
+			import mx.collections.ArrayCollection;
+	
+			//发射台
+			[Bindable]
+			private var stationArr:ArrayCollection = new ArrayCollection;
+			
+			//语言
+			[Bindable]
+			private var lanaguageArr:ArrayCollection = new ArrayCollection;
+			
+			//国际台运行图
+			[Bindable]
+			private var wgtRunplanArr:ArrayCollection = new ArrayCollection;
+			
+			private function queryRunplan():void{
+				clew_label.visible=true;
+				clew_label.includeInLayout=true;
+				var wgtRunplan:WGTRunplanBean = new WGTRunplanBean;
+				wgtRunplan.runplan_type_id="3";//外国台运行图 类型值为3
+				wgtRunplan.flag="all";
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.runplan.wgt_runplan.WGTRunplan","queryRunplan",wgtRunplan,getRunplanListBack,DataManager.showErrorMessageBack);
+				pagebar.m_sendCmd(request);
+			}
+			private function getRunplanListBack(arr:ArrayCollection):void{
+				wgtRunplanArr.removeAll();
+				if(arr.length==0){
+					clew_label.text="无相关查询数据";
+				}else{
+					clew_label.visible=false;
+					clew_label.includeInLayout=false;
+					wgtRunplanArr = arr;
+				}
+				
+			}
+		]]>
+	</fx:Script>
+	<s:VGroup width="100%" height="100%" paddingLeft="2">
+		<s:HGroup  width="100%" height="25" verticalAlign="middle" paddingLeft="20">
+			
+			<s:Label text="站点:"/>
+			<global:HeadendList id="headend" headDataAll="true"  width="180"/>
+			
+			<s:Label text="发射台:"/>
+			<s:DropDownList id="station"  dataProvider="{stationArr}" labelField="station_name"/>
+			
+			<s:Label text="语言:"/>
+			<s:DropDownList id="language"  dataProvider="{lanaguageArr}" labelField="language_name"/>
+			
+			<s:Label text="频率"/>
+			<s:TextInput width="60" />
+			<s:Label text="方向"/>
+			<s:TextInput width="60" />
+			<s:Label text="天线号"/>
+			<s:TextInput width="100" />
+			<s:Label text="天线程式"/>
+			<s:TextInput width="100" />
+			<s:Label text="功率"/>
+			<s:TextInput width="60" />
+			<s:Label text="服务区"/>
+			<s:TextInput width="100" />
+			
+		</s:HGroup>
+		<s:HGroup width="100%" height="25" verticalAlign="middle" paddingLeft="20">
+			<s:Label text="CIRAF区"/>
+			<s:TextInput width="60" />
+			<s:Label text="国际卫星通道"/>
+			<s:TextInput width="60" />
+			<s:Label text="开始时间" />
+			<timecomp:TimeNew id="starttime"  dateDisplay="timenew"/>
+			<s:Label text="结束时间" />
+			<timecomp:TimeNew id="endtime"  dateDisplay="timenew"/>
+			<s:Label text="休息时间"/>
+			<s:TextInput id="rest_time" width="60"/>
+			<s:Label text="休息日期"/>
+			<timecomp:TimeNew id="rest_datetime"/>
+			<s:Label text="启用期"/>
+			<timecomp:TimeNew id="valid_starttime"/>
+			<s:Label text="停用期"/>
+			<timecomp:TimeNew id="valid_endtime"/>
+			<s:Button buttonMode="true" label="查询" click="queryRunplan()"/>
+		</s:HGroup>   
+		<mx:Canvas width="100%" height="100%">
+			<s:DataGrid width="100%" height="100%" dataProvider="{wgtRunplanArr}" id="grid">
+				<s:columns>
+					<s:ArrayCollection>
+						<s:GridColumn dataField="station_name"  headerText="台名" />
+						<s:GridColumn dataField="broadcast_station"  headerText="播音电台" />
+						<s:GridColumn dataField="broadcast_country"  headerText="播音国家" />
+						<s:GridColumn dataField="launch_country"  headerText="发射国家" />
+						<s:GridColumn dataField="sentcity"  headerText="发射城市" />
+						<s:GridColumn dataField="transmiter_no"  headerText="发射机号" />
+						<s:GridColumn dataField="freq"  headerText="频率(KHZ)" />
+						<s:GridColumn dataField="direction"  headerText="方向" />
+						<s:GridColumn dataField="antenna"  headerText="天线号" />
+						<s:GridColumn dataField="antennatype"  headerText="天线程式" />
+						<s:GridColumn dataField="language"  headerText="语言" />
+						<s:GridColumn dataField="power"  headerText="功率" />
+						<s:GridColumn dataField="service_area"  headerText="服务区" />
+						<s:GridColumn dataField="ciraf"  headerText="CIRAF区" />
+						<s:GridColumn dataField="start_time"  headerText="开始时间" />
+						<s:GridColumn dataField="end_time"  headerText="结束时间" />
+						<s:GridColumn dataField="rest_datetime"  headerText="休息日期" />
+						<s:GridColumn dataField="rest_time"  headerText="休息时间" />
+						<s:GridColumn dataField="valid_start_time"  headerText="启用期" />
+						<s:GridColumn dataField="valid_end_time"  headerText="停用期" />
+						<s:GridColumn dataField="mon_area"  headerText="遥控站收测" />
+						<s:GridColumn dataField="remark"  headerText="备注" />
+					</s:ArrayCollection>
+				</s:columns>
+			</s:DataGrid>
+			<s:Label text="正在查询，请稍候..." id="clew_label" y="{grid.columnHeaderGroup.height+10}" color="0x000000" fontSize="15" width="100%" textAlign="center"  visible="false" includeInLayout="false" />
+		</mx:Canvas>
+		
+		<flipBar:PageBar width="100%" id="pagebar" rowConutOfPage="40" totalPageQuery="5" height="20"/>
+	</s:VGroup>
+</system:BasePage>

@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:contaners="com.morcha4.ui.contaners.*"
+		 width="100%" height="100%">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.viewscenes.global.DataManager;
+			
+			import mx.collections.ArrayCollection;
+			
+			import spark.components.HGroup;
+			private function init():void{
+				//				var tmp:uint;
+				//				tmp is CardUnits;
+				//				clearAll();
+				//				getdata();
+				//				setUpsState();
+				//				setCardState();
+				//				setOtherCard(); 
+			}
+			public function clearAll():void{
+				_state.text = "";
+				outlevel_ups.text	= "";
+				inlevel_ups.text	= "";
+				linefreq.text		= "";
+				batterylevel.text	= "";
+				upsstates.text		= "";
+				_systime.text		= "";
+				_amcard.text		= "";
+				_fmcard.text		= "";
+				_voicecard.text		= "";
+				_offsetcard.text	= "";
+				//setData(equXML);
+			}
+			/**
+			 * 设置数据
+			 */
+			public function setData(list:ArrayCollection):void{
+				var hb:HGroup = new HGroup();
+				var count:int =0;
+				//Alert.show(datas.toString())
+				var _ups_card_index:int=mainCards.getElementIndex(_ups_card);
+				for(var ii:int=mainCards.numChildren-1;ii>=1;ii--)
+				{
+					mainCards.removeElementAt(ii);
+				}
+				
+				for(var ri:int=1;ri<list.length;ri++){
+					
+					var obj:Object = list.getItemAt(ri);
+					var type:String = obj.label.toString().split(":")[0];
+					var value:String= obj.data;
+					if(type!=null&&type!=""){
+						
+						var card:CardUnits = new CardUnits();
+						if(count!=0&&(count%3==0)){
+							hb = new HGroup();
+						}
+						hb.percentWidth = 100;
+						//						hb.setStyle("width","1000");
+						hb.horizontalAlign = "center";
+						hb.verticalAlign = "middle";
+						hb.paddingLeft = 60;
+						hb.paddingRight = 60;
+						//						hb.setStyle("backgroundColor","#0000FF");
+						mainCards.addElement(hb);
+						card.width = 400;
+						hb.addElement(card);
+						
+						//						card._labelname.label =  "接收机"+type;
+						card.title =  "接收机"+type;
+						card._type.text = value;
+						
+						if((count+1)%2!=0){							
+							var space:Spacer = new Spacer();
+							space.width = 100;
+							hb.addElement(space);
+						}
+						
+						count++;
+					}
+				}
+			}
+			//2|R2|Idle:|
+			//level:231;fm-modulation:57;am-modulation:75;band:1;freq:828;offset:-2;attenuation:2;bandwidth:5;tasktype:收测任务;
+			public function setCardState(obj:Object):void{
+				var lastTime:String = obj.last_get_time;
+				this.clearAll();
+				var time:String=obj.last_get_time;
+				var msg:String = obj.dataList;//zyh
+				_systime.text = time;
+				if(msg==""){
+					return;
+				}
+				var MsgArray:Array = msg.split("#$#");
+				for(var i:int=0;i<MsgArray.length;i++){
+					var equipemt:Array  = (MsgArray[i] as String).split("|");
+					
+					var type:String	    = equipemt[0] as String ;//设备类型
+					var equCode:String  = equipemt[1] as String ;//设备标识
+					var equState:String = equipemt[2] as String ;//设备状态:状态描述
+					var params:String	= equipemt[3] as String ;//设备具体参数子元素
+					var paramArry:Array = new Array();
+					if(params.indexOf(";")>0){
+						paramArry = params.split(";");
+					}
+					//					var paramArry:Array = params.split(";");
+					
+					switch(type){ 
+						case "1"://UPS
+							_state.text 	  = equState;
+							//							var paramArry:Array = params.split(";");
+							for(var j:int=0;j<paramArry.length;j++){
+								var pm:Array = (paramArry[j] as String).split(":");
+								var str:String = pm[0] as String;
+								if(str=="outputlinelevel" ){
+									outlevel_ups.text = pm[1] as String;
+								}else if(str=="inputlinelevel"){
+									inlevel_ups.text = pm[1] as String;
+								}else if(str=="linerrequency"){
+									linefreq.text = pm[1] as String;
+								}else if(str=="batterylevel"){
+									batterylevel.text = pm[1] as String;
+								}else if(str=="upsstatus"){
+									upsstates.text = pm[1] as String;
+								}
+							}
+							break;
+						case "2"://接收机
+							var equ:String = "接收机"+equCode;
+							for(var ii:int=0;ii<mainCards.numElements;ii++){
+								var hb:HGroup = mainCards.getElementAt(ii) as HGroup;
+								if(hb.id!="_ups_card"){
+									for(var jj:int=0;jj<hb.numElements;jj++){
+										var cards:CardUnits = hb.getElementAt(jj) as CardUnits;
+										//										if(cards._labelname.label == equ){
+										if(cards==null)continue;
+										if(cards.title == equ){
+											cards.setAllData(equState,paramArry);
+										}
+									}
+								}
+							}
+							break;
+						case "3":
+							_fmcard.text = equState;
+							break;
+						case "4":
+							_amcard.text = equState;
+							break;
+						case "5":
+							_voicecard.text = equState;
+							break;
+						case "6":
+							_offsetcard.text = equState;
+							break;
+						case "11":
+							var equt:String = "接收机"+equCode;
+							for(var it:int=0;it<mainCards.numElements;it++){
+								var hbt:HGroup = mainCards.getElementAt(it) as HGroup;
+								if(hbt.id!="_ups_card"){
+									for(var jt:int=0;jt<hbt.numElements;jt++){
+										var cardt:CardUnits = hbt.getElementAt(jt) as CardUnits;
+										//										if(cardt._labelname.label == equt){
+										if(cardt==null)continue;
+										if(cardt.title == equt){
+											cardt.setAllData(equState,paramArry);
+										}
+									}
+								}
+							}
+							break;
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:VGroup id="mainCards" width="100%" height="100%" horizontalAlign="center" paddingLeft="60" paddingRight="60">
+		<s:HGroup id="_ups_card" width="100%" horizontalAlign="center" verticalAlign="top">
+			<!--mx:TabNavigator id="UPS" width="50%"-->
+			<s:Panel width="400" title="UPS">
+				<s:VGroup id="UPS" left="5" right="5" top="0" width="100%" gap="0">
+					<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg">
+						<contaners:layout>
+							<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+						</contaners:layout>		
+						<s:Label width="40%" text="状态：" fontWeight="bold" textAlign="right"/>
+						<s:Label id="_state" width="60%" text="" textAlign="left"/>
+					
+					</contaners:BGAbleContainer>
+					<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg">
+						<contaners:layout>
+							<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+						</contaners:layout>	
+						<s:Label width="40%" text="系统时间：" fontWeight="bold" textAlign="right"/>
+						<s:Label id="_systime" width="60%" text="" textAlign="left"/>
+					</contaners:BGAbleContainer>
+					<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg">
+						<contaners:layout>
+							<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+						</contaners:layout>	
+						<s:Label width="40%" text="输出电压：" fontWeight="bold" textAlign="right"/>
+						<s:Label id="outlevel_ups" width="60%" text="" textAlign="left"/>
+					</contaners:BGAbleContainer>
+					<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg">
+						<contaners:layout>
+							<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+						</contaners:layout>	
+						<s:Label width="40%" text="输入电压：" fontWeight="bold" textAlign="right"/>
+						<s:Label id="inlevel_ups" width="60%" text="" textAlign="left"/>
+					</contaners:BGAbleContainer>
+					<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg">
+						<contaners:layout>
+							<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+						</contaners:layout>	
+						<s:Label width="40%" text="线路频率：" fontWeight="bold" textAlign="right"/>
+						<s:Label id="linefreq" width="60%" text="" textAlign="left"/>
+					</contaners:BGAbleContainer>
+					<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg">
+						<contaners:layout>
+							<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+						</contaners:layout>	
+						<s:Label width="40%" text="电池电压：" fontWeight="bold" textAlign="right"/>
+						<s:Label id="batterylevel" width="60%" text="" textAlign="left"/>
+					</contaners:BGAbleContainer>
+					<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg">
+						<contaners:layout>
+							<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+						</contaners:layout>	
+						<s:Label width="40%" text="UPS状态字符串：" fontWeight="bold" textAlign="right"/>
+						<s:Label id="upsstates" width="60%" text="" textAlign="left"/>
+					</contaners:BGAbleContainer>
+				</s:VGroup>
+			</s:Panel>
+			<s:Spacer width="100"/>
+			<!--/mx:TabNavigator-->
+			<!--mx:TabNavigator id="cardstate"  width="50%" -->
+			<s:Panel width="400"  title="卡状态" visible="false" includeInLayout="false">
+				<s:VGroup id="cardstate" left="5" right="5" top="0" width="100%" gap="0">
+					<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg">
+						<contaners:layout>
+							<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+						</contaners:layout>
+						<!--s:Label width="40%" text="系统时间：" fontWeight="bold" textAlign="right"/>
+						<s:Label id="_systime" width="60%" text="" textAlign="left"/-->
+					</contaners:BGAbleContainer>
+					<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg">
+						<contaners:layout>
+							<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+						</contaners:layout>
+						<s:Label width="40%" text="调幅度卡：" fontWeight="bold" textAlign="right"/>
+						<s:Label id="_amcard" width="60%" text="" textAlign="left"/>
+					</contaners:BGAbleContainer>
+					<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg">
+						<contaners:layout>
+							<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+						</contaners:layout>
+						<s:Label width="40%" text="调制度卡：" fontWeight="bold" textAlign="right"/>
+						<s:Label id="_fmcard" width="60%" text="" textAlign="left"/>
+					</contaners:BGAbleContainer>
+					<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg">
+						<contaners:layout>
+							<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+						</contaners:layout>
+						<s:Label width="40%" text="语音压缩卡：" fontWeight="bold" textAlign="right"/>
+						<s:Label id="_voicecard" width="60%" text="" textAlign="left"/>
+					</contaners:BGAbleContainer>
+					<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg">
+						<contaners:layout>
+							<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+						</contaners:layout>
+						<s:Label width="40%" text="频偏卡：" fontWeight="bold" textAlign="right"/>
+						<s:Label id="_offsetcard" width="60%" text="" textAlign="left"/>
+					</contaners:BGAbleContainer>
+					<contaners:BGAbleContainer width="100%" height="37" styleName="dataBGImg">
+						<contaners:layout>
+							<s:HorizontalLayout horizontalAlign="center" verticalAlign="middle"/>
+						</contaners:layout>
+						<s:Label width="40%" text="" fontWeight="bold" textAlign="right"/>
+						<s:Label id="_temp" width="60%" text="" textAlign="left"/>
+					</contaners:BGAbleContainer>
+				</s:VGroup>
+			</s:Panel>
+			<!--/mx:TabNavigator-->
+		</s:HGroup>
+	</s:VGroup>
+</s:Group>

@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:system="com.morcha4.frame.system.*" 
+				 width="100%" height="100%"  backgroundColor1="0xe3d4bd" backgroundColor2="0xaf8555" 
+				 xmlns:timecomp="com.viewscenes.utils.timecomp.*" xmlns:DataGrid="mor.DataGrid.*" creationComplete="initApp();"
+				 xmlns:util="com.viewscenes.utils.*"
+				 xmlns:flipBar="com.viewscenes.utils.flipBar.*">
+	
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.editor.ComboBoxEditor;
+			import com.morcha4.editor.EditorManager;
+			import com.morcha4.editor.TextEditor;
+			import com.morcha4.util.RendererUtil;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.SystemInit;
+			
+			import flash.utils.setTimeout;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.UIComponent;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.utils.ArrayUtil;
+			import mx.utils.ObjectUtil;
+			
+			import spark.events.GridItemEditorEvent;
+			
+			[Bindable]
+			private var listStat:ArrayCollection = new ArrayCollection();
+			private var insertListStat:ArrayCollection = new ArrayCollection();
+			private var updateListStat:ArrayCollection = new ArrayCollection();
+			
+			
+			[Bindable]private var selectedCounts:int = 0;  //选择总数
+			
+			
+			private var dellist:String = "";//删除详细数据id (多个id以逗号分隔)
+			
+			private var flag_channellist:Boolean = true;
+			
+			
+			public function initApp():void{
+	
+			}
+			
+			/**
+			 * 查询
+			 * */
+			private function getState():void
+			{ 
+					this.clearPage();
+	                listStat.removeAll();
+					con_clewlabel(clew_label,true,'正在查询，请稍候...');
+					var obj:Object = new Object;
+					pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.dicManager.StateTab","getState",obj,_getState,onfault));
+			}
+
+			private function _getState(list:ArrayCollection):void{ 
+					con_clewlabel(clew_label,false);
+					this.listStat=list;
+					
+					listStat.refresh();
+					if(listStat.length==0){
+						
+						con_clewlabel(clew_label,true,"无查询数据！");
+					}
+			}
+			
+			
+			/**
+			 * 控制datagrid的提示框是否显示，以及显示内容
+			 * author:cht
+			 * **/
+			public function con_clewlabel(_component:Label,_visible:Boolean,_label:String="")
+			{
+				_component.visible=_visible;
+				_component.includeInLayout=_visible;
+				_component.text=_label;
+			}
+			
+			
+			/**
+			 * 导出excel
+			 * */
+			private function getStateExcel():void
+			{
+				//				var url:String="com.viewscenes.framework.service.report.kltv.KL_StatService";
+				//				var func:String="getStatExcel";
+				//				
+				//				var head:String = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r';
+				//				head += '<msg type="'+url+'" function="'+func+'">\r';
+				//				var xmlText:String = head;
+				//				xmlText += "<headCode>"+headName.selectedItem.code+"</headCode>";
+				//				xmlText += "<channel>"+channelName.selectedItem.ch_id+"</channel>";
+				//				xmlText += "<FatherType>"+fatherType.selectedItem.dict_type+"</FatherType>";
+				//				xmlText += "<SonType>"+sonType.selectedItem.TypeId+"</SonType>";
+				//				xmlText += "<isReview>"+is_resume.selectedItem.data+"</isReview>";
+				//				xmlText += "<startTime>"+startTime.text+"</startTime>";
+				//				xmlText += "<endTime>"+endTime.text+"</endTime>";
+				//				xmlText += "<abnormal_time_type>"+longType.selectedItem.data+"</abnormal_time_type>";
+				//				xmlText += "<abnormal_time>"+long.text+"</abnormal_time>";
+				//				xmlText += "</msg>";
+				//				flash.external.ExternalInterface.call("toExcel",xmlText);
+			}
+			
+			
+			//选择点中后执行的方法
+			private function changeSelect(obj:Object):void{
+				//				Alert.show(obj.data.isSelected);
+				if(obj.data.isSelected=="true"){
+					this.selectedCounts=selectedCounts+1;  
+				}else{
+					this.selectedCounts=selectedCounts-1; 
+				}
+			}
+			
+			private function clearPage():void{  //下一页或者上一页时需要把选择状态和选择总数清零
+				selectedCounts = 0;
+				selectAll.selected = false;
+			}
+			
+			
+			/**
+			 * 选择全部
+			 */
+			private function selectAllItem():void{
+				
+				if(listStat == null || listStat.length ==0){
+					return;
+				}
+				var check:Boolean = selectAll.selected;
+				
+				for(var i:int=0; i<listStat.length; i++){
+					var Obj:Object = listStat.getItemAt(i) as Object;
+					Obj.isSelected = check.toString();
+					//					Alert.show(Obj.isSelected);
+				}
+				
+				listStat.refresh(); //这个必须有，因为Obj.isSelected的值有变化，列表结果的dataProvider需要重新装载，即重新渲染
+				if(selectAll.selected){
+					selectedCounts = result.dataProvider.length;  //selectedCounts赋值
+				} else{
+					selectedCounts = 0; 
+				}
+			}
+			
+			
+			/**
+			 * 删除
+			 **/
+			private function clickDeleteState():void{
+				
+				dellist ="";
+				var del_number:Number = 0;
+				for(var i:int=result.dataProvider.length-1;i>=0;i--)
+				{
+					if(result.dataProvider[i].isSelected=="true")
+					{
+						var state:String = result.dataProvider[i].state;
+						
+						if(del_number==0)
+						{
+							
+							dellist = "'"+state+"'";
+							
+							
+						} else{
+							dellist += ","+"'"+state+"'";
+						}
+						del_number++;
+					}
+				}
+				if(dellist!=""){
+					
+					Alert.show("您确定删除吗?","删除确认",Alert.YES | Alert.NO,this,clickDeleteChoose);
+				}
+				else{
+					Alert.show("请选择要删除的信息","警告");
+					return;
+				}
+			}
+			
+			
+			//选择删除任务
+			private function clickDeleteChoose(event:CloseEvent):void{
+				if(event.detail == Alert.NO)
+					return;
+				deleteDetailData(dellist);
+				
+			}
+			
+			
+			/**
+			 * 删除查询的详细数据
+			 **/
+			public function deleteDetailData(dellist:String):void{
+				selectAll.selected = false;
+				//				Alert.show(IdList);
+				for(var i:int=result.dataProvider.length-1;i>=0;i--) //在前台删除
+				{
+					if(result.dataProvider[i].isSelected=="true")
+					{
+						result.dataProvider.removeItemAt(i);
+						this.selectedCounts=selectedCounts-1;
+					}
+				}
+				
+				var obj:Object = new Object();//在后台删除
+				
+				obj.dellist=dellist;
+				
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.dicManager.StateTab","deleteState",
+									obj,_deleteState,onfault))
+				
+			}
+			
+			private function _deleteState(obj:Object):void{ 
+				var si:SystemInit = new SystemInit();  
+				si.getConfigData();
+				getState();
+				Alert.show("删除成功");
+				
+			}
+			
+			/**
+			 * 添加一条详细数据（只在表格中添加，还未提交到后台,所有之查询已处理的报警）
+			 **/
+			public function addStateData():void{
+//				con_clewlabel(clew_label,false,"");
+				//				var obj:Object = new Object();
+				//				obj.state="";
+				//				obj.state_name="";
+				//				this.listStat.addItemAt(obj,0);
+				//				this.selectedCounts=selectedCounts+1;
+				//				listStat.refresh();
+				var pop:AddStateForm=AddStateForm(PopUpManager.createPopUp(this,AddStateForm,true));
+				PopUpManager.centerPopUp(pop);
+				pop.addEventListener("Listresresh",resultCommitAllState);
+			}
+		
+			private function updateState(obj:Object):void{
+				var pop:EditStateForm=EditStateForm(PopUpManager.createPopUp(this,EditStateForm,true));
+				pop.setState(obj.data);
+				PopUpManager.centerPopUp(pop);
+				pop.addEventListener("Listresresh",resultCommitAllState);
+				
+			}
+			
+		
+			/**
+			 * 提交新增和修改的数据
+			 **/
+			public function commitState():void{
+			
+				insertListStat.removeAll();
+				updateListStat.removeAll();
+				for(var i:int=0;i<listStat.length;i++){
+					if(listStat.getItemAt(i).isSelected=="true"){
+						if(listStat.getItemAt(i).state ==""){//说明是插入操作
+							insertListStat.addItem(listStat.getItemAt(i));	
+						}
+						else{//说明是插入更新
+							updateListStat.addItem(listStat.getItemAt(i));
+						}
+					}
+				}
+				
+				if(insertListStat.length==0&&updateListStat.length==0){
+					Alert.show("请选择要确认的信息");
+				}
+				else{
+					var obj:Object = new Object();
+					obj.insert=insertListStat;
+					obj.update=updateListStat;
+					RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.dicManager.StateTab","modifyState",obj,resultCommitAllState,onfault));
+				}
+			}
+			
+			private function resultCommitAllState(obj:Object):void{ 
+				var resultList:ArrayCollection =new ArrayCollection;
+				resultList=obj as ArrayCollection;
+				Alert.show("操作成功,成功插入"+resultList.getItemAt(0).toString()+"条,成功更新"+resultList.getItemAt(1).toString()+"条");
+				getState();
+				var si:SystemInit = new SystemInit();  
+				si.getConfigData();
+			}
+			
+			
+			private function onfault(e:RPCException):void
+			{
+			
+				Alert.show(e.message);
+			}
+			
+			
+			
+			
+		]]>
+	</fx:Script>
+	
+	
+	<s:VGroup width="100%" height="100%">
+		
+	   <s:HGroup width="100%"  horizontalAlign="right" verticalAlign="middle">
+		    <s:Button buttonMode="true" label="查 询" width="100" click="getState();"/>
+			<s:Button buttonMode="true" id="addset" width="100" label="添加"  click="addStateData()"/>
+		    <!--s:Button buttonMode="true" id="updateset" width="100" label="编辑确认"  click="commitState()"/-->
+			<s:Button buttonMode="true" id="delset" width="100" label="删除所选"  click="clickDeleteState()"/>
+			<!--s:Button label="导出Excel" width="100" click="getStateExcel();"/-->
+		</s:HGroup>
+		
+		
+		<s:Group width="100%" height="100%">
+			<s:DataGrid id="result" width="100%" height="100%" dataProvider="{listStat}" editable="true">
+				<s:columns>
+					<s:ArrayCollection>
+						<s:GridColumn  headerText="选择" width="60" editable="false" itemRenderer="{RendererUtil.getCheckBoxRenderer(changeSelect)}"  />
+						<!--s:GridColumn dataField="state" headerText="代号" itemEditor="com.morcha4.editor.TextEditor" /-->
+						<s:GridColumn dataField="state_name" headerText="名称" itemEditor="com.morcha4.editor.TextEditor" />
+						<s:GridColumn headerText="夏令时开始时间" dataField="start_time" />
+						<s:GridColumn headerText="夏令时结束时间" dataField="end_time" />
+						<s:GridColumn headerText="修改" itemRenderer="{RendererUtil.getButtonRenderer('修改',updateState)}" />
+					</s:ArrayCollection>
+				</s:columns>
+			</s:DataGrid>
+			<s:Label text="正在查询，请稍候..."  color="0x000000" id="clew_label" y="{result.columnHeaderGroup.height+10}" width="100%" textAlign="center" visible="false" includeInLayout="false" />		
+		</s:Group>	
+		
+		
+		<s:HGroup  width="100%" height="30" verticalAlign="middle" gap="10">
+			<s:CheckBox id="selectAll" selected="false" change="selectAllItem()"/>
+			<s:Label text="全选"/> 
+			
+			<s:Label width="20"/>
+			
+			<!--分页组件所在地-->
+			<flipBar:PageBar  id="pagebar" rowConutOfPage="25" totalPageQuery="10" height="20"/>
+			
+			<!--flipBar:PageBar width="100%" id="pagebar" rowConutOfPage="20" totalPageQuery="5" height="20"/-->
+		</s:HGroup> 
+		
+	</s:VGroup>
+	
+	
+	
+</system:BasePage>	

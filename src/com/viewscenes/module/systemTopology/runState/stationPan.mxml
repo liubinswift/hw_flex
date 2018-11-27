@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" 
+		  xmlns:playlist="com.viewscenes.module.systemTopology.runState.*"
+		  horizontalAlign="center" verticalAlign="middle" width="100%">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.morcha4.frame.system.EventBus;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			//用来储存总站点
+			[Bindable]
+			public var data:Object = new Object();
+			//用来储存站点下安装的设备。
+			[Bindable]
+			 var headendList:ArrayCollection = new ArrayCollection();
+			protected function onClick(e:MouseEvent):void
+			{
+				var mousePX:int = e.stageX;
+				var mousePY:int = e.stageY;
+				data.mousePX = mousePX;
+				data.mousePY = mousePY;
+				data.headendList=headendList;
+			    EventBus.dispatchEvent(new AdvancedEvent("showHeadList",true,false,data));
+
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Group width="85" height="75" >
+		<s:Image id="img" source="{data.src}"  width="85" height="75" fillMode="scale" click="onClick(event)"  useHandCursor="true" buttonMode="true"/>
+	</s:Group>
+	<s:Label id="headname" mouseChildren="false" textAlign="center" mouseEnabled="false" width="100%" height="100%" text="{data.name}" color="0xFFFFFF"/>
+	<s:Label id="code" mouseChildren="false" mouseEnabled="false" textAlign="center" width="100%" height="100%" text="{data.code}" color="0xFFFFFF"/>
+</s:VGroup>

@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" close="close(event);"
+			   xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+			   creationComplete="init();" 
+			   xmlns:timecomp="com.viewscenes.utils.timecomp.*"
+			   xmlns:ip="com.viewscenes.utils.tools.*"
+			   mouseDown="startDrag()"
+			   title="查看站点信息详情"
+			   mouseUp="stopDrag();">
+	<s:layout>
+		<s:FormItemLayout/>
+	</s:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.utils.StringTool;
+			
+			import flashx.textLayout.events.SelectionEvent;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			
+			[Bindable]
+			private var SeeHeadObj:Object;
+			
+			[Bindable]
+			private var comArray:ArrayCollection = new ArrayCollection([{label:"宽带",value:"1"},{label:"拨号",value:"2"}]);
+			[Bindable]
+			private var isdel:ArrayCollection = new ArrayCollection([{label:"否",value:0},{label:"是",value:1}]);
+			[Bindable]
+			private var lineArray:ArrayCollection = new ArrayCollection([{label:"不在线",value:0},{label:"在线",value:1}]);
+			[Bindable]
+			private var stateArr:ArrayCollection=new ArrayCollection();
+			//服务区
+			[Bindable]
+			public var serviceArr:ArrayCollection = new ArrayCollection;
+			
+			private function init():void{
+				stateArr=StringTool.clone(DataManager.satateBeanArr);
+				getState();
+				getServiceName();
+			}
+			
+			public function setHead(obj:Object):void{
+				SeeHeadObj = obj;
+				if(SeeHeadObj.type_id==101){
+					this.type_id.text="采集点";
+				}else{
+					this.type_id.text="遥控站";
+				}
+				if(SeeHeadObj.com_id=="1"){
+					this.com_id.text="宽带";
+				}else{
+					this.com_id.text="拨号";
+				}
+				if(SeeHeadObj.summertime=="0"){
+					summertime.text="否";
+				}else{
+					summertime.text="是";
+				}
+				if(SeeHeadObj.is_online==0){
+					is_online.text="不在线";
+				}else{
+					is_online.text="在线";
+				}
+				if(SeeHeadObj.site_status=="0"){
+					site_status.text="正常";
+				}else{
+					site_status.text="异常";
+				}
+				principal_phone1.text=SeeHeadObj.principal_phone.split(",")[0];		
+				principal_phone2.text=SeeHeadObj.principal_phone.split(",")[1];
+				principal_phone3.text=SeeHeadObj.principal_phone.split(",")[2];
+			}
+			
+			private function close(e:Event):void{
+				
+				PopUpManager.removePopUp(this);
+				
+			}
+			
+			private function getState():void{
+				for(var n:int=0;n<stateArr.length;n++){
+					if(stateArr[n].state!=""&&stateArr[n].state==SeeHeadObj.state){
+						state.text= stateArr[n].state_name;
+						return ;
+					}
+				}
+			}
+			private  function getServiceName():void{
+				var index:int=-1;
+				for(var i:int=0;i<serviceArr.length;i++){
+					if(serviceArr[i].chinese_name==SeeHeadObj.service_name){
+						index= i;
+					}
+				}
+				if(index==-1){
+					for(i=0;i<serviceArr.length;i++){
+						if(serviceArr[i].english_name==SeeHeadObj.service_name){
+							index= i;
+						}
+					}
+				}
+				service_name.text=serviceArr[index].chinese_name.toString();
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<s:HGroup width="100%" horizontalAlign="right" verticalAlign="middle">
+		<s:VGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle">
+			<s:Form>
+				<s:FormItem label="站点代码" height="20" >
+					<s:TextInput id="code" text="{SeeHeadObj.code}"  maxChars="20"   editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="站点名称" height="20">
+					<s:TextInput id="shortname"  text="{SeeHeadObj.shortname}" editable="false"/>
+				</s:FormItem>														
+				<s:FormItem label="拨号电话"  height="20">
+					<s:TextInput id="comphone" text="{SeeHeadObj.comphone}"   editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="地址"  height="20">
+					<s:TextInput id="address" text="{SeeHeadObj.address}"    editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="经度" height="20">
+					<s:TextInput id="longitude" text="{SeeHeadObj.longitude}"  editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="纬度" height="20">
+					<s:TextInput id="latitude" text="{SeeHeadObj.latitude}"  editable="false"/>
+				</s:FormItem>					
+				<s:FormItem label="海拔"  height="20">
+					<s:TextInput id="altitude"  text="{SeeHeadObj.altitude}" editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="X"  height="20">
+					<s:TextInput id="X"  text="{SeeHeadObj.x}" editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="Y"  height="20">
+					<s:TextInput id="Y"  text="{SeeHeadObj.y}" editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="站点状态"  height="20">
+					<s:TextInput id="site_status"   editable="false"/>
+				</s:FormItem>
+				<!--s:FormItem label="通信状态"  height="20">
+					<s:TextInput id="com_status" text="{SeeHeadObj.com_status}"  editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="失败状态"  height="20">
+					<s:TextInput id="fault_status" text="{SeeHeadObj.fault_status}"   editable="false"/>
+				</s:FormItem>			
+				<s:FormItem label="是否删除" height="20">
+					<s:TextInput id="is_delete"   editable="false"/>
+				</s:FormItem-->
+				<s:FormItem label="站点类型" height="20">						
+					<s:TextInput id="type_id"   editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="在线是否" height="20">						
+					<s:TextInput id="is_online"    editable="false"/>
+				</s:FormItem>										
+			</s:Form>
+		</s:VGroup>
+		<s:VGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle">
+			<s:Form>
+				<s:FormItem label="下发地址"  height="20">
+					<s:TextInput id="url" text="{SeeHeadObj.url}"   editable="false" width="150"/>
+				</s:FormItem>
+				<s:FormItem label="通信类型" height="20">
+					<s:TextInput id="com_id"   editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="通信协议" height="20">
+					<s:TextInput id="com_protocol" text="{SeeHeadObj.com_protocol}" editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="IP地址"  height="20">
+					<s:TextInput  id="ip" text="{SeeHeadObj.ip}" editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="维护人"  height="20">
+					<s:TextInput id="person" text="{SeeHeadObj.person}" editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="维护人电话"  height="20">
+					<s:TextInput id="person_phone" text="{SeeHeadObj.person_phone}" editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="联系人"  height="20">
+					<s:TextInput id="principal" text="{SeeHeadObj.principal}" editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="联系人职务"  height="20">
+					<s:TextInput id="post" text="{SeeHeadObj.post}" editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="联系人办公电话"  height="20">
+					<s:TextInput id="principal_phone1"  editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="联系人手机"  height="20">
+					<s:TextInput id="principal_phone2" editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="联系人家庭电话"  height="20" >
+					<s:TextInput id="principal_phone3"  editable="false"/>
+				</s:FormItem>
+				
+			</s:Form>
+		</s:VGroup>
+		<s:VGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle">
+			<s:Form>
+				<s:FormItem label="大洲"  height="20">
+					<s:TextInput id="state"  editable="false"/>						
+				</s:FormItem>
+				<s:FormItem label="国家"  height="20">
+					<s:TextInput id="country" text="{SeeHeadObj.country}"  editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="是否有夏令时" height="20">
+					<s:TextInput id="summertime"  editable="false"/>
+				</s:FormItem>
+				<!--s:FormItem label="夏令开始时间"  height="20">
+					<s:TextInput id="summertime_begin" text="{SeeHeadObj.summertime_begin}" editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="夏令结束时间"  height="20">
+					<s:TextInput id="summertime_end" text="{SeeHeadObj.summertime_end}" editable="false"/>
+				</s:FormItem-->
+				<s:FormItem label="服务区"  height="20">
+					<s:TextInput id="service_name" text="{SeeHeadObj.service_name}"  editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="默认语言"  height="20">
+					<s:TextInput id="default_language" text="{SeeHeadObj.default_language}" editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="CIRAF区"  height="20">
+					<s:TextInput id="ciraf" text="{SeeHeadObj.ciraf}"  editable="false"/>
+				</s:FormItem>					
+				<s:FormItem label="时差"  height="20">
+					<s:TextInput id="time_diff" text="{SeeHeadObj.time_diff}"   editable="false"/>
+				</s:FormItem>									
+				<s:FormItem label="制造厂商"  height="20">
+					<s:TextInput id="manufacturer" text="{SeeHeadObj.manufacturer}"   editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="版本"  height="20">
+					<s:TextInput id="version"  text="{SeeHeadObj.version}" editable="false"/>
+				</s:FormItem>
+				<s:FormItem label="描述"  height="20">
+					<s:TextInput id="descript" text="{SeeHeadObj.descript}"   editable="false"/>
+				</s:FormItem>
+				<s:FormItem width="216"  height="30">
+					<s:layout>
+						<s:HorizontalLayout/>
+					</s:layout>
+					<s:Button buttonMode="true" label="确定" click="close(event)"/>
+				</s:FormItem>
+			</s:Form>			
+		</s:VGroup>
+	</s:HGroup> 
+	
+</s:TitleWindow>

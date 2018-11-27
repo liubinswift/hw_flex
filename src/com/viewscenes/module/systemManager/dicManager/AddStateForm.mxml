@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" close="close(event);"
+			   xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="100%"
+			   creationComplete="init();" 
+			   xmlns:timecomp="com.viewscenes.utils.timecomp.*"
+			   xmlns:ip="com.viewscenes.utils.tools.*"
+			   mouseDown="startDrag()"
+			   title="添加大洲信息"
+			   mouseUp="stopDrag();">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.comp.MM;
+			
+			import mx.charts.chartClasses.DataDescription;
+			import mx.managers.PopUpManager;
+			private function init():void{
+			
+			}
+			private function addState():void{
+				var obj:Object=new Object();
+				obj.state_name=state_name.text;
+				obj.start_time=start_time.text
+				obj.end_time=end_time.text;
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.dicManager.StateTab","insertState",obj,_addState,DataManager.showErrorMessageBack));
+			}
+			private function _addState(obj:Object):void{
+				if(obj.success!="success"){
+					MM.show(obj.success);
+					return ;
+				}
+				MM.show("添加大洲信息成功");
+				this.dispatchEvent(new Event("Listresresh"));
+				close(null);
+			}
+			private function close(event:Event):void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</fx:Script>
+	<s:VGroup>
+		<s:Form >
+			<s:FormItem label="大洲名称">
+				<s:TextInput id="state_name" />
+			</s:FormItem>
+			<s:FormItem label="夏令时开始时间">
+				<timecomp:TimeNew id="start_time" />
+			</s:FormItem>
+			<s:FormItem label="夏令时结束时间">
+				<timecomp:TimeNew id="end_time" />
+			</s:FormItem>
+			
+		</s:Form>
+		<s:HGroup height="20" width="100%" horizontalAlign="center">
+			<s:Button buttonMode="true" label="添加" click="addState();"/>
+			<s:Button buttonMode="true" label="取消" click="close(null)"/>
+		</s:HGroup>
+	</s:VGroup>
+</s:TitleWindow>

@@ -1,0 +1,619 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:mx="library://ns.adobe.com/flex/mx" 
+				 xmlns:system="com.morcha4.frame.system.*" 
+				 width="100%" height="100%" creationComplete="init()"
+				 xmlns:global="com.viewscenes.global.*" xmlns:spectrum="com.viewscenes.module.dailyBusiness.dataAnalyse.spectrum.*" xmlns:utils="com.viewscenes.utils.*" xmlns:timecomp="com.viewscenes.utils.timecomp.*">
+	<system:layout>
+		<s:VerticalLayout horizontalAlign="center" verticalAlign="middle"/>
+	</system:layout>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<s:HTTPService id="_spectrumService"  fault="faultHandle(event)" resultFormat="e4x"/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.morcha4.frame.system.AdvancedEvent;
+			import com.viewscenes.beans.RealtimeUrlCmdBean;
+			import com.viewscenes.beans.pub.ResHeadendBean;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.comp.MM;
+			import com.viewscenes.utils.StringTool;
+			
+			import mx.collections.ArrayCollection;
+			import mx.core.FlexGlobals;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+//			private var drawState:Boolean = false; 
+//			private var type_id:String 		= "";			//101,遥控站，102采集点，103边境
+//			private var headversion:String 	= "";			//版本
+//			private var dataType:String 	= "";
+//			private var level:String		= "";			//电平
+			private var intervalId:uint 	= new uint();	//setInterval返回的id
+			private var timeoutID:uint;
+			private var action:String 		= "";
+			private var realReceiCode:String= "";			//开始扫描后返回的接收机
+			private var stoped:Boolean		= true;			//为防止定时停止与手动停止重复发送命令，true为已经停止
+			private var units:String        = "kHz";		//画图显示的单位
+//			
+			[Bindable] private var headcode:String 	= "";	//前端code
+			[Bindable] private var headname:String 	= "";	//前端名称
+//			[Bindable] private var po:Number 		= 0;	//每个像素占的刻度值			
+//			[Bindable] public  var threshold:Number = 50;	//门限			
+//			[Bindable] private var topLimit:Number 	= 250;	//坐标Y轴上限
+//			[Bindable] private var lowerLimit:Number= 0;	//坐标Y轴上限	
+//			[Bindable] private var min:Number  		= 23;
+//			[Bindable] private var max:Number  		= 26.1;
+//			[Bindable] private var step:Number 		= 8;
+//			
+//			private var tempArray:ArrayCollection = new ArrayCollection();
+//			[Bindable] private var chartDP:ArrayCollection 		= new ArrayCollection();//频谱图数据
+//			private var dicChartDP:Object=new Object();
+//			[Bindable] private var runplanData:ArrayCollection 	= new ArrayCollection();//频谱图数据
+//			
+			[Bindable]private var bandlist:ArrayCollection 		= new ArrayCollection([{label:"短波",data:"0"},{label:"中波",data:"1"},{label:"调频",data:"2"}]);
+//			[Bindable]private var scantype:ArrayCollection 		= new ArrayCollection([{label:"频率扫描",data:"0"},{label:"标准频道扫描",data:"1"}]);
+//			[Bindable]private var _receiveEquList:ArrayCollection= new ArrayCollection();//接收机列表
+			[Bindable]private var _spectrumTypeList:ArrayCollection= new ArrayCollection([{label:"频谱任务数据",data:"0,1"},{label:"实时频谱截图数据",data:"2"}]);//频谱类型列表
+//			[Bindable]private var lineAxis:ArrayCollection 		= new ArrayCollection([
+//				{freq:0,spectrum:0},{freq:0,spectrum:255}]);
+//			
+//			private var urltemp:String = "";//临时url
+//			private var service:SendXmlService = null;
+//			
+//			private var highLeverObj:Object=new Object();//存放高于门限的数据
+//			private var highlevelLimitValue:Number = 255;//高门限值
+//			private var currFreq:Number = 0;//当前播放的频率
+//			private var currprame:String = "";//获取播放url的部分xml
+//			private var currUrl:String = "";//当前播放的URL
+//			public var mediaplay:PlayWindow;//模块主页面的播放器
+			//语言
+			private var lanaguageArr:ArrayCollection = new ArrayCollection();
+			[Bindable]private var reg:RegExp = /^0.\d*|0.{0,1}|[1-9]\d*.{0,1}\d*$/;
+			
+			public function init():void{
+				this.addEventListener("SAVA_SPECTRUM_SCAN_LEVEL",setLevel);
+				this.addEventListener("SPECTRUM_SCAN_PLAY_FREQ",playFreq);
+				if(this.stoped){
+					headcode = newHead.selectedHeadendCode;
+//					getStationInfo();//获取站点信息
+					getLevel();
+				}
+				
+			}
+			/**
+			 * 
+			 * 根据手动输入频率生成发送URL请求指令
+			 * */
+			private function buildUrlCmdByFreq(headCode:String,freq:String,action:String):RealtimeUrlCmdBean{
+				var urlBean:RealtimeUrlCmdBean = new RealtimeUrlCmdBean;
+				
+				urlBean.freq =  freq;
+				urlBean.band =  StringTool.getBandFromFreq(freq);
+				urlBean.userid =  DataManager.user.userId;
+				urlBean.code =  headCode;
+				urlBean.action = action;
+				urlBean.priority =  DataManager.user.priority;
+				
+				return urlBean;
+			}
+			var stepFreq:String = "5";
+			/**
+			 * 播放频点
+			 */
+			private function playFreq(event:AdvancedEvent):void{
+				var playFreq:String = event.data.toString();
+				var urlCmdBean:RealtimeUrlCmdBean = buildUrlCmdByFreq(headcode,playFreq,"Start");
+				
+				//				this.urlCmdBean = urlBean;
+				//				this.freq = urlBean.freq;
+				var band:String = StringTool.getBandFromFreq(playFreq);
+				
+				if (band == "0"){//短波
+					stepFreq = "5";
+				}else if (band == "1"){//中波
+					stepFreq = "10";
+				}else if (band == "2"){//调频
+					stepFreq = "100";
+				}
+				//				getRealtimeUrlBack("www.biau.com");
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.online.onlineListen.OnlineService",
+					"getRealtimeUrl",urlCmdBean,playFreqBack,DataManager.showErrorMessageBack,true,playFreq,DataManager.server_app_id));
+			}
+			/**
+			 * 传入数据播放
+			 */
+			private function playFreqBack(url:String,pfreq:String):void{
+				//				player.playUrl(url);
+				//				player.setText("正在播放...");
+				freqDetail.lanaguageArr = lanaguageArr;
+				this.freqDetail.playAndMarkReal(url,pfreq,DataManager.getHeadendByCode(headcode));
+				this.freqDetail.visible = this.freqDetail.includeInLayout = true;
+			}
+			/**
+			 * 取得门限
+			 */
+			private function getLevel():void{
+				var obj:Object = new Object();
+				obj.code = newHead.selectedHeadendCode;
+				var codeNoAB:String = newHead.oStation.getHeadCode;
+				var codeAB:String = newHead.oStation.getHeadABCode;
+				var receiveEqu:String = newHead.oStation.getEquTypeValue;
+				obj.receiverCode = receiveEqu;
+				//				obj.code = headcode;
+				if(codeNoAB == ""){
+					obj.headendID = "";
+				} else{
+					if(codeAB == ""){
+						var hh:Object = newHead.oStation.headend.selectedItem;
+						if(hh.type_id == "101"){
+							var head:ResHeadendBean = DataManager.getHeadendByCode(codeNoAB);
+							if(head==null){
+								obj.headendID = "-1";
+							} else{
+								obj.headendID = head.head_id;
+							}
+						} else if(hh.type_id == "102"){//遥控站
+							var head:ResHeadendBean = DataManager.getHeadendByCode(codeNoAB+"A");
+							var headID:String = "";
+							if(head==null){
+								headID = "-1";
+							} else{
+								headID = head.head_id;
+							}
+							head = DataManager.getHeadendByCode(codeNoAB+"B");
+							if(head==null){
+								headID = headID+",-1";
+							} else{
+								headID = headID +","+ head.head_id;
+							}
+						}
+						
+					} else{
+						var head:ResHeadendBean = DataManager.getHeadendByCode(codeAB);
+						if(head==null){
+							obj.headendID = "-1";
+						} else{
+							obj.headendID = head.head_id;
+						}
+					}
+					var head:ResHeadendBean = DataManager.getHeadendByCode(headcode);
+					if(head==null){
+						obj.headendID = "-1";
+					} else{
+						obj.headendID = head.head_id;
+					}
+				}
+				obj.dataType = "1";//电平
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.online.realtimeMonitor.RealtimeQuality",
+					'getLevel',obj,getLevelBack,DataManager.alertShowErrorMessage);
+				RPCManager.sendCmd(request); 
+			}
+			private function getLevelBack(obj:Object):void{
+				draw._spectrumLevel.text = obj.level;
+				draw.m_setSpectrumLevel();
+			}
+			/**
+			 * 设置报警参数
+			 */
+			public function setLevel(event:AdvancedEvent):void{
+				var obj:Object = new Object();
+				obj.code = newHead.selectedHeadendCode;
+				obj.lowlevel = event.data;
+				obj.dataType = "1";//电平
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.online.realtimeMonitor.RealtimeQuality",
+					'setLevel',obj,setLevelBack,DataManager.alertShowErrorMessageBack,true);
+				RPCManager.sendCmd(request); 
+			}
+			
+			private function setLevelBack(str:String):void{
+				DataManager.alertShowErrorMessage(str);
+			}
+			/**
+			 * 站点改变
+			 */
+			private function changeHeadCode(headObj:ResHeadendBean):void{
+				if(headObj.code!=null&&headObj.code!=""){
+					_start.enabled = false;
+				} else{
+					return;
+				}
+				headcode 	= headObj.code;
+				headname 	= headObj.shortname;
+//				getStationInfo();
+				_start.enabled = true;
+			}
+//			/**
+//			 * 获取站点信息
+//			 */
+//			private function getStationInfo():void{
+////				_receiveEquList = new ArrayCollection();
+//				var obj:Object = new Object();
+//				obj.headendCode = headcode;
+//				var request:RORequestParam = new RORequestParam("com.viewscenes.web.daily.dataAnalyse.DataAnalyse",
+//					'getHeadendInfo',obj,getStationInfoBack,DataManager.alertShowErrorMessageBack);
+//				RPCManager.sendCmd(request); 
+//			}
+//			/**
+//			 * 解析站点信息并改变页面显示
+//			 */
+//			public function getStationInfoBack(list:ArrayCollection):void{
+////				var listEqu:ArrayCollection = list.getItemAt(0) as  ArrayCollection;
+//				var listPro:ArrayCollection = list.getItemAt(0) as  ArrayCollection;
+////				_receiveEquList = listEqu;
+//				//根据获得的站点信息改变页面
+//				//实时视频模块调用时,频率由实时视频模块传入，不用本模块赋值。
+//				//				if(realTime==false){
+//				//					_Freq.text = _channelList.getItemAt(0).data as String;
+//				//					//					freqChanged();
+//				//					changeChannel();
+//				//				} else{
+//				//					freqChanged();
+//				//					_frontier.height 	 = 0;//从实时模块调入时隐藏广播和电视选择，因为只有广播调用，电视没调用，默认是广播 
+//				//				}
+//			}
+			/**
+			 * 设置开始后页面个参数不可以更改
+			 * isStop 是否停止  true是停止 false不是停止
+			 * isBegin 是否是开始下发接口 true是 false是下发接口返回
+			 */
+			private function setPageEnable(isStop:Boolean,isBegin:Boolean):void
+			{
+//				condition2.enabled = isStop;
+//				newHead.enabled = isStop;
+//				if(isBegin){
+//					_start.enabled = false;
+//					_stop.enabled = false;
+//				} else{
+//					_start.enabled = isStop;
+//					_stop.enabled = !isStop;
+//				}
+			}
+			
+			/**
+			 * 开始频谱扫描
+			 */
+			private function start():void{
+			        setChartParam(_band.selectedItem.data);
+					sendSpectrumScan("Start");//频谱扫描接口下发
+					//getRunPlanData();//获取运行图信息； 此处不获取运行图，真正下发的时候在获取
+				
+				
+			}
+			
+			//停止扫描
+			public function stop():void{
+				if(stoped == true){
+					//this.setPageEnable(stoped,true);
+					return;
+				}else{
+					stoped = true;
+					this.setPageEnable(stoped,false);
+					sendSpectrumScan("Stop");//频谱扫描接口下发
+				}
+			}
+			
+			/**
+			 * 自动停止扫描
+			 */
+			public function autoStop():void{
+				if(stoped == true){
+					//this.setPageEnable(stoped,true);
+					return;
+				}else{
+					stoped = true;
+					this.setPageEnable(stoped,false);
+					clearInterval(timeoutID);
+					clearInterval(intervalId);
+				}
+			}
+			
+			//检查频率合法性
+			private function freqLegal():Boolean{
+				if(_band.selectedItem.data=="0"){
+					
+					if(!(2300<=parseInt(_startFreq.text)&&parseInt(_startFreq.text)<=26100)){
+						DataManager.alertShowErrorMessage("输入的频率不合法,短波范围2300~26100");
+						return false;
+					}
+					if(!(2300<=parseInt(_stopFreq.text)&&parseInt(_stopFreq.text)<=26100)){
+						DataManager.alertShowErrorMessage("输入的频率不合法,短波范围2300~26100");
+						return false;
+					}
+				}else if(_band.selectedItem.data=="1"){
+					if(!(531<=parseInt(_startFreq.text)&&parseInt(_startFreq.text)<=1602)){
+						DataManager.alertShowErrorMessage("输入的频率不合法,中波范围531~1602");
+						return false;
+					}
+					if(!(531<=parseInt(_stopFreq.text)&&parseInt(_stopFreq.text)<=1602)){
+						DataManager.alertShowErrorMessage("输入的频率不合法,中波范围531~1602");
+						return false;
+					}
+				}else if(_band.selectedItem.data=="2"){
+					if(!(87000<=parseInt(_startFreq.text)&&parseInt(_startFreq.text)<=108000)){
+						DataManager.alertShowErrorMessage("输入的频率不合法,调频范围87000~108000");
+						return false;
+					}
+					if(!(87000<=parseInt(_stopFreq.text)&&parseInt(_stopFreq.text)<=108000)){
+						DataManager.alertShowErrorMessage("输入的频率不合法,调频范围87000~108000");
+						return false;
+					}
+				}
+				if(parseInt(_stopFreq.text)<parseInt(_startFreq.text)){
+					DataManager.alertShowErrorMessage("输入的频率不合法,开始频率不能大于结束频率");
+					return false;
+				}
+				setChartParam(_band.selectedItem.data);
+				return true;
+			}
+			
+			/**
+			 * 改变波段
+			 */
+			private function changeBand():void{
+				if(_band.selectedItem.data=="0"){//短波
+					this._freqSEHbox.toolTip = "短波广播频率范围2300kHz~26100kHz";
+					_startFreq.text = "2300";
+					_stopFreq.text  = "26100";
+					units = "MHz";
+				}else if(_band.selectedItem.data=="1"){//中波
+					this._freqSEHbox.toolTip = "中波广播频率范围531kHz~1602kHz";
+					_startFreq.text = "531";
+					_stopFreq.text  = "1602";
+					units = "kHz";
+				}else if(_band.selectedItem.data=="2"){//调频
+					this._freqSEHbox.toolTip = "调频广播频率范围87~108MHz";
+					_startFreq.text = "87000";
+					_stopFreq.text  = "108000";
+					units = "MHz";
+				}
+				setChartParam(_band.selectedItem.data);
+			}
+			
+			/**
+			 * 根据用户的选择设置图表参数
+			 */
+			private function setChartParam(band:String):void{
+				this._freqSEHbox.toolTip = "调频广播频率范围87~108MHz";
+				this.draw.m_setChartParam( _startFreq.text, _stopFreq.text, "0", "150", units, "dbuv",band);
+			}
+			
+			/**
+			 * 下发实时频谱接口
+			 */
+			private function sendSpectrumScan(act:String):void{
+				var obj:Object = new Object();
+				obj = StringTool.addHead(obj);
+				action = act;
+//				//记录当前扫描的站点
+//				if(act=="Start")
+//				{
+//					this.currentScanHeadend=this.headcode;
+//				}
+				
+				var codeNoAB:String = newHead.oStation.getHeadCode;
+				var codeAB:String = newHead.oStation.getHeadABCode;
+				var receiveEqu:String = newHead.oStation.getEquTypeValue;
+				obj.receiveCode = receiveEqu;
+				//				obj.code = headcode;
+				if(codeNoAB == ""){
+					obj.headendID = "";
+				} else{
+					if(codeAB == ""){
+						var hh:Object = newHead.oStation.headend.selectedItem;
+						if(hh.type_id == "101"){
+							var head:ResHeadendBean = DataManager.getHeadendByCode(codeNoAB);
+							if(head==null){
+								obj.headendID = "-1";
+							} else{
+								obj.headendID = head.head_id;
+							}
+						} else if(hh.type_id == "102"){//遥控站
+							var head:ResHeadendBean = DataManager.getHeadendByCode(codeNoAB+"A");
+							var headID:String = "";
+							if(head==null){
+								headID = "-1";
+							} else{
+								headID = head.head_id;
+							}
+							head = DataManager.getHeadendByCode(codeNoAB+"B");
+							if(head==null){
+								headID = headID+",-1";
+							} else{
+								headID = headID +","+ head.head_id;
+							}
+							head = DataManager.getHeadendByCode(codeNoAB+"C");
+							if(head==null){
+								headID = headID+",-1";
+							} else{
+								headID = headID +","+ head.head_id;
+							}
+							head = DataManager.getHeadendByCode(codeNoAB+"D");
+							if(head==null){
+								headID = headID+",-1";
+							} else{
+								headID = headID +","+ head.head_id;
+							}
+							obj.headendID = headID;
+						}
+						
+					} else{
+						var head:ResHeadendBean = DataManager.getHeadendByCode(codeAB);
+						if(head==null){
+							obj.headendID = "-1";
+						} else{
+							obj.headendID = head.head_id;
+						}
+					}
+				}
+			
+				
+				obj.band = _band.selectedItem.data;
+				obj.startFreq = _startFreq.text;
+				obj.endFreq = _stopFreq.text;
+				
+				obj.freq = "";
+				obj.type = "0";
+				obj.showMaxLevel = (showMaxLevel.selected==true?"1":"0");
+				obj.startTime = beginTime.text;
+				obj.endTime = endTime.text;
+				obj.spectrumType = _spectrumType.selectedItem.data;
+				var request:RORequestParam = new RORequestParam("com.viewscenes.web.daily.dataAnalyse.DataAnalyse","querySpectrumData",obj,getSpectrumBack,DataManager.alertShowErrorMessageBack);
+				RPCManager.sendCmd(request);
+			}
+			
+//			private function getSpectrumBackError(obj:RPCException):void{
+//				if(action =="Stop"){
+//					DataManager.alertShowErrorMessage("停止扫描错误>>>"+obj.message);
+//				}else{
+//					DataManager.alertShowErrorMessage("开始扫描错误>>>"+obj.message);
+//				}
+//				stoped = true;
+//				this.setPageEnable(stoped,false);
+//				clearInterval(intervalId);
+//				clearInterval(timeoutID);
+//			}
+			
+			private function getSpectrumBack(obj:String):void{
+			
+				resultHandleSpectrum(obj);
+			}
+			
+			/**
+			 * 获取实时频谱扫描数据
+			 */
+			private function getSpectrumData():void{
+				
+				var sysurl:String = FlexGlobals.topLevelApplication.url;
+				var index:int = sysurl.lastIndexOf("/");
+				var url:String = sysurl.substring(0,index);
+				var bandstr:String =  _band.selectedItem.data;
+				var frontierstr:String ="";
+				
+				url += "/jmaskservlet?function=getGraphData&type=com.viewscenes.web.online.realtimeMonitor.RealtimeQuality";
+				url +="&headendcode="+headcode;
+//				url +="&receivercode="+(_receiveEqu.selectedItem==null?"":_receiveEqu.selectedItem.data);
+				url +="&band="+bandstr;
+				
+				url +="&frequency=";
+				url +="&interval="+_reportTime.text;
+				url +="&checktime="+parseInt(_outTime.text)*60;
+				var serUrl:String = url+"&data=100";
+				_spectrumService.url = serUrl+"&ss="+(new Date().time);
+				intervalId = setInterval(sendHttpService,1000);
+				
+			}
+			
+			private function resultHandleSpectrum(xml:String):void{
+//				var xml:String=e.result.valueOf();
+//				for(var i:int=0;i<_chartSpan1.numElements;i++){
+//					for(var j:int=0;j<xml.split("#@#").length;j++){
+//						if((_chartSpan1.getElementAt(i) as QualityDrawing).id.replace("drawDataType_","") ==xml.split("#@#")[j].split("<fen>")[0]){
+//							(_chartSpan1.getElementAt(i) as QualityDrawing).drawingByData(xml.split("#@#")[j].split("<fen>")[1],xml.split("#@#")[j].split("<fen>")[0]);
+//						}
+//					}
+//				}
+//				for(var m:int=0;m<_chartSpan2.numElements;m++){
+//					for(var n:int=0;n<xml.split("#@#").length;n++){
+//						if((_chartSpan1.getElementAt(m) as QualityDrawing).id.replace("drawDataType_","") ==xml.split("#@#")[n].split("<fen>")[0]){
+//							(_chartSpan1.getElementAt(m) as QualityDrawing).drawingByData(xml.split("#@#")[n].split("<fen>")[1],xml.split("#@#")[n].split("<fen>")[0]);
+//						}
+//					}
+//				}
+        
+				var resList:ArrayCollection = new ArrayCollection();
+				draw.m_setScanData(resList);
+				var tmarry:Array = xml.split("</columns>");
+//				if(tmarry.length==2){
+//					MM.show("根据所选条件没有查询到数据！");
+//					return;
+//				}
+//				
+				var dataarry:Array = (tmarry[1] as String).split("$");
+				var count:int = 0;
+				var DataObj:Object = new Object();
+				for(var i:int=0;i<dataarry.length;i++){
+					if(count==2){
+						DataObj = new Object();
+						if(new Number(dataarry[i])<531){
+							DataObj.freq =new Number(dataarry[i])*1000+"";
+						} else {
+							DataObj.freq =dataarry[i];
+						}
+					}
+					if(count==3){
+						DataObj.spectrum = dataarry[i];
+						resList.addItem(DataObj);
+						
+					}
+					count++;
+					if(count==7){
+						count = 0;
+					}
+				}
+				
+				draw.m_setScanData(resList);
+			}
+			
+			private function faultHandle(e:FaultEvent):void{
+				clearInterval(intervalId);
+				var sInfo:String = "Error: ";
+				sInfo += "网络故障或后台服务停止。\n\n";
+				sInfo += "无法获取站点信息，请尝试刷新页面。\n\n";
+				sInfo += "详细信息: " + e.fault.faultString+"\n\n";
+				DataManager.alertShowErrorMessage(sInfo);
+			}
+			private function sendHttpService():void{
+				_spectrumService.send();
+				
+			}
+			
+			
+		]]>
+	</fx:Script>
+	
+	<s:VGroup verticalAlign="middle" gap="0"  width="100%"
+			 horizontalAlign="center"  id="condition2">			
+		<s:HGroup width="100%" height="35" verticalAlign="middle" paddingLeft="16" paddingRight="16">
+			<global:HeadendAllAndStateList id="newHead" />
+			<s:Label  text="上报时间" />
+			<s:TextInput   width="100" id="_reportTime" text="5" maxChars="6" restrict="0-9"/>
+			<s:Label  text="秒       过期时间" />
+			<utils:RegExpTextInput   width="100" id="_outTime" text="10" maxChars="6" />
+			<s:Label  text="分钟" />
+			
+			<!--s:Label  text="       频谱类型" /-->
+			<s:DropDownList id="_spectrumType" dataProvider="{_spectrumTypeList}" requireSelection="true" visible="false"/>
+			<!--s:Button label="详细" /-->
+		</s:HGroup>
+		<s:HGroup width="100%" height="35" verticalAlign="middle"  paddingLeft="16" paddingRight="16">
+			<s:HGroup id="_bandBox" verticalAlign="middle">
+				<s:Label  text="波段" />
+				<s:DropDownList id="_band" dataProvider="{bandlist}" change="changeBand();" valueCommit="changeBand();" requireSelection="true"/>
+				
+			</s:HGroup>
+			<s:HGroup id="_freqSEHbox" verticalAlign="middle" paddingLeft="35">
+				<s:Label  text="起始频率" />
+				<utils:RegExpTextInput regex="{reg}" width="100" id="_startFreq" text="2300"  maxChars="6"/>
+				<s:Label id="_stopFreqLabel"  text="(kHz)  结束频率" />
+				<utils:RegExpTextInput regex="{reg}" width="100" id="_stopFreq" text="26100"  maxChars="6"/>
+			</s:HGroup>
+			<s:Label text="开始时间："/>
+			<timecomp:TimeNew id="beginTime" />
+			<s:Label text="结束时间："/>
+			<timecomp:TimeNew id="endTime" />
+			<s:CheckBox label="最大电平" id="showMaxLevel" selected="false" enabled="true" visible="false"/>
+			<s:Spacer width="100%"/>
+			
+			<s:Button buttonMode="true" label="查询" id="_start" click="start();"/>
+		</s:HGroup>
+	</s:VGroup>
+	<spectrum:SpectrumDrawing id="draw" width="100%" height="100%" ownerParent="{this}"/>
+	<spectrum:SpectrumFreqDetail id="freqDetail" width="500" visible="false" includeInLayout="false"/>
+	
+</system:BasePage>

@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<system:BasePage xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				 xmlns:s="library://ns.adobe.com/flex/spark" 
+				 xmlns:system="com.morcha4.frame.system.*" 
+				 width="100%" height="100%"  
+
+			
+				 PAGE_SHOW="basepage1_PAGE_SHOWHandler(event)" xmlns:global="com.viewscenes.global.*" xmlns:timecomp="com.viewscenes.utils.timecomp.*" xmlns:flipBar="com.viewscenes.utils.flipBar.*"
+	
+			
+	>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.morcha4.RPC.RPCException;
+			import com.morcha4.RPC.RPCManager;
+			import com.morcha4.RPC.request.RORequestParam;
+			import com.viewscenes.global.DataManager;
+			import com.viewscenes.global.comp.MM;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+
+			
+			[Bindable]private var setArray:ArrayCollection = new ArrayCollection();
+			[Bindable]private var listStat:ArrayCollection = new ArrayCollection();
+			[Bindable]private var bandArray:ArrayCollection = new ArrayCollection([{label:"全部",value:""},{label:"短波",value:"0"},{label:"中波",value:"1"},{label:"调频",value:"2"}]);
+			
+			
+			
+			
+			/** 根据站点代码获取接收机
+			 * */
+			private function getEquByCode(code:String):void{
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.common.Common","getEquList",code,processGetEquList,DataManager.showErrorMessageBack));
+			}
+			
+			private function processGetEquList(arr:ArrayCollection):void{
+				setArray.removeAll();
+				setArray=arr;
+			}
+			
+			
+			private function focusout(textinput:TextInput):void
+			{
+				var str:String=textinput.text;
+				while(str.charAt(0)=='0')
+				{
+					str=str.substring(1,str.length);
+				}
+				textinput.text=str;
+			}
+			private function TimeCheck(e:MouseEvent):void
+			{
+				if(e.target.label=="按时间段查询")
+				{ 
+					Starttime_day.includeInLayout=true;
+					Starttime.includeInLayout=false;
+					Starttime_day.visible=true;
+					Starttime.visible=false;
+					endtimelabel.visible=true;
+					Endtime_day.visible=true;
+					space1.visible=true;
+					space1.includeInLayout=true;
+					space2.visible=true;
+					space2.includeInLayout=true;
+					begintimelabel.text="起始时间：";
+				}
+				else
+				{
+					Starttime_day.includeInLayout=false;
+					Starttime.includeInLayout=true;
+					Starttime.visible=true;
+					Starttime_day.visible=false;
+					endtimelabel.visible=false;
+					Endtime_day.visible=false;
+					space1.visible=false;
+					space1.includeInLayout=false;
+					space2.visible=false;
+					space2.includeInLayout=false;
+					begintimelabel.text="查询时间：";
+				}
+				
+			}
+			
+			/**
+			 * 
+			 * <p>class/function com.viewscenes.web.daily.queryData
+			 * <p>explain:频谱数据查询,如果添加出错会返回错误信息
+			 * <p>author-date:张文2012-8-20
+			 * @param:
+			 * @return:
+			 */
+			
+			public function searchdata():void//主要作用在于初始化
+			{
+				
+				var starttime:String=Starttime_day.text;
+				var endtime:String=Endtime_day.text;
+				
+				if(starttime>endtime)
+				{
+					MM.show("起始时间大于结束时间，请重新输入！","提示");
+					var date:Date=new Date();
+					var date1:Date=new Date();
+					date.setHours(00,00,00);
+					Starttime_day.setDate(date);
+					Endtime_day.setDate(date1);
+					return;
+				}
+				listStat.removeAll();
+				index_Query();
+			}
+			/**
+			 * 控制datagrid的提示框是否显示，以及显示内容
+			 * author:cht
+			 * **/
+			public function con_clewlabel(_component:Label,_visible:Boolean,_label:String=""):void
+			{
+				_component.visible=_visible;
+				_component.includeInLayout=_visible;
+				_component.text=_label;
+			}
+			
+			private function index_Query():void
+			{
+				this.oqueryButton.enabled=false;
+				con_clewlabel(clew_label,true,'正在查询，请稍候...');
+				var obj:Object = new Object;
+				obj.taskId =taskId.text;
+				
+				obj.code =this.station.getHeadCode;
+				obj.codeAB=this.station.getHeadABCode;
+				obj.receive_mark =this.station.getEquTypeValue;
+				obj.band =this.band.selectedItem.value;
+				
+				obj.freq =Freq.text;
+				
+				if(Starttime_day.visible==true)
+				{
+					var starttime:String=Starttime_day.text;
+					var endtime:String=Endtime_day.text;
+					obj.startTime = starttime;
+					obj.endTime = endtime;
+					obj.dateType = "byTime";
+				}
+				else
+				{
+					obj.startTime = Starttime.text;
+					obj.endTime = Starttime.text;	
+					obj.dateType = "byDate";
+				}
+				
+				pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.daily.queryData.SpectrumQuery","Query",obj,_Query,onfault));
+				
+			}
+			private function _Query(list:ArrayCollection):void{ 
+				this.oqueryButton.enabled=true;
+				con_clewlabel(clew_label,false);
+				this.listStat=list;
+				
+				listStat.refresh();
+				if(listStat.length==0){
+					
+					con_clewlabel(clew_label,true,"无查询数据！");
+				}
+				
+			}
+			
+			private function bandFuc(item:Object,gc:GridColumn):String
+			{
+				var band:String="";
+				if(item.band=="0"){
+					band="短波";
+				}else if(item.band=="1"){
+					band="中波"
+				}else if(item.band=="2"){
+					band="调频"
+				}
+				
+				return band;
+			}
+			private function onfault(e:RPCException):void
+			{
+				
+				Alert.show(e.message);
+			}
+			protected function basepage1_PAGE_SHOWHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				station.setDataProviderNew();
+			}
+			
+		]]>	
+	</fx:Script>
+	<s:VGroup width="100%" height="100%">
+		<s:VGroup  left="9" right="9" horizontalAlign="left" verticalAlign="middle" width="100%" height="100%">
+			<s:VGroup height="80" top="12"   id="grid" width="100%"  verticalAlign="middle">
+				
+				<s:HGroup height="38" width="100%" verticalAlign="middle">
+					<s:Spacer width="5"/>
+
+					<global:HeadendListAll id="station"  width="530" />
+					<s:Spacer width="5"/>
+                    <s:Spacer width="5"/>
+					<s:Label text="波段："/>
+					
+					<s:ComboBox id="band"  dataProvider="{bandArray}" requireSelection="true"/>
+					<s:Spacer width="5"/>
+					
+					<s:Label text="频      率："/>
+					
+					<s:TextInput id="Freq" textAlign="left" restrict="0-9" maxChars="6" focusOut="focusout(Freq)"/>
+					<s:Label text="KHz/MHz"/>
+					<s:Spacer width="5"/>
+					<s:Label text="任务ID："/>
+					
+					<s:TextInput id="taskId" width="80" restrict="0-9"/>
+					
+				</s:HGroup>
+				
+				<s:HGroup height="38" width="100%"  verticalAlign="middle">
+					<s:Spacer width="16"/>
+					<s:RadioButton label="按时间段查询" groupName="TimeCheck" selected="true" click="TimeCheck(event)"/>
+					<s:RadioButton label="按日期查询" groupName="TimeCheck" click="TimeCheck(event)"/>		
+					<s:Spacer width="30"/>		
+					<s:Label text="起始时间：" id="begintimelabel"/>
+					<s:Spacer width="6"/>
+					<timecomp:TimeNew id="Starttime_day" starttime="00:00:00"  />
+					<timecomp:TimeNew id="Starttime" dateDisplay="date" visible="false" includeInLayout="false"/>
+					<s:Spacer width="39" id="space1"/>	
+					<s:Label text="结束时间：" id="endtimelabel"/>
+					<s:Spacer width="6" id="space2"/>
+					<timecomp:TimeNew id="Endtime_day" />
+					
+					
+					<s:Spacer width="30"/>	
+					<s:Button buttonMode="true" label="查询"  id="oqueryButton" click="searchdata()" styleName="ButtonBlack"/>
+				</s:HGroup>
+				
+			</s:VGroup>
+			
+			<s:Group width="100%" height="100%" top="12" bottom="60">
+				<s:DataGrid width="100%" height="100%" id="result" dataProvider="{listStat}" textAlign="center">
+					<s:columns>
+						<s:ArrayCollection>
+							<s:GridColumn headerText="任务ID" dataField="task_id"/>
+							<s:GridColumn headerText="扫描时间" dataField="check_datetime"/>
+							<s:GridColumn headerText="接收机标识符" dataField="equ_code" />
+							<s:GridColumn headerText="频率(KHz/MHz)" dataField="frequency" />
+				
+							<s:GridColumn headerText="波段" dataField="band" labelFunction="bandFuc"/>
+							<s:GridColumn headerText="电平" dataField="e_level"/>
+						</s:ArrayCollection>
+					</s:columns>
+				</s:DataGrid>
+				<s:Label text="正在查询，请稍候..."   color="0x000000" id="clew_label" y="{result.columnHeaderGroup.height+10}" width="100%" textAlign="center"  visible="false" includeInLayout="false" />				
+			</s:Group>
+			<!--分页组件所在地-->
+			<flipBar:PageBar  id="pagebar" rowConutOfPage="25" totalPageQuery="10" height="20"/>
+		</s:VGroup>
+	</s:VGroup>
+</system:BasePage>

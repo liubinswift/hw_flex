@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:GridItemEditor xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				  xmlns:s="library://ns.adobe.com/flex/spark" 
+				  xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" xmlns:timecomp="com.viewscenes.util.timecomp.*" xmlns:timecomp1="com.viewscenes.utils.timecomp.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			
+			[Bindable]public static var dateDisplayType:String="all"; 
+			[Bindable]public static var isClear:Boolean=true; 
+			[Bindable]public static var isEnable:Boolean=true; 
+			[Bindable]public  var starttime:String=""; //格式:00:00:00
+			
+			
+			override public function prepare():void{
+				super.prepare();
+				var lab:String = this.column.dataField;
+				var val:String = this.data[lab];
+				this.time.text = val;
+			}
+			override public function save():Boolean{
+				var lab:String = this.column.dataField;
+				this.time.onfocusOut();//焦点从控件移开后，监测各个输入框的内容使其合法,比如输入9会自动补齐09
+				this.data[lab] = this.time.text;
+				this.data["isEdited"] = true;
+				return true;
+			}
+		]]>
+	</fx:Script>
+	<timecomp1:TimeNew id="time" dateDisplay="{dateDisplayType}" starttime="{starttime}" clearDate="true"/>
+</s:GridItemEditor>

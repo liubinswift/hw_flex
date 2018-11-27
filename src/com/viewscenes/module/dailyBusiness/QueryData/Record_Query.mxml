@@ -376,11 +376,15 @@
 			 * 打分人
 			 */
 			private function markUserFunction(item:Object,gc:GridColumn):String{
-				if(item.edit_user!=null&&item.edit_user!=""){
-					return item.edit_user;
-				}else {
-					return item.mark_user
-				}
+				var mark:RadioMarkZstViewBean = item.radioMarkZstViewBean as RadioMarkZstViewBean;
+				if(mark!=null){
+					if(mark.edit_user!=null&&mark.edit_user!=""){
+						return mark.edit_user;
+					}else {
+						return mark.mark_user;
+					}
+				}else 
+					return "";
 			}
 			/**
 			 * 查询时提示信息

@@ -66,7 +66,8 @@
 				"manufacturer":"",
 			    "service_name":""};
 			[Bindable]
-			private var comArray:ArrayCollection = new ArrayCollection([{label:"宽带",code:"2"},{label:"拨号",code:"3"}]);
+			private var comArray:ArrayCollection = new ArrayCollection([{label:"统计",code:"1"},{label:"不统计",code:"0"}]);
+
 			[Bindable]
 			private var isdel:ArrayCollection = new ArrayCollection([{label:"否",code:0},{label:"是",code:1}]);
 			[Bindable]
@@ -180,7 +181,7 @@
 			</s:VGroup>
 			<s:VGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle">
 				<s:Form>
-					<s:FormItem label="通信类型" height="20">
+					<s:FormItem label="是否统计" height="20">
 						<s:ComboBox id="com_id" dataProvider="{comArray}" selectedIndex="{HeadObj.com_id}"  change="{HeadObj.com_id=com_id.selectedItem.code}" requireSelection="true"/>
 					</s:FormItem>
 					<s:FormItem label="通信协议" height="20">

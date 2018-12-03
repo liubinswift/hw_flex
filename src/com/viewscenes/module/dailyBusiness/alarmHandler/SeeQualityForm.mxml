@@ -160,7 +160,7 @@
 					
 					var obj:Object = new Object;
 					//录音类型
-					obj.recType = "1";
+					obj.recType = "0";
 					obj.headCode = SeeQualityObj.head_code;
 					
 					obj.dateType = "byTime";

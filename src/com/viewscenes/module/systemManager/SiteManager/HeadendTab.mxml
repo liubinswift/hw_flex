@@ -42,6 +42,9 @@
 			private var insertListStat:ArrayCollection = new ArrayCollection();
 			private var updateListStat:ArrayCollection = new ArrayCollection();
 			[Bindable]
+			private var comArray:ArrayCollection = new ArrayCollection([{label:"全部",code:""},{label:"统计",code:"1"},{label:"不统计",code:"0"}]);
+
+			[Bindable]
 			private var comprotocolArray:ArrayCollection = new ArrayCollection([{label:"全部",code:"0"},{label:"未迁移",code:"1"},{label:"已迁移",code:"2"}]);
 			
 			[Bindable]private var sTypeArray:ArrayCollection = new ArrayCollection([{label:"全部",value:""},{label:"采集点",value:"101"},{label:"遥控站",value:"102"}]);
@@ -141,6 +144,7 @@
 				obj.site =site.text;
 				obj.code =code.text;
 				obj.com_protocol = com_protocol.selectedItem.code;
+				obj.com_id = com_id.selectedItem.code;
 				pagebar.m_sendCmd(new RORequestParam("com.viewscenes.web.sysmgr.dicManager.HeadendTab","getHeadend",obj,_getHeadend,onfault));
 			}
 			
@@ -370,6 +374,13 @@
 				else
 					return "未迁移";
 			}
+			private function reportLabelFunc(item:Object,gc:GridColumn):String{
+				if (item.reportLabelFunc=='0')
+					return "不统计"
+				else
+					return "统计";
+			}
+			
 			private function onlineLabelFunc(item:Object,gc:GridColumn):String{
 				if (item.is_online == '1')
 					return "在线"
@@ -439,6 +450,9 @@
 			
 			<s:Label width="80" textAlign="right" text="站点类型：" fontSize="12"/>
 			<s:ComboBox width="100" id="sType" dataProvider="{sTypeArray}" requireSelection="true" styleName="text12"/>
+			<s:Label width="80" textAlign="right" text="是否统计：" fontSize="12"/>
+			<s:ComboBox width="100" id="com_id" dataProvider="{comArray}" requireSelection="true" styleName="text12"/>
+			
 			<s:Label width="80" textAlign="right" text="是否迁移：" fontSize="12"/>
 			<s:ComboBox width="100" id="com_protocol" dataProvider="{comprotocolArray}" requireSelection="true" styleName="text12"/>
 			
@@ -473,6 +487,7 @@
 						<s:GridColumn dataField="time_diff" headerText="时差"/>
 						<!--s:GridColumn dataField="type_id" headerText="站点类型" labelFunction="type"/-->
 						<s:GridColumn dataField="com_protocol" headerText="是否迁移" labelFunction="proLabelFunc"/>
+						<s:GridColumn dataField="com_id" headerText="是否统计" labelFunction="reportLabelFunc"/>
 						<s:GridColumn dataField="is_online" headerText="是否在线" labelFunction="onlineLabelFunc"/>
 						
 						<s:GridColumn  minWidth="50" headerText="修改" itemRenderer="{RendererUtil.getButtonRenderer('修改',updateHead)}"/>

@@ -488,7 +488,7 @@
 				{  
 					playBtn.enabled = true;
 					playBtn.label ="停止";
-					player.setText("正在播放:"+this.reportUrl,0);
+					player.setText("正在播放:"+this.reportUrl);
 					player.playUrl(this.reportUrl);
 					this.lastUrl = this.reportUrl;
 					showLocalTime();

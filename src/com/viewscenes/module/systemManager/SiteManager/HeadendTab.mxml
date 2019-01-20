@@ -375,7 +375,7 @@
 					return "未迁移";
 			}
 			private function reportLabelFunc(item:Object,gc:GridColumn):String{
-				if (item.reportLabelFunc=='0')
+				if (item.com_id=='0')
 					return "不统计"
 				else
 					return "统计";

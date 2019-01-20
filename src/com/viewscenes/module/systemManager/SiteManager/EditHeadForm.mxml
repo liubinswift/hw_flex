@@ -103,7 +103,7 @@
 				}else{
 					this.type_id.selectedIndex=1;
 				}
-				if(HeadObj.com_id=="1"){
+				if(HeadObj.com_id==1){
 					this.com_id.selectedIndex=0;
 				}else{
 					this.com_id.selectedIndex=1;
@@ -129,6 +129,7 @@
 					HeadObj.id=head_id.text;
 					HeadObj.code=code.text;
 					HeadObj.com_protocol=com_protocol.selectedItem.code;
+					HeadObj.com_id = com_id.selectedItem.code;
 					HeadObj.principal_phone=principal_phone1.text+","+principal_phone2.text+","+principal_phone3.text;
 					HeadObj.default_language=default_language.getText("label");
 					HeadObj.url=url.text;

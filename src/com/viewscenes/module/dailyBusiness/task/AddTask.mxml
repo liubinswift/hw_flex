@@ -60,9 +60,27 @@
 			private var reg:RegExp=/^[1-9]\d*\.\d*|0\.\d*[1-9]\d*|[1-9]\d*|0$/;
 			[Bindable]
 			public var runplanlistdata:ArrayCollection=new ArrayCollection();
-//			[Bindable]
-//			public var equColl:ArrayCollection=new ArrayCollection([{label: "自动选择", data: ""}, {label: "R1", data: "R1"}, {label: "R2", data: "R2"}]);
 			[Bindable]
+			public var equColl:ArrayCollection=new ArrayCollection([{label: "自动选择", data: ""}, 
+				{label: "R1", data: "R1"}, {label: "R2", data: "R2"},
+				{label: "R3", data: "R3"}, {label: "R4", data: "R4"},
+				{label: "R5", data: "R5"}, {label: "R6", data: "R6"},
+				{label: "R7", data: "R7"}, {label: "R8", data: "R8"},
+				{label: "R9", data: "R9"}, {label: "R10", data: "R10"},
+				{label: "R11", data: "R11"}, {label: "R12", data: "R12"},
+				{label: "R13", data: "R13"}, {label: "R14", data: "R14"},
+				{label: "R15", data: "R15"}, {label: "R16", data: "R16"},
+				{label: "R17", data: "R17"}, {label: "R18", data: "R18"},
+				{label: "R19", data: "R19"}, {label: "R20", data: "R20"},
+				{label: "R21", data: "R21"}, {label: "R22", data: "R22"},
+				{label: "R23", data: "R23"}, {label: "R24", data: "R24"},
+				{label: "R25", data: "R25"}, {label: "R26", data: "R26"},
+				{label: "R27", data: "R27"}, {label: "R28", data: "R28"},
+				{label: "R29", data: "R29"}, {label: "R30", data: "R30"},
+				{label: "R31", data: "R31"}, {label: "R32", data: "R32"}
+				
+			]);
+            [Bindable]
 			public var taskTypeColl:ArrayCollection=new ArrayCollection([{label: "临时任务", data: "1"}, {label: "运行图", data: "2"}]);
 			[Bindable]
 			public var runplanTypeColl:ArrayCollection=new ArrayCollection([{label: "国际台运行图", data: "1"}, {label: "海外落地运行图", data: "2"}]);
@@ -2092,8 +2110,9 @@
 				runplanChannel.qualityBox.visible=runplanChannel.qualityBox.includeInLayout=false;
 				
 				runplanChannel.addChildtoVBox("stand");
-				runplanChannel.equColl.addItem({label:"R1", data:"R1"});
-				runplanChannel.equColl.addItem({label:"R2", data:"R2"});
+//				runplanChannel.equColl.addItem({label:"R1", data:"R1"});
+//				runplanChannel.equColl.addItem({label:"R2", data:"R2"});
+//				runplanChannel.equColl.addItem({label:"R3", data:"R3"});
 				runplanChannel._equ_code.dataProvider = runplanChannel.equColl;
 //				publicAddChannel.removeAllElements();
 				return runplanChannel;
@@ -2480,7 +2499,7 @@
 								<s:Spacer width="10"/>
 								<s:Label text="接收机:" visible="false"/>
 								<s:DropDownList id="sequ_code" visible="false"
-												dataProvider="{DataManager.taskHeadenEqu}"
+												dataProvider="{equColl}"
 												selectedIndex="0"/>
 
 							</s:HGroup>

@@ -64,7 +64,8 @@
 					{label:"设备D", data:"D"},
 					{label:"设备E", data:"E"},
 					{label:"设备F", data:"F"},
-					{label:"设备G", data:"G"}
+					{label:"设备G", data:"G"},
+					{label:"设备H", data:"H"}
 				]);
 			
 			[Bindable]
@@ -76,6 +77,42 @@
 			public var receiver1Coll:ArrayCollection = new ArrayCollection(
 				[  {label:"不指定", data:""},
 					{label:"R1", data:"R1"}]);
+			[Bindable]
+			public var receiver3Coll:ArrayCollection = new ArrayCollection(
+				[  {label:"不指定", data:""},
+					{label:"R1", data:"R1"}, 
+					{label:"R2", data:"R2"},
+					{label:"R3", data:"R3"}, 
+					{label:"R4", data:"R4"},
+					{label:"R5", data:"R5"}, 
+					{label:"R6", data:"R6"},
+					{label:"R7", data:"R7"}, 
+					{label:"R8", data:"R8"},
+					{label:"R9", data:"R9"}, 
+					{label:"R10", data:"R10"},
+					{label:"R11", data:"R11"}, 
+					{label:"R12", data:"R12"},
+					{label:"R13", data:"R13"}, 
+					{label:"R14", data:"R14"},
+					{label:"R15", data:"R15"}, 
+					{label:"R16", data:"R16"},
+					{label:"R17", data:"R17"}, 
+					{label:"R18", data:"R18"},
+					{label:"R19", data:"R19"}, 
+					{label:"R20", data:"R20"},
+					{label:"R21", data:"R21"}, 
+					{label:"R22", data:"R22"},
+					{label:"R23", data:"R23"}, 
+					{label:"R24", data:"R24"},
+					{label:"R25", data:"R25"}, 
+					{label:"R26", data:"R26"},
+					{label:"R27", data:"R27"}, 
+					{label:"R28", data:"R28"},
+					{label:"R29", data:"R29"}, 
+					{label:"R30", data:"R30"},
+					{label:"R31", data:"R31"}, 
+					{label:"R32", data:"R32"}
+				]);
 			
 			[Bindable]
 			public var querydata:ArrayCollection = new ArrayCollection();
@@ -457,10 +494,12 @@
 			  {
 				  this.oReceiver.dataProvider=receiver1Coll;
 				  
-			  }else 
+			  }else if(this.oStationType.selectedItem.data=="H")
 			  {
-				  this.oReceiver.dataProvider=receiver2Coll;
+				  this.oReceiver.dataProvider=receiver3Coll;
 				  
+			  }else{
+				  this.oReceiver.dataProvider=receiver2Coll; 
 			  }
 			  this.oReceiver.selectedIndex=0;
 			}

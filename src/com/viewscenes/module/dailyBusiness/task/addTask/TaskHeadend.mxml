@@ -39,11 +39,11 @@
 				runplanChannel.percentWidth=100;
 				runplanChannel.station.dataProvider=DataManager.stationBeanAll;
 				
-				if("101" == DataManager.getHeadendByCode(headcode).type_id){
+//				if("101" == DataManager.getHeadendByCode(headcode).type_id){
 					runplanChannel._equ_code.dataProvider = runplanChannel.equColl;
-				} else{
-					runplanChannel._equ_code.dataProvider = DataManager.taskHeadenEqu;
-				}
+//				} else{
+//					runplanChannel._equ_code.dataProvider = DataManager.taskHeadenEqu;
+//				}
 //				runplanChannel.language.dataProvider=DataManager; 语言test
 				content.addElement(runplanChannel);
 				if(e!=null)

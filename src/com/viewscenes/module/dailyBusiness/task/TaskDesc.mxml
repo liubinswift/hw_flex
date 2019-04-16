@@ -39,10 +39,26 @@
 			import mx.controls.Alert;
 			import mx.managers.PopUpManager;
 			[Bindable]
-//			public var equColl:ArrayCollection = new ArrayCollection(
-//				[ {label:"自动选择", data:""},
-//					{label:"R1", data:"R1"}, 
-//					{label:"R2", data:"R2"} ]);
+			[Bindable]
+			public var equColl:ArrayCollection=new ArrayCollection([{label: "自动选择", data: ""}, 
+				{label: "R1", data: "R1"}, {label: "R2", data: "R2"},
+				{label: "R3", data: "R3"}, {label: "R4", data: "R4"},
+				{label: "R5", data: "R5"}, {label: "R6", data: "R6"},
+				{label: "R7", data: "R7"}, {label: "R8", data: "R8"},
+				{label: "R9", data: "R9"}, {label: "R10", data: "R10"},
+				{label: "R11", data: "R11"}, {label: "R12", data: "R12"},
+				{label: "R13", data: "R13"}, {label: "R14", data: "R14"},
+				{label: "R15", data: "R15"}, {label: "R16", data: "R16"},
+				{label: "R17", data: "R17"}, {label: "R18", data: "R18"},
+				{label: "R19", data: "R19"}, {label: "R20", data: "R20"},
+				{label: "R21", data: "R21"}, {label: "R22", data: "R22"},
+				{label: "R23", data: "R23"}, {label: "R24", data: "R24"},
+				{label: "R25", data: "R25"}, {label: "R26", data: "R26"},
+				{label: "R27", data: "R27"}, {label: "R28", data: "R28"},
+				{label: "R29", data: "R29"}, {label: "R30", data: "R30"},
+				{label: "R31", data: "R31"}, {label: "R32", data: "R32"}
+				
+			]);
 			[Bindable]
 			public var timeType:ArrayCollection = new ArrayCollection(
 				[  {label:"分钟", data:"2"}, 
@@ -70,11 +86,11 @@
 				}
 				taskType = task.task_type;
 				var taskchannel:TaskChannel=new TaskChannel();
-				if("101" == task.head_type_id){
+//				if("101" == task.head_type_id){
 					taskchannel._equ_code.dataProvider = taskchannel.equColl;
-				} else{
-					taskchannel._equ_code.dataProvider = DataManager.taskHeadenEqu;
-				}
+//				} else{
+//					taskchannel._equ_code.dataProvider = DataManager.taskHeadenEqu;
+//				}
 				
 				this.shortname.setHeadCode(task.head_code);
 				taskchannel.LoopContainer.enabled = false;
@@ -99,11 +115,11 @@
 				this.is_send.text+=task.is_send;
 				if(task.task_type=="频谱任务")
 				{
-						if("101" == task.head_type_id){
+//						if("101" == task.head_type_id){
 							sequ_code.dataProvider = taskchannel.equColl;
-						} else{
-							sequ_code.dataProvider = DataManager.taskHeadenEqu;
-						}
+//						} else{
+//							sequ_code.dataProvider = DataManager.taskHeadenEqu;
+//						}
 					this.task_levelGroup.visible=false;
 					this.quality_sleeptimeGroup.visible=false;
 					this.offset_sleeptimeGroup.visible=false;
@@ -528,7 +544,7 @@
 						<s:Label text="KHz"/>
 						<s:Spacer width="10"/>
 						<s:Label text="接收机："/>
-						<s:DropDownList id="sequ_code"  dataProvider="{DataManager.taskHeadenEqu}" selectedIndex="0">
+						<s:DropDownList id="sequ_code"  dataProvider="{equColl}" selectedIndex="0">
 							
 						</s:DropDownList>
 						<s:Spacer width="15"/>

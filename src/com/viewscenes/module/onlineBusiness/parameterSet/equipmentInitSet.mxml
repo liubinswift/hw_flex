@@ -541,15 +541,15 @@
 			<s:VGroup width="100%" paddingLeft="10" verticalAlign="middle" horizontalAlign="center" id="centerVG" height="100%" gap="5" >
 				<s:HGroup horizontalAlign="center" verticalAlign="middle" >
 					<s:Label text="代 码:" color="white"/>	
-					<s:TextInput width="100" id="SrcCode"/>
+					<s:TextInput width="100" id="SrcCode" restrict="a-z\A-Z\0-9"/>
 					<s:Label text="上报地址:" color="white"/>	
 					<s:TextInput  width="200" id="UpURL"/>
 					<s:Label text="FTP 地 址:" color="white"/>	
 					<ip:IPComponent id="FTP"/>
 					<s:Label text="FTP端口:" color="white"/>
-					<s:TextInput  width="100" id="FTPPort"  />
-					<s:Label text="FTP用户:" color="white"/>
-					<s:TextInput  width="100" id="FTPUser" />
+					<s:TextInput  width="100" id="FTPPort" restrict="0-9" />
+					<s:Label text="FTP用户:" color="white" />
+					<s:TextInput  width="100" id="FTPUser" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"/>
 					<s:Label text="FTP 密 码:" color="white"/>
 					<s:TextInput  width="100" id="FTPPassword" />
 					<s:Label text="FTP路径:" color="white"/>

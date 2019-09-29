@@ -189,30 +189,30 @@
 	       <s:VGroup width="100%" height="100%" horizontalAlign="right" verticalAlign="middle">
 			   <s:Form>
 					<s:FormItem label="前端ID" height="20">
-						<s:TextInput id="head_id" text="{HeadObj.head_id}" editable="false"/>
+						<s:TextInput id="head_id" text="{HeadObj.head_id}" restrict="0-9" editable="false"/>
 					</s:FormItem>
 					<s:FormItem label="前端CODE" height="20">
 						<s:TextInput id="code" text="{HeadObj.code}" restrict="a-z\A-Z\0-9" maxChars="20" change="{HeadObj.code=code.text}"/>
 					</s:FormItem>
 				   <s:FormItem label="前端简称" height="20">
-					   <s:TextInput id="shortname" text="{HeadObj.shortname}"  change="{HeadObj.shortname=shortname.text}"/>
+					   <s:TextInput id="shortname"  restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{HeadObj.shortname}"  change="{HeadObj.shortname=shortname.text}"/>
 				   </s:FormItem>
 				
 				   <s:FormItem label="经度" height="20">
-					   <s:TextInput id="longitude" text="{HeadObj.longitude}" change="{HeadObj.longitude=longitude.text}"/>
+					   <s:TextInput id="longitude" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{HeadObj.longitude}" change="{HeadObj.longitude=longitude.text}"/>
 				   </s:FormItem>
 				   <s:FormItem label="纬度" height="20">
-					   <s:TextInput id="latitude" text="{HeadObj.latitude}" change="{HeadObj.latitude=latitude.text}"/>
+					   <s:TextInput id="latitude"  restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{HeadObj.latitude}" change="{HeadObj.latitude=latitude.text}"/>
 				   </s:FormItem>
 				   
 					<s:FormItem label="拨号电话"  height="20">
 						<s:TextInput id="comphone" text="{HeadObj.comphone}" change="{HeadObj.comphone=comphone.text}"/>
 					</s:FormItem>
 					<s:FormItem label="站点"  height="20">
-						<s:TextInput id="site"  text="{HeadObj.site}" change="{HeadObj.site=site.text}"/>
+						<s:TextInput id="site"   restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{HeadObj.site}" change="{HeadObj.site=site.text}"/>
 					</s:FormItem>	
 					<s:FormItem label="地址"  height="20">
-						<s:TextInput id="address" text="{HeadObj.address}"  change="{HeadObj.address=address.text}"/>
+						<s:TextInput id="address" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"  text="{HeadObj.address}"  change="{HeadObj.address=address.text}"/>
 					</s:FormItem>
 					<s:FormItem label="站点状态"  height="20">
 						<s:TextInput id="site_status" text="{HeadObj.site_status}" change="{HeadObj.site_status=site_status.text}"/>
@@ -224,7 +224,7 @@
 					   <s:TextInput id="fault_status" text="{HeadObj.fault_status}" change="{HeadObj.fault_status=fault_status.text}"/>
 				   </s:FormItem>
 				   <s:FormItem label="发射台名称"  height="20">
-					   <s:TextInput id="station_name" text="{HeadObj.station_name}" change="{HeadObj.station_name=station_name.text}"/>
+					   <s:TextInput id="station_name"  restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{HeadObj.station_name}" change="{HeadObj.station_name=station_name.text}"/>
 				   </s:FormItem>
 				   <s:FormItem label="大洲"  height="20">
 					   <!--s:TextInput id="state"  change="{HeadObj.state=state.text}"/-->
@@ -257,29 +257,29 @@
 						  <ip:IPComponent width="150" id="ip" text="{HeadObj.ip}"/>
 					  </s:FormItem>
 					  <s:FormItem label="版本"  height="20">
-						  <s:TextInput id="version" text="{HeadObj.version}"  change="{HeadObj.version=version.text}"/>
+						  <s:TextInput id="version" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{HeadObj.version}"  change="{HeadObj.version=version.text}"/>
 					  </s:FormItem>
 					  
 					  <s:FormItem label="海拔"  height="20">
-						  <s:TextInput id="altitude" text="{HeadObj.altitude}" change="{HeadObj.altitude=altitude.text}"/>
+						  <s:TextInput id="altitude" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{HeadObj.altitude}" change="{HeadObj.altitude=altitude.text}"/>
 					  </s:FormItem>
 					  <s:FormItem label="X"  height="20">
-						  <s:TextInput id="X" text="{HeadObj.x}" change="{HeadObj.x=X.text}"/>
+						  <s:TextInput id="X" restrict="0-9\." text="{HeadObj.x}" change="{HeadObj.x=X.text}"/>
 					  </s:FormItem>
 					  <s:FormItem label="Y"  height="20">
-						  <s:TextInput id="Y" text="{HeadObj.y}" change="{HeadObj.y=Y.text}"/>
+						  <s:TextInput id="Y" restrict="0-9\." text="{HeadObj.y}" change="{HeadObj.y=Y.text}"/>
 					  </s:FormItem>
 					  <s:FormItem label="维护人"  height="20">
-						  <s:TextInput id="person" text="{HeadObj.person}" change="{HeadObj.person=person.text}"/>
+						  <s:TextInput id="person" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{HeadObj.person}" change="{HeadObj.person=person.text}"/>
 					  </s:FormItem>
 					  <s:FormItem label="维护人电话"  height="20">
 						  <s:TextInput id="person_phone" text="{HeadObj.person_phone}" change="{HeadObj.person_phone=person_phone.text}"/>
 					  </s:FormItem>
 					  <s:FormItem label="联系人"  height="20">
-						  <s:TextInput id="principal" text="{HeadObj.principal}" change="{HeadObj.principal=principal.text}"/>
+						  <s:TextInput id="principal" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{HeadObj.principal}" change="{HeadObj.principal=principal.text}"/>
 					  </s:FormItem>
 					  <s:FormItem label="联系人职务"  height="20">
-						  <s:TextInput id="post" text="{HeadObj.post}" change="{HeadObj.post=post.text}"/>
+						  <s:TextInput id="post" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{HeadObj.post}" change="{HeadObj.post=post.text}"/>
 					  </s:FormItem>
 					  <s:FormItem label="联系人办公电话"  height="20">
 						  <s:TextInput id="principal_phone1"/>
@@ -305,11 +305,11 @@
 					  <timecomp:TimeNew id="summertime_end" text="{HeadObj.summertime_end}" TimeNewChanged="{HeadObj.summertime_end=summertime_end.text}"/>
 				  </s:FormItem>
 				   <s:FormItem label="CIRAF区"  height="20">
-					   <s:TextInput id="ciraf" text="{HeadObj.ciraf}" change="{HeadObj.ciraf=ciraf.text}"/>
+					   <s:TextInput id="ciraf" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"  text="{HeadObj.ciraf}" change="{HeadObj.ciraf=ciraf.text}"/>
 				   </s:FormItem>
 				  
 				   <s:FormItem label="时差"  height="20">
-					   <s:TextInput id="time_diff" text="{HeadObj.time_diff}" change="{HeadObj.time_diff=time_diff.text}"/>
+					   <s:TextInput id="time_diff"   text="{HeadObj.time_diff}" change="{HeadObj.time_diff=time_diff.text}"/>
 				   </s:FormItem>
 				   <s:FormItem label="默认语言"  height="20">
 					   <checkbox:CheckDropList id="default_language" dataProvider="{lanaguageArr}"  filedLabel="label" />
@@ -330,10 +330,10 @@
 					   <s:ComboBox id="is_online" dataProvider="{lineArray}" selectedIndex="{HeadObj.is_online}" change="{HeadObj.is_online=is_online.selectedItem.code}"/>
 				   </s:FormItem>
 				   <s:FormItem label="制造厂商"  height="20">
-					   <s:TextInput id="manufacturer" text="{HeadObj.manufacturer}" change="{HeadObj.manufacturer=manufacturer.text}"/>
+					   <s:TextInput id="manufacturer" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{HeadObj.manufacturer}" change="{HeadObj.manufacturer=manufacturer.text}"/>
 				   </s:FormItem>
 				   <s:FormItem label="描述"  height="20">
-					   <s:TextInput id="descript" text="{HeadObj.descript}" change="{HeadObj.descript=descript.text}"/>
+					   <s:TextInput id="descript" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{HeadObj.descript}" change="{HeadObj.descript=descript.text}"/>
 				   </s:FormItem>
 			   </s:Form>
 			   <s:FormItem width="216"  height="30">

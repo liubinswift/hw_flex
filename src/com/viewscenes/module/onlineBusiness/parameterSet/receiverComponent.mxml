@@ -8,11 +8,11 @@
 	</fx:Declarations>
 	<s:HGroup >
 		<s:Label text="类        型：" color="white"/>
-		<s:TextInput id="equName" width="100"/>
+		<s:TextInput id="equName" width="100" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" />
 	</s:HGroup>
 	<s:HGroup >
 		<s:Label text="设备编码：" color="white" />
-		<s:TextInput id="equCode" width="100"/>
+		<s:TextInput id="equCode" width="100" />
 	</s:HGroup>
 	<s:HGroup >
 		<s:Spacer width="60"/>

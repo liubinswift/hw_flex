@@ -90,7 +90,7 @@
 					 scaleGridBottom='41',scaleGridLeft='230',scaleGridRight='310')"/>
 			<s:HGroup width="250" height="100%" horizontalAlign="center" verticalAlign="middle" left="20">
 				<s:Label text="站点代码" color="black"/>
-				<s:TextInput width="80" id="headcode" text="" focusIn="this.headcode.text=''" />
+				<s:TextInput width="80" id="headcode"  restrict="a-z\A-Z\0-9" text="" focusIn="this.headcode.text=''" />
 				<s:Label text="大洲" color="black"/>
 				<s:DropDownList width="100"  id="state" change="state_changeHandler()" dataProvider="{stateArr}" requireSelection="true" labelField="state_name"/>
 			</s:HGroup>
@@ -112,7 +112,7 @@
 			
 			<s:HGroup width="180" height="100%" verticalAlign="middle" right="70">
 				<s:Label text="站点名称：" color="black"/>
-				<s:TextInput width="80" id="headname" text="" focusIn="this.headname.text=''" />
+				<s:TextInput width="80" id="headname"  restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="" focusIn="this.headname.text=''" />
 				<s:Button buttonMode="true" label="查询" width="50" click="button1_clickHandler()"/>
 			</s:HGroup>  
 		</s:Group>

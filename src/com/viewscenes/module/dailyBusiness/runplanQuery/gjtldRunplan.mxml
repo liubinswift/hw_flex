@@ -601,7 +601,7 @@
 			<s:ComboBox id="headend" width="180" dataProvider="{headendArr}"/>
 			<!--global:HeadendList id="headend" headDataAll="true"  width="180"/-->
 			<s:Label text="转播机构"/>
-			<s:TextInput id="redisseminators" width="80"/>
+			<s:TextInput id="redisseminators" width="80" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"/>
 			<s:Label text="语言:"/>
 			<s:DropDownList id="language" width="80"  dataProvider="{lanaguageArr}" labelField="language_name"/>
 			<s:Label text="频率"/>

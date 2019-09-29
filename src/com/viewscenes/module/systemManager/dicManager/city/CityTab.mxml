@@ -371,15 +371,15 @@
 		<s:HGroup height="25" width="100%" verticalAlign="middle" >
 			<s:HGroup width="50%" horizontalAlign="left" verticalAlign="middle" >
 				<s:Label text="城市"/>
-				<s:TextInput width="80" id="city"/>
+				<s:TextInput width="80" id="city" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"/>
 				<s:Label text="国家"/>
-				<s:TextInput width="80" id="contry"/>
+				<s:TextInput width="80" id="contry" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"/>
 				<!--
 				<s:Label text="首都"/>
 				<s:TextInput width="80" id="capital" />
 				-->
 				<s:Label text="CIRAF区"/>
-				<s:TextInput width="80" id="ciraf"/>
+				<s:TextInput width="80" id="ciraf" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"/>
 			</s:HGroup>
 			<s:HGroup width="50%"  horizontalAlign="right" verticalAlign="middle">
 				<s:Button buttonMode="true" label="查 询" width="100" click="getCity();"/>

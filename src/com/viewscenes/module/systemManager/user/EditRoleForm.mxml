@@ -71,7 +71,7 @@
 		 
 		<s:FormItem label="角色名称：">
 
-			<s:TextInput id="roleName" text="{roleObj.name}" change="{roleObj.name=roleName.text}"/><s:Label text="*" color="0xff0000"/>
+			<s:TextInput id="roleName" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{roleObj.name}" change="{roleObj.name=roleName.text}"/><s:Label text="*" color="0xff0000"/>
 		</s:FormItem>
 		
 		<s:FormItem label="优 先 级：">

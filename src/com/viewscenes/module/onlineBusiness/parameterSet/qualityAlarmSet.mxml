@@ -354,7 +354,7 @@
 				<s:Label text="波段"/>
 				<s:DropDownList id="band" width="100"  selectedIndex="0" dataProvider="{new ArrayCollection([{label:'全部',value:''},{label:'中波',value:'1'},{label:'短波',value:'0'},{label:'调频',value:'2'}])}"/>
 				<s:Label text="频率(KHZ)"/>
-				<s:TextInput id="freq" width="100" focusOut="setTimeout(checkFreq,100);"/>
+				<s:TextInput id="freq" width="100" restrict="0-9" focusOut="setTimeout(checkFreq,100);"/>
 				<s:Spacer width="10"/>
 				<s:Button buttonMode="true" label="设置" id="setButton" click="setParameter()"/>
 				<s:Spacer width="10"/>

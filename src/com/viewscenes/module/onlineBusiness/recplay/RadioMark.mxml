@@ -319,7 +319,7 @@
 						this.radioMarkzstViewBean.counti = mark_i.text;
 						this.radioMarkzstViewBean.counts = mark_s.text;
 						this.radioMarkzstViewBean.counto = mark_o.text;
-						this.radioMarkzstViewBean.edit_user = DataManager.user.userId;
+						this.radioMarkzstViewBean.edit_user = DataManager.user.userName;
 						this.radioMarkzstViewBean.description = getDesc();
 						this.radioMarkzstViewBean.remark = remark.text;
 						//如果进行过识别

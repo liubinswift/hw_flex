@@ -211,7 +211,7 @@
 			</s:HGroup>
 			<s:HGroup>
 				<s:Label text="用户名：" />
-				<s:TextInput id="username"  text="user" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"></s:TextInput>
+				<s:TextInput id="username"  text="user" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}"></s:TextInput>
 			</s:HGroup>
 			<s:HGroup>
 				<s:Label text="密码：" />

@@ -68,7 +68,7 @@
 			<s:layout>
 				<s:HorizontalLayout/>
 			</s:layout>
-			<s:TextInput id="roleName" text=""  restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{roleObj.name=roleName.text}"/><s:Label text="*" color="0xff0000"/>
+			<s:TextInput id="roleName" text=""  restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{roleObj.name=roleName.text}"/><s:Label text="*" color="0xff0000"/>
 		</s:FormItem>
 		
 		<s:FormItem label="优 先 级：">

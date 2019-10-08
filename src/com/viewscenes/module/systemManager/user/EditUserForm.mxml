@@ -176,7 +176,7 @@
 					<s:layout>
 						<s:HorizontalLayout/>
 					</s:layout>
-					<s:TextInput id="userName" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{userObj.userName}" change="{userObj.userName=userName.text}"/><s:Label text="*" color="0xff0000"/>
+					<s:TextInput id="userName" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" text="{userObj.userName}" change="{userObj.userName=userName.text}"/><s:Label text="*" color="0xff0000"/>
 					<s:Label id="nameMark"/>
 				</s:FormItem>
 				
@@ -209,10 +209,10 @@
 					<s:TextInput id="mobilephone"  text="{userObj.mobilephone}" change="{userObj.mobilephone=mobilephone.text}"/>
 				</s:FormItem>	
 				<s:FormItem label="职位："  height="20">
-					<s:TextInput id="post" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{userObj.post}"  change="{userObj.post=post.text}"/>
+					<s:TextInput id="post" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" text="{userObj.post}"  change="{userObj.post=post.text}"/>
 				</s:FormItem>
 				<s:FormItem label="地  址："  height="20">
-					<s:TextInput id="address" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{userObj.address}" change="{userObj.address=address.text}"/>
+					<s:TextInput id="address" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" text="{userObj.address}" change="{userObj.address=address.text}"/>
 				</s:FormItem>
 				<s:FormItem label="E-MAIL:"  height="20">
 					<s:TextInput id="email" text="{userObj.email}" change="{userObj.email=email.text}"/>

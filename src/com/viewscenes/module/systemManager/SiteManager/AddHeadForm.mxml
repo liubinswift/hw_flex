@@ -131,7 +131,7 @@
 						<s:TextInput id="code" restrict="a-z\A-Z\0-9" maxChars="20" change="{HeadObj.code=code.text}"/><s:Label text="*" color="0xff0000"/>
 					</s:FormItem>
 					<s:FormItem label="前端简称" height="20">
-						<s:TextInput id="shortname" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{HeadObj.shortname=shortname.text}"/>
+						<s:TextInput id="shortname" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{HeadObj.shortname=shortname.text}"/>
 					</s:FormItem>
 					<s:FormItem label="经度" height="20">
 						<s:TextInput id="longitude"  restrict="a-z\A-Z\0-9" change="{HeadObj.longitude=longitude.text}"/>
@@ -144,22 +144,22 @@
 						<s:TextInput id="comphone"  change="{HeadObj.comphone=comphone.text}"/>
 					</s:FormItem>
 					<s:FormItem label="站点"  height="20">
-						<s:TextInput id="site" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"  change="{HeadObj.site=site.text}"/>
+						<s:TextInput id="site" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}"  change="{HeadObj.site=site.text}"/>
 					</s:FormItem>	
 					<s:FormItem label="地址"  height="20">
-						<s:TextInput id="address" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{HeadObj.address=address.text}"/>
+						<s:TextInput id="address" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{HeadObj.address=address.text}"/>
 					</s:FormItem>
 					<s:FormItem label="站点状态"  height="20">
-						<s:TextInput id="site_status" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{HeadObj.site_status=site_status.text}"/>
+						<s:TextInput id="site_status" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{HeadObj.site_status=site_status.text}"/>
 					</s:FormItem>
 					<s:FormItem label="通信状态"  height="20">
-						<s:TextInput id="com_status" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"  change="{HeadObj.com_status=com_status.text}"/>
+						<s:TextInput id="com_status" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}"  change="{HeadObj.com_status=com_status.text}"/>
 					</s:FormItem>
 					<s:FormItem label="失败状态"  height="20">
-						<s:TextInput id="fault_status"  restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{HeadObj.fault_status=fault_status.text}"/>
+						<s:TextInput id="fault_status"  restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{HeadObj.fault_status=fault_status.text}"/>
 					</s:FormItem>
 					<s:FormItem label="发射台名称"  height="20">
-						<s:TextInput id="station_name"  restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{HeadObj.station_name=station_name.text}"/>
+						<s:TextInput id="station_name"  restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{HeadObj.station_name=station_name.text}"/>
 					</s:FormItem>
 					
 					<s:FormItem label="大洲"  height="20">
@@ -185,17 +185,17 @@
 						<s:ComboBox id="com_id" dataProvider="{comArray}" selectedIndex="{HeadObj.com_id}"  change="{HeadObj.com_id=com_id.selectedItem.code}" requireSelection="true"/>
 					</s:FormItem>
 					<s:FormItem label="通信协议" height="20">
-						<s:TextInput id="com_protocol" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{HeadObj.com_protocol=com_protocol.text}"/>
+						<s:TextInput id="com_protocol" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{HeadObj.com_protocol=com_protocol.text}"/>
 					</s:FormItem>
 					<s:FormItem label="IP地址"  height="20">
 						<ip:IPComponent width="150" id="ip"/>
 					</s:FormItem>
 					<s:FormItem label="版本"  height="20">
-						<s:TextInput id="version" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{HeadObj.version=version.text}"/>
+						<s:TextInput id="version" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{HeadObj.version=version.text}"/>
 					</s:FormItem>
 					
 					<s:FormItem label="海拔"  height="20">
-						<s:TextInput id="altitude" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{HeadObj.altitude=altitude.text}"/>
+						<s:TextInput id="altitude" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{HeadObj.altitude=altitude.text}"/>
 					</s:FormItem>
 					<s:FormItem label="X"  height="20">
 						<s:TextInput id="X" restrict="a-z\A-Z\0-9"  change="{HeadObj.x=X.text}"/>
@@ -204,16 +204,16 @@
 						<s:TextInput id="Y" restrict="a-z\A-Z\0-9"  change="{HeadObj.y=Y.text}"/>
 					</s:FormItem>
 					<s:FormItem label="维护人"  height="20">
-						<s:TextInput id="person" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{HeadObj.person=person.text}"/>
+						<s:TextInput id="person" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{HeadObj.person=person.text}"/>
 					</s:FormItem>
 					<s:FormItem label="维护人电话"  height="20">
 						<s:TextInput id="person_phone" change="{HeadObj.person_phone=person_phone.text}"/>
 					</s:FormItem>
 					<s:FormItem label="联系人"  height="20">
-						<s:TextInput id="principal"  restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{HeadObj.principal=principal.text}"/>
+						<s:TextInput id="principal"  restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{HeadObj.principal=principal.text}"/>
 					</s:FormItem>
 					<s:FormItem label="联系人职务"  height="20">
-						<s:TextInput id="post" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{HeadObj.post=post.text}"/>
+						<s:TextInput id="post" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{HeadObj.post=post.text}"/>
 					</s:FormItem>
 					<s:FormItem label="联系人办公电话"  height="20">
 						<s:TextInput id="principal_phone1"/>
@@ -239,7 +239,7 @@
 						<timecomp:TimeNew id="summertime_end"  TimeNewChanged="{HeadObj.summertime_end=summertime_end.text}"/>
 					</s:FormItem>
 					<s:FormItem label="CIRAF区"  height="20">
-						<s:TextInput id="ciraf" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{HeadObj.ciraf=ciraf.text}"/>
+						<s:TextInput id="ciraf" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{HeadObj.ciraf=ciraf.text}"/>
 					</s:FormItem>
 					
 					<s:FormItem label="时差"  height="20">
@@ -264,10 +264,10 @@
 						<s:ComboBox id="is_online" dataProvider="{lineArray}" selectedIndex="{HeadObj.is_online}" change="{HeadObj.is_online=is_online.selectedItem.code}" requireSelection="true"/>
 					</s:FormItem>
 					<s:FormItem label="制造厂商"  height="20">
-						<s:TextInput id="manufacturer" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{HeadObj.manufacturer=manufacturer.text}"/>
+						<s:TextInput id="manufacturer" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{HeadObj.manufacturer=manufacturer.text}"/>
 					</s:FormItem>
 					<s:FormItem label="描述"  height="20">
-						<s:TextInput id="descript" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{HeadObj.descript=descript.text}"/>
+						<s:TextInput id="descript" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{HeadObj.descript=descript.text}"/>
 					</s:FormItem>
 				</s:Form>
 				<s:FormItem width="216"  height="30">

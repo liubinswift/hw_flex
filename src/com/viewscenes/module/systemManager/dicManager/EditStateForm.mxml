@@ -55,7 +55,7 @@
 	<s:VGroup>
 		<s:Form >
 			<s:FormItem label="大 洲 名 称">
-				<s:TextInput id="state_name" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" text="{stateBean.state_name}"/>
+				<s:TextInput id="state_name" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" text="{stateBean.state_name}"/>
 			</s:FormItem>
 			<s:FormItem label="夏令时开始时间">
 				<timecomp:TimeNew id="start_time" text="{stateBean.start_time}"/>

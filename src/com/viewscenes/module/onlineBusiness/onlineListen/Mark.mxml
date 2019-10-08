@@ -361,7 +361,7 @@
 				
 				<s:Spacer width="10"/>
 				
-				<s:Label text="备注:" color="0x000000"/><s:TextInput id="remark"  width="120" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"/>
+				<s:Label text="备注:" color="0x000000"/><s:TextInput id="remark"  width="120" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}"/>
 				
 				<s:Button buttonMode="true" label="打分" click="setMark();"/>
 				<!--/s:HGroup-->	

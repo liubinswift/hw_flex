@@ -111,7 +111,7 @@
 			
 			<s:HGroup width="180" height="100%" verticalAlign="middle" right="70">
 				<s:Label text="站点名称：" color="black"/>
-				<s:TextInput width="80"  restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" id="headname" text="" focusIn="this.headname.text=''" />
+				<s:TextInput width="80"  restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" id="headname" text="" focusIn="this.headname.text=''" />
 				<s:Button buttonMode="true" label="查询" width="50" click="button1_clickHandler()"/>
 			</s:HGroup>  
 		</s:Group>

@@ -31,7 +31,7 @@
 													  labelField="name" selectedIndex="0"/>					
 					<s:Spacer width="12"/>
 					<s:Label text="机号:"/>
-					<s:TextInput id="tran_no" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" />
+					<s:TextInput id="tran_no" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" />
 					<s:Spacer width="12"/>
 					<s:Label text="功率:"/>
 					<s:TextInput id="power" width="40" restrict="0-9\." />
@@ -39,13 +39,13 @@
 				<s:HGroup id="hwldsomeGroup" verticalAlign="middle">
 					<s:Label text="  发射国家"/>
 					<!--advancedComboBox:DropDownListSet id="send_county" dataProvider="{countryArr}" selectedIndex="0"/-->
-					<s:TextInput id="send_county" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"/>
+					<s:TextInput id="send_county" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}"/>
 					<s:Spacer width="12"/>
 					<s:Label text="发射城市"/>
 					<!--advancedComboBox:DropDownListSet id="send_city" width="100" dataProvider="{cityArr}" labelField="city"/-->
-					<s:TextInput id="send_city" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"/>
+					<s:TextInput id="send_city" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}"/>
 					<s:Label text="转播机构:"/>
-					<s:TextInput id="redisseminators" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"/>
+					<s:TextInput id="redisseminators" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}"/>
 					
 				</s:HGroup>
 			</s:HGroup>
@@ -78,7 +78,7 @@
 							dataProvider="{new ArrayCollection([{label:'国外发射台质量异态',value:'1'},{label:'海外落地节目质量异态',value:'2'}])}"/>
 				<s:Spacer width="12"/>
 				<s:Label text="备注:"/>
-				<s:TextInput id="remark" width="100" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" />
+				<s:TextInput id="remark" width="100" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" />
 				
 			</s:HGroup>
 			<s:HGroup width="100%" height="100%" verticalAlign="middle">

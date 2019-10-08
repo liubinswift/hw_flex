@@ -217,14 +217,14 @@
 					<s:layout>
 						<s:HorizontalLayout/>
 					</s:layout>
-					<s:TextInput id="city" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"  change="{CityObj.city=city.text}"/><s:Label text="*" color="0xff0000"/>
+					<s:TextInput id="city" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}"  change="{CityObj.city=city.text}"/><s:Label text="*" color="0xff0000"/>
 					<s:Label id="cityMark" />
 				</s:FormItem>
 				<s:FormItem label="首都" height="20">
 					<s:layout>
 						<s:HorizontalLayout/>
 					</s:layout>
-					<s:TextInput id="capital" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{CityObj.capital=capital.text}"/><s:Label text="*" color="0xff0000"/>
+					<s:TextInput id="capital" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{CityObj.capital=capital.text}"/><s:Label text="*" color="0xff0000"/>
 					<s:Label id="capitalMark" />
 				</s:FormItem>
 				<s:FormItem label="国家"  height="20">
@@ -259,7 +259,7 @@
 					<s:Label id="latitudeMark" />
 				</s:FormItem>
 				<s:FormItem label="CIRAF"  height="20">
-					<s:TextInput id="ciraf"  restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" change="{CityObj.ciraf=ciraf.text}"/>
+					<s:TextInput id="ciraf"  restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{CityObj.ciraf=ciraf.text}"/>
 				</s:FormItem>
 				<s:FormItem label="海拔"  height="20">
 					<s:layout>

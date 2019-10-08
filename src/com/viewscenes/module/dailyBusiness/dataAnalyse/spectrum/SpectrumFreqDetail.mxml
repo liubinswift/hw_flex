@@ -15,7 +15,7 @@
 			<!--advancedComboBox:DropDownListSet id="station" dataProvider="{DataManager.stationBeanAll}" selectedIndex="0"  width="90" labelField="name"/-->
 			<s:TextInput id="station" >	</s:TextInput>
 			<s:Label text="  归属国家"/>
-			<s:TextInput id="country" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}">	</s:TextInput>
+			<s:TextInput id="country" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}">	</s:TextInput>
 			<!--advancedComboBox:DropDownListSet id="country" dataProvider="{countryArr}" selectedIndex="0" labelField="contry"/-->
 		</s:HGroup>
 		<s:HGroup width="100%" verticalAlign="middle">

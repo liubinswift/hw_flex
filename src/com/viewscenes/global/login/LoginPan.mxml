@@ -158,7 +158,7 @@
 		<s:HGroup  id="loginpan" alpha="1" fontSize="14" fontFamily="宋体" width="100%" height="100%" top="-45"  color="0xffffff" verticalAlign="middle" horizontalAlign="center">
 			
 			<s:Label text="用户名"/>
-				<s:TextInput id="userName" width="245" text="" height="30"/>
+				<s:TextInput id="userName" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" width="245" text="" height="30"/>
 			
 			<s:Label text="    密码"/>
 				<s:TextInput id="password" width="245" displayAsPassword="true" enter="login();" text="" height="30"/>

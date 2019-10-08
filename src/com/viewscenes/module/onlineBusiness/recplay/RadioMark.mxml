@@ -745,7 +745,7 @@
 				
 				<s:Spacer width="5"/>
 				
-				<s:Label text="备注:" /><s:TextInput id="remark"  keyDown="remark_keyDownHandler(event)" width="100"/>
+				<s:Label text="备注:" /><s:TextInput id="remark"  keyDown="remark_keyDownHandler(event)" width="100" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"/>
 				
 				<s:Button buttonMode="true" label="打分" click="setMark();"/>
 				<s:Spacer width="5"/>

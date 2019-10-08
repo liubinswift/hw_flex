@@ -442,8 +442,8 @@
 			<s:Label width="100" textAlign="right" fontSize="12" text="站点名称缩写："/>
 			<s:TextInput width="100" id="shortname"/>
 			
-			<s:Label width="80" textAlign="right" text="站点名称："  fontSize="12"/>
-			<s:TextInput width="100"  id="site" />
+			<s:Label width="80" textAlign="right" text="站点名称："   fontSize="12"/>
+			<s:TextInput width="100"  id="site" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" />
 			
 			<s:Label width="80" textAlign="right" text="站点代码："  fontSize="12"/>
 			<s:TextInput width="100"  id="code" restrict="a-z\A-Z\0-9" maxChars="20"/>

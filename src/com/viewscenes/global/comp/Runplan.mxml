@@ -201,7 +201,7 @@
 		<s:HGroup width="100%" height="25" verticalAlign="middle" horizontalAlign="center">
 			
 			<s:Label text="频率"/>
-			<s:TextInput id="freq" width="70"/>
+			<s:TextInput id="freq" width="70" restrict="0-9"/>
 			<s:CheckBox label="播音时间" click="checkbox1_clickHandler(event)" id="playTimeBox" selected="{playTimeBoxSelect}"/>
 			<s:Label text="开始时间"/>
 			<timecomp:TimeNew id="beginTime" dateDisplay="timenew" text="00:00"/>

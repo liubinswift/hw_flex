@@ -21,7 +21,7 @@
 	</fx:Script>
 	<s:HGroup >
 		<s:Label text="代        码:" color="white"/>	
-		<s:TextInput width="100" id="SrcCode"/>
+		<s:TextInput width="100"  restrict="a-z\A-Z\0-9" id="SrcCode"/>
 		<s:Spacer width="10"/>
 		<!--s:Label text="类       型:" color="white"/>
 		<s:ComboBox  width="130" id="centerType" labelField="value"  />
@@ -34,10 +34,10 @@
 	</s:HGroup>
 	<s:HGroup >
 		<s:Label text="FTP端口:" color="white"/>
-		<s:TextInput  width="100" id="FTPPort"  />
+		<s:TextInput  width="100" id="FTPPort"  restrict="0-9"/>
 		<s:Spacer width="10"/>
-		<s:Label text="FTP用户:" color="white"/>
-		<s:TextInput  width="130" id="FTPUser" />
+		<s:Label text="FTP用户:" color="white" />
+		<s:TextInput  width="130" id="FTPUser" restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}"/>
 		<s:Spacer width="10"/>
 		<s:Label text="FTP 密 码:" color="white"/>
 		<s:TextInput  width="50" id="FTPPassword" />

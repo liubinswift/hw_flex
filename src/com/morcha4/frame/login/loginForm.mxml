@@ -59,7 +59,7 @@
 	</fx:Script>
 	<s:Group id="form" width.init="0" height.init="0" clipAndEnableScrolling="true">
 		<s:TextInput id="password" x="44" y="29" width="132" tabIndex="1"/>
-		<s:TextInput id="userName" x="44" y="0" width="132" tabIndex="2"/>
+		<s:TextInput id="userName"  restrict="a-z\A-Z\0-9\^{'[/u4e00-/u9fa5]'}" x="44" y="0" width="132" tabIndex="2"/>
 		<s:Button buttonMode="true" id="login" x="180" y="10" width="56" height="39" doubleClickEnabled="true" doubleClick="this.currentState='init'" tabFocusEnabled="false" click="if(userName.text==''||password.text==''){this.currentState='error';this.loginTip='信息不全';return;}setTimeout(function(){loginTip='登陆成功，正在初始化';currentState='init'},2000);loginTip='正在登录。。';this.currentState='process'"/>
 		<s:Label  y="33" width="41" text="密    码"/>
 		<s:Label  y="4" fontSize="13" text="用户名"/>

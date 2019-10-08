@@ -350,7 +350,7 @@
 		<s:HGroup width="100%" height="25" verticalAlign="middle" horizontalAlign="left">
 			<s:HGroup  verticalAlign="middle" horizontalAlign="left">
 				<s:Label text="季节代号:"/>
-				<s:TextInput id="code" width="100"/>
+				<s:TextInput id="code" width="100" restrict="a-z\A-Z\0-9" />
 			</s:HGroup>
 			<s:HGroup width="100%"  horizontalAlign="right" verticalAlign="middle">
 				

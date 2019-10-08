@@ -43,7 +43,7 @@
 	<s:VGroup  width="100%" height="100%" mouseDown="event.stopImmediatePropagation();">
 		<s:HGroup width="100%" paddingLeft="10" paddingRight="10">
 			<s:Label text="截图文件名"/>
-			<s:TextInput id="filename" width="100%"/>
+			<s:TextInput id="filename" width="100%" />
 			<s:Button buttonMode="true" label="保存" click="saveImg();"/>
 		</s:HGroup>
 		<s:Image id="cutImg" width="100%" height="100%"/>

@@ -593,7 +593,7 @@
 								<s:GridColumn headerText="打分人"  	labelFunction="markUserFunction"/>
 								<s:GridColumn headerText="播放"   itemRenderer="{RendererUtil.getButtonRenderer('播放',playAndMark)}"/>
 								<s:GridColumn headerText="下载"   itemRenderer="{RendererUtil.getButtonRenderer('下载',downloadRec)}"/>
-								<s:GridColumn headerText="删除"   itemRenderer="{RendererUtil.getButtonRenderer('删除',delRecFile)}"/>
+								<s:GridColumn headerText="删除"   itemRenderer="{RendererUtil.getButtonRenderer('删除',del)}"/>
 							</s:ArrayCollection>
 						</s:columns>
 					</s:DataGrid>

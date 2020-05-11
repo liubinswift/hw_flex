@@ -134,10 +134,10 @@
 						<s:TextInput id="shortname" restrict="a-z\A-Z\0-9\^{'[\u4e00-\u9fa5]'}" change="{HeadObj.shortname=shortname.text}"/>
 					</s:FormItem>
 					<s:FormItem label="经度" height="20">
-						<s:TextInput id="longitude"  restrict="a-z\A-Z\0-9" change="{HeadObj.longitude=longitude.text}"/>
+						<s:TextInput id="longitude"  restrict="a-z\A-Z\0-9\.\-" change="{HeadObj.longitude=longitude.text}"/>
 					</s:FormItem>
 					<s:FormItem label="纬度" height="20">
-						<s:TextInput id="latitude" restrict="a-z\A-Z\0-9" change="{HeadObj.latitude=latitude.text}"/>
+						<s:TextInput id="latitude" restrict="a-z\A-Z\0-9\.\-" change="{HeadObj.latitude=latitude.text}"/>
 					</s:FormItem>
 					
 					<s:FormItem label="拨号电话"  height="20">

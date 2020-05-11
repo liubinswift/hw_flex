@@ -481,13 +481,16 @@
 					}
 				}
 				if(runplanIDs!=""){
-					MM.show("您确定要删除吗?","删除录音文件","",confirmDel,true,cancelHandler,null);
+					runplanIDs= runplanIDs.substr(0,runplanIDs.length-1);
+					MM.show("您确定要删除吗?删除录音文件id:"+runplanIDs,"删除录音文件","",confirmDel,true,cancelHandler,null);
 				}else{
 					DataManager.showErrorMessage("请选择要删除的录音文件!");
 					return;
 				}
 				
 			}
+		
+			
 			/**
 			 * 取消回调方法
 			 * */
@@ -497,7 +500,7 @@
 			
 			
 			private function confirmDel():void{
-				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.daily.queryData.RecFileQuery","delSelectFile",runplanIDs.substr(0,runplanIDs.length-1),delRunplanBack,DataManager.showErrorMessageBack,true,null,DataManager.server_app_id));
+				RPCManager.sendCmd(new RORequestParam("com.viewscenes.web.daily.queryData.RecFileQuery","delSelectFile",runplanIDs,delRunplanBack,DataManager.showErrorMessageBack));
 			}
 			private function delRunplanBack(res:String):void{
 				runplanIDs="";
@@ -593,7 +596,7 @@
 								<s:GridColumn headerText="打分人"  	labelFunction="markUserFunction"/>
 								<s:GridColumn headerText="播放"   itemRenderer="{RendererUtil.getButtonRenderer('播放',playAndMark)}"/>
 								<s:GridColumn headerText="下载"   itemRenderer="{RendererUtil.getButtonRenderer('下载',downloadRec)}"/>
-								<s:GridColumn headerText="删除"   itemRenderer="{RendererUtil.getButtonRenderer('删除',del)}"/>
+								<s:GridColumn headerText="删除"   itemRenderer="{RendererUtil.getButtonRenderer('删除',delRecFile)}"/>
 							</s:ArrayCollection>
 						</s:columns>
 					</s:DataGrid>
